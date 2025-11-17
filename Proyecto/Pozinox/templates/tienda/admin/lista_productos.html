@@ -220,14 +220,14 @@
         <form method="get" class="row g-3">
             <div class="col-md-3">
                 <label class="form-label">Buscar</label>
-                <input type="text" class="form-control" name="q" value="{{ busqueda }}" placeholder="Nombre, código o descripción">
+                <input type="text" class="form-control" name="q" value="{% if busqueda %}{{ busqueda }}{% endif %}" placeholder="Nombre, código o descripción">
             </div>
             <div class="col-md-3">
                 <label class="form-label">Categoría</label>
                 <select class="form-select" name="categoria">
                     <option value="">Todas las categorías</option>
                     {% for categoria in categorias %}
-                        <option value="{{ categoria.id }}" {% if categoria_actual == categoria.id|stringformat:"s" %}selected{% endif %}>
+                        <option value="{{ categoria.id }}" {% if categoria_actual and categoria_actual == categoria.id|stringformat:"s" %}selected{% endif %}>
                             {{ categoria.nombre }}
                         </option>
                     {% endfor %}

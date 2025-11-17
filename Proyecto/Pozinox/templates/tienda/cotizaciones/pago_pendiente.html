@@ -41,9 +41,14 @@
                         </h5>
                         <hr>
                         <p class="mb-0">
-                            Tu pago está siendo verificado por el procesador de pagos. 
-                            Este proceso puede tardar algunos minutos. Te notificaremos por correo 
-                            electrónico cuando el pago sea confirmado.
+                            {% if es_transferencia %}
+                                Tu comprobante de transferencia ha sido registrado y está pendiente de verificación por un administrador. 
+                                Te notificaremos por correo electrónico cuando el pago sea confirmado.
+                            {% else %}
+                                Tu pago está siendo verificado por el procesador de pagos. 
+                                Este proceso puede tardar algunos minutos. Te notificaremos por correo 
+                                electrónico cuando el pago sea confirmado.
+                            {% endif %}
                         </p>
                     </div>
                     
@@ -54,10 +59,17 @@
                         </h5>
                         <hr>
                         <ul class="mb-0">
-                            <li>No cierres esta ventana inmediatamente</li>
-                            <li>Espera la confirmación por correo electrónico</li>
-                            <li>Puedes revisar el estado en "Mis Cotizaciones"</li>
-                            <li>Si después de 24 horas no recibes confirmación, contáctanos</li>
+                            {% if es_transferencia %}
+                                <li>Tu comprobante ha sido recibido correctamente</li>
+                                <li>Un administrador revisará tu transferencia en las próximas 24-48 horas</li>
+                                <li>Puedes revisar el estado en "Mis Cotizaciones"</li>
+                                <li>Te notificaremos por correo cuando el pago sea confirmado</li>
+                            {% else %}
+                                <li>No cierres esta ventana inmediatamente</li>
+                                <li>Espera la confirmación por correo electrónico</li>
+                                <li>Puedes revisar el estado en "Mis Cotizaciones"</li>
+                                <li>Si después de 24 horas no recibes confirmación, contáctanos</li>
+                            {% endif %}
                         </ul>
                     </div>
                     

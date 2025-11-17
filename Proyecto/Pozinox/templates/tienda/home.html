@@ -386,62 +386,64 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-8">
-                <h2 class="display-6 fw-bold mb-3">Contáctenos</h2>
-                    <form method="post" action="" class="bg-white p-4 rounded shadow border border-3" style="color:#1e3a8a; border-color:#1e3a8a;">
+                <h2 class="display-6 fw-bold mb-4 text-center">Contáctenos</h2>
+                <p class="text-center mb-4">Complete el formulario y nos pondremos en contacto con usted a la brevedad.</p>
+                    <form method="post" action="{% url 'home' %}" class="bg-white p-4 rounded shadow border border-3" style="color:#1e3a8a; border-color:#1e3a8a;" id="contact-form">
                         {% csrf_token %}
                         <div class="row mb-3">
-                            <div class="col-md-6 mb-3 mb-md-0">
-                                <input type="text" name="nombre" class="form-control" placeholder="Nombre" required>
-                            </div>
-                            <div class="col-md-6">
-                                <input type="text" name="rut" class="form-control" placeholder="RUT" required>
+                            <div class="col-12">
+                                <label for="nombre" class="form-label fw-bold">Nombre <span class="text-danger">*</span></label>
+                                <input type="text" name="nombre" id="nombre" class="form-control" placeholder="Ingrese su nombre completo" required>
                             </div>
                         </div>
                         <div class="row mb-3">
                             <div class="col-md-6 mb-3 mb-md-0">
-                                <input type="text" name="direccion" class="form-control" placeholder="Dirección de la Empresa" required>
+                                <label for="direccion" class="form-label fw-bold">Dirección</label>
+                                <input type="text" name="direccion" id="direccion" class="form-control" placeholder="Ingrese su dirección (opcional)">
                             </div>
                             <div class="col-md-6">
-                                <input type="text" name="comuna" class="form-control" placeholder="Comuna" required>
+                                <label for="comuna" class="form-label fw-bold">Comuna</label>
+                                <input type="text" name="comuna" id="comuna" class="form-control" placeholder="Ingrese la comuna (opcional)">
                             </div>
                         </div>
                         <div class="row mb-3">
                             <div class="col-md-6 mb-3 mb-md-0">
-                                <input type="text" name="ciudad" class="form-control" placeholder="Ciudad" required>
+                                <label for="ciudad" class="form-label fw-bold">Ciudad</label>
+                                <input type="text" name="ciudad" id="ciudad" class="form-control" placeholder="Ingrese la ciudad (opcional)">
                             </div>
                             <div class="col-md-6">
-                                <input type="text" name="giro" class="form-control" placeholder="Actividad Económica (Giro)" required>
+                                <label for="giro" class="form-label fw-bold">Actividad Económica / Giro</label>
+                                <input type="text" name="giro" id="giro" class="form-control" placeholder="Ingrese su actividad económica (opcional)">
                             </div>
                         </div>
                         <div class="row mb-3">
                             <div class="col-md-6 mb-3 mb-md-0">
-                                <input type="email" name="email" class="form-control" placeholder="Email" required>
+                                <label for="email" class="form-label fw-bold">Email <span class="text-danger">*</span></label>
+                                <input type="email" name="email" id="email" class="form-control" placeholder="correo@ejemplo.com" required>
                             </div>
                             <div class="col-md-6">
-                                <input type="text" name="telefono" class="form-control" placeholder="Teléfono" required>
+                                <label for="telefono" class="form-label fw-bold">Teléfono <span class="text-danger">*</span></label>
+                                <input type="tel" name="telefono" id="telefono" class="form-control" placeholder="+56 9 1234 5678" required>
                             </div>
                         </div>
                         <div class="mb-3">
-                            <textarea name="mensaje" class="form-control" rows="4" placeholder="Mensaje" required></textarea>
+                            <label for="mensaje" class="form-label fw-bold">Mensaje <span class="text-danger">*</span></label>
+                            <textarea name="mensaje" id="mensaje" class="form-control" rows="4" placeholder="Escriba su mensaje aquí..." required></textarea>
                         </div>
-                        <div class="row mb-3 align-items-center">
-                            <div class="col-auto">
-                                <label class="form-label fw-bold" style="color:#1e3a8a; background: #e0e7ff; padding: 6px 12px; border-radius: 8px;">{{ suma_a }} + {{ suma_b }} =</label>
+                        {% if error_message %}
+                            <div class="alert alert-danger mb-3 fw-bold border border-danger text-center" style="background:#fee2e2; color:#991b1b;">
+                                <i class="fas fa-exclamation-circle me-2"></i>{{ error_message }}
                             </div>
-                            <div class="col-auto">
-                                <input type="number" name="suma" class="form-control border border-2" required style="width:80px; border-color:#1e3a8a;">
-                            </div>
-                            <div class="col">
-                                {% if error_suma %}
-                                    <span class="text-danger small fw-bold" style="background:#fee2e2; padding:4px 10px; border-radius:6px;">{{ error_suma }}</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="text-end">
-                            <button type="submit" class="btn btn-warning fw-bold px-4 py-2">ENVIAR MENSAJE</button>
+                        {% endif %}
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-warning fw-bold px-5 py-2 btn-lg">
+                                <i class="fas fa-paper-plane me-2"></i>ENVIAR MENSAJE
+                            </button>
                         </div>
                         {% if success %}
-                            <div class="alert alert-success mt-3 fw-bold border border-success" style="background:#d1fae5; color:#065f46;">{{ success }}</div>
+                            <div class="alert alert-success mt-3 fw-bold border border-success text-center" style="background:#d1fae5; color:#065f46;">
+                                <i class="fas fa-check-circle me-2"></i>{{ success }}
+                            </div>
                         {% endif %}
                     </form>
             </div>
@@ -488,5 +490,25 @@
         el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
         observer.observe(el);
     });
+    
+    // Mostrar notificación cuando se envía el formulario exitosamente
+    {% if success %}
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Mensaje enviado!',
+                text: '{{ success|escapejs }}',
+                confirmButtonText: 'Aceptar',
+                timer: 5000,
+                timerProgressBar: true,
+                customClass: {
+                    confirmButton: 'btn btn-primary px-4'
+                },
+                buttonsStyling: false
+            });
+        }
+    });
+    {% endif %}
 </script>
 {% endblock %}

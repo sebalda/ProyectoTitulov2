@@ -53,12 +53,83 @@ def paginar_queryset(queryset, request, per_page=20):
 
 def home(request):
     """Vista principal de la página de inicio"""
-    context = {
-        'productos_destacados': Producto.objects.filter(activo=True)[:6],
-        'categorias': CategoriaAcero.objects.filter(activa=True)[:4],
-        'titulo': 'Pozinox - Tienda de Aceros',
-    }
-    return render(request, 'tienda/home.html', context)
+    from django.core.mail import send_mail
+    import threading
+    
+    if request.method == 'GET':
+        context = {
+            'productos_destacados': Producto.objects.filter(activo=True)[:6],
+            'categorias': CategoriaAcero.objects.filter(activa=True)[:4],
+            'titulo': 'Pozinox - Tienda de Aceros',
+        }
+        return render(request, 'tienda/home.html', context)
+
+    # Procesar formulario POST
+    elif request.method == 'POST':
+        # Obtener datos del formulario
+        nombre = request.POST.get('nombre', '').strip()
+        direccion = request.POST.get('direccion', '').strip()
+        comuna = request.POST.get('comuna', '').strip()
+        ciudad = request.POST.get('ciudad', '').strip()
+        giro = request.POST.get('giro', '').strip()
+        email = request.POST.get('email', '').strip()
+        telefono = request.POST.get('telefono', '').strip()
+        mensaje = request.POST.get('mensaje', '').strip()
+
+        # Construir cuerpo del correo
+        cuerpo = f"""
+Nuevo mensaje de contacto desde Pozinox
+
+Datos del contacto:
+Nombre: {nombre}
+Email: {email}
+Teléfono: {telefono}
+"""
+        
+        # Agregar campos opcionales solo si fueron proporcionados
+        if direccion:
+            cuerpo += f"Dirección: {direccion}\n"
+        if comuna:
+            cuerpo += f"Comuna: {comuna}\n"
+        if ciudad:
+            cuerpo += f"Ciudad: {ciudad}\n"
+        if giro:
+            cuerpo += f"Actividad Económica / Giro: {giro}\n"
+        
+        cuerpo += f"""
+Mensaje:
+{mensaje}
+"""
+        
+        # Función para enviar correo en segundo plano
+        def enviar_correo_asincrono():
+            try:
+                send_mail(
+                    subject=f"Nuevo mensaje de contacto de {nombre}",
+                    message=cuerpo,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=["pozinox.empresa@gmail.com"],
+                    fail_silently=True,  # No bloquear si falla
+                )
+            except Exception as e:
+                # Log del error (puedes agregar logging aquí si lo necesitas)
+                print(f"Error al enviar correo: {e}")
+        
+        # Enviar correo en un hilo separado para no bloquear la respuesta
+        thread = threading.Thread(target=enviar_correo_asincrono)
+        thread.daemon = True
+        thread.start()
+        
+        # Mostrar mensaje de éxito inmediatamente
+        success = "¡Mensaje enviado correctamente! Nos contactaremos pronto."
+
+        context = {
+            'productos_destacados': Producto.objects.filter(activo=True)[:6],
+            'categorias': CategoriaAcero.objects.filter(activa=True)[:4],
+            'titulo': 'Pozinox - Tienda de Aceros',
+            'success': success,
+        }
+        return render(request, 'tienda/home.html', context)
 
 
 def productos_publicos(request):
@@ -664,36 +735,50 @@ def pago_pendiente(request, cotizacion_id):
     """Página de pago pendiente"""
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
     
-    # Verificar si el pago ya fue aprobado
-    payment_id = request.GET.get('payment_id') or request.GET.get('preference_id')
+    # Verificar si es pago por Transferencia
+    es_transferencia = cotizacion.metodo_pago == 'transferencia'
     
-    if payment_id and getattr(settings, 'MERCADOPAGO_ACCESS_TOKEN', None):
-        try:
-            mp_access_token = getattr(settings, 'MERCADOPAGO_ACCESS_TOKEN', None) or os.getenv('MERCADOPAGO_ACCESS_TOKEN')
-            sdk = mercadopago.SDK(mp_access_token)
-            payment_response = sdk.payment().get(payment_id)
-            
-            if "error" not in payment_response:
-                payment = payment_response["response"]
-                status = payment.get("status")
+    # Verificar si el pago ya fue aprobado (solo para MercadoPago)
+    if not es_transferencia:
+        payment_id = request.GET.get('payment_id') or request.GET.get('preference_id')
+        
+        if payment_id and getattr(settings, 'MERCADOPAGO_ACCESS_TOKEN', None):
+            try:
+                mp_access_token = getattr(settings, 'MERCADOPAGO_ACCESS_TOKEN', None) or os.getenv('MERCADOPAGO_ACCESS_TOKEN')
+                sdk = mercadopago.SDK(mp_access_token)
+                payment_response = sdk.payment().get(payment_id)
                 
-                if status == 'approved':
-                    # El pago fue aprobado, redirigir a página de éxito
-                    cotizacion.estado = 'pagada'
-                    cotizacion.pago_completado = True
-                    cotizacion.mercadopago_payment_id = str(payment.get("id", ""))
-                    cotizacion.save()
-                    messages.success(request, '¡Tu pago ha sido confirmado!')
-                    return redirect('pago_exitoso', cotizacion_id=cotizacion.id)
-                elif status in ['rejected', 'cancelled']:
-                    # El pago fue rechazado, redirigir a página de fallo
-                    messages.error(request, 'El pago fue rechazado. Por favor, intenta nuevamente.')
-                    return redirect('pago_fallido', cotizacion_id=cotizacion.id)
-        except Exception as e:
-            logger.exception(f'Error al verificar pago pendiente {payment_id}')
+                if "error" not in payment_response:
+                    payment = payment_response["response"]
+                    status = payment.get("status")
+                    
+                    if status == 'approved':
+                        # El pago fue aprobado, redirigir a página de éxito
+                        cotizacion.estado = 'pagada'
+                        cotizacion.pago_completado = True
+                        cotizacion.mercadopago_payment_id = str(payment.get("id", ""))
+                        cotizacion.save()
+                        messages.success(request, '¡Tu pago ha sido confirmado!')
+                        return redirect('pago_exitoso', cotizacion_id=cotizacion.id)
+                    elif status in ['rejected', 'cancelled']:
+                        # El pago fue rechazado, redirigir a página de fallo
+                        messages.error(request, 'El pago fue rechazado. Por favor, intenta nuevamente.')
+                        return redirect('pago_fallido', cotizacion_id=cotizacion.id)
+            except Exception as e:
+                logger.exception(f'Error al verificar pago pendiente {payment_id}')
+    
+    # Obtener información de la transferencia si existe
+    transferencia = None
+    if es_transferencia:
+        try:
+            transferencia = cotizacion.transferencia
+        except TransferenciaBancaria.DoesNotExist:
+            pass
     
     context = {
         'cotizacion': cotizacion,
+        'es_transferencia': es_transferencia,
+        'transferencia': transferencia,
     }
     return render(request, 'tienda/cotizaciones/pago_pendiente.html', context)
 
@@ -923,12 +1008,30 @@ def procesar_pago_transferencia(request, cotizacion_id):
                     cotizacion.comprobante_pago = comprobante
                     cotizacion.comentarios_pago = comentarios
                     cotizacion.metodo_pago = 'transferencia'
-                    cotizacion.estado = 'en_revision'
+                    cotizacion.estado = 'en_revision'  # En revisión hasta que el admin apruebe
                     cotizacion.pago_completado = False  # No está completado hasta que se apruebe
                     cotizacion.save()
                     
-                    messages.success(request, 'Pago por transferencia registrado con comprobante. Te contactaremos para confirmar el pago.')
-                    return redirect('pago_exitoso', cotizacion_id=cotizacion.id)
+                    # Crear o actualizar el objeto TransferenciaBancaria
+                    transferencia, created = TransferenciaBancaria.objects.get_or_create(
+                        cotizacion=cotizacion,
+                        defaults={
+                            'monto_transferencia': cotizacion.total,
+                            'estado': 'pendiente',
+                            'comprobante': comprobante,
+                            'observaciones_cliente': comentarios,
+                        }
+                    )
+                    
+                    # Si ya existe, actualizar el comprobante y estado
+                    if not created:
+                        transferencia.comprobante = comprobante
+                        transferencia.observaciones_cliente = comentarios
+                        transferencia.estado = 'pendiente'
+                        transferencia.save()
+                    
+                    messages.info(request, 'Tu comprobante de transferencia ha sido registrado. Está pendiente de verificación por un administrador.')
+                    return redirect('pago_pendiente', cotizacion_id=cotizacion.id)
     
     # Obtener información de cuenta bancaria desde settings (o usar valores por defecto)
     cuenta_bancaria = {

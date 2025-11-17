@@ -1,51 +1,50 @@
-{% extends 'base.html' %}
+{% extends 'admin/base_admin.html' %}
 {% load static %}
 
-{% block title %}{{ titulo }} - Pozinox{% endblock %}
+{% block admin_title %}{{ titulo }}{% endblock %}
 
-{% block extra_css %}
+{% block admin_extra_css %}
 <style>
-    .form-container {
-        padding: 6rem 2rem 2rem 2rem;
-        max-width: 800px;
-        margin: 0 auto;
-    }
-    
-    .header {
+    .form-header {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        padding: 1.5rem 2rem;
+        margin-bottom: 2rem;
+        border-radius: 8px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2rem;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid #e5e7eb;
     }
     
-    .header h1 {
+    .form-header h1 {
         margin: 0;
-        color: #1f2937;
-        font-size: 1.875rem;
         font-weight: 600;
     }
     
     .btn-back {
-        background: #6b7280;
+        background: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.3);
         color: white;
-        padding: 0.5rem 1rem;
+        padding: 0.75rem 1.5rem;
         border-radius: 6px;
         text-decoration: none;
         font-weight: 500;
+        transition: all 0.3s ease;
     }
     
     .btn-back:hover {
-        background: #4b5563;
-        color: white;
+        background: white;
+        color: #007bff;
+        text-decoration: none;
     }
     
     .form-card {
         background: white;
         border-radius: 8px;
         padding: 2rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1px solid #e9ecef;
+        max-width: 800px;
+        margin: 0 auto;
     }
     
     .form-section {
@@ -176,12 +175,13 @@
 </style>
 {% endblock %}
 
-{% block content %}
-<div class="form-container">
-    <div class="header">
-        <h1>{{ titulo }}</h1>
-        <a href="{% url 'lista_usuarios_admin' %}" class="btn-back">← Volver</a>
-    </div>
+{% block admin_content %}
+<div class="form-header">
+    <h1><i class="fas fa-user me-3"></i>{{ titulo }}</h1>
+    <a href="{% url 'lista_usuarios_admin' %}" class="btn-back">
+        <i class="fas fa-arrow-left me-2"></i>Volver a Lista
+    </a>
+</div>
     
     <div class="form-card">
         <form method="post">

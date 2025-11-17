@@ -55,8 +55,8 @@
     
     .category-item {
         border-bottom: 1px solid #e5e7eb;
-        padding: 1.5rem;
-        transition: background-color 0.3s ease;
+        padding: 0.75rem 1rem;
+        transition: background-color 0.2s ease;
     }
     
     .category-item:hover {
@@ -68,30 +68,26 @@
     }
     
     .category-info h5 {
-        margin: 0 0 0.5rem 0;
+        margin: 0;
         color: #1e3a8a;
         font-weight: 600;
+        font-size: 0.95rem;
     }
     
     .category-description {
         color: #6b7280;
-        font-size: 0.875rem;
-        margin-bottom: 1rem;
-        line-height: 1.5;
-    }
-    
-    .category-stats {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 1rem;
+        font-size: 0.8rem;
+        margin: 0.25rem 0 0 0;
+        line-height: 1.4;
+        max-width: 400px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
     
     .stat-item {
-        background: #f3f4f6;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.875rem;
-        color: #374151;
+        font-size: 0.8rem;
+        color: #6b7280;
     }
     
     .stat-item i {
@@ -102,15 +98,15 @@
     .category-actions {
         display: flex;
         gap: 0.5rem;
+        justify-content: flex-end;
     }
     
     .btn-action {
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
+        padding: 0.35rem 0.65rem;
+        border-radius: 4px;
         text-decoration: none;
-        font-size: 0.875rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
     }
     
     .btn-edit {
@@ -138,9 +134,9 @@
     }
     
     .status-badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
         font-weight: 600;
     }
     
@@ -155,33 +151,20 @@
     }
     
     .pagination-wrapper {
-        padding: 1.5rem;
+        padding: 1rem;
         background: #f9fafb;
     }
     
     .no-categories {
         text-align: center;
-        padding: 3rem;
+        padding: 2rem;
         color: #6b7280;
     }
     
     .no-categories i {
-        font-size: 4rem;
-        margin-bottom: 1rem;
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
         color: #d1d5db;
-    }
-    
-    .category-icon {
-        width: 60px;
-        height: 60px;
-        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-        border-radius: 15px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.5rem;
-        margin-right: 1rem;
     }
 </style>
 {% endblock %}
@@ -199,7 +182,7 @@
         <form method="get" class="row g-3">
             <div class="col-md-4">
                 <label class="form-label">Buscar</label>
-                <input type="text" class="form-control" name="q" value="{{ busqueda }}" placeholder="Nombre o descripción">
+                <input type="text" class="form-control" name="q" value="{% if busqueda %}{{ busqueda }}{% endif %}" placeholder="Nombre o descripción">
             </div>
             <div class="col-md-3">
                 <label class="form-label">Estado</label>
@@ -230,49 +213,37 @@
             {% for categoria in categorias %}
                 <div class="category-item">
                     <div class="row align-items-center">
-                        <div class="col-md-1">
-                            <div class="category-icon">
-                                <i class="fas fa-tag"></i>
+                        <div class="col-md-4">
+                            <div class="category-info">
+                                <h5>{{ categoria.nombre }}</h5>
+                                {% if categoria.descripcion %}
+                                    <div class="category-description" title="{{ categoria.descripcion }}">{{ categoria.descripcion }}</div>
+                                {% endif %}
                             </div>
                         </div>
                         
-                        <div class="col-md-6">
-                            <h5>{{ categoria.nombre }}</h5>
-                            {% if categoria.descripcion %}
-                                <div class="category-description">{{ categoria.descripcion }}</div>
-                            {% else %}
-                                <div class="category-description text-muted">Sin descripción</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="col-md-3">
-                            <div class="category-stats">
-                                <div class="stat-item">
-                                    <i class="fas fa-boxes"></i>
-                                    {{ categoria.producto_set.count }} producto{{ categoria.producto_set.count|pluralize }}
-                                </div>
+                        <div class="col-md-2 text-center">
+                            <div class="stat-item">
+                                <i class="fas fa-boxes"></i>
+                                {{ categoria.producto_set.count }}
                             </div>
                         </div>
                         
-                        <div class="col-md-1">
+                        <div class="col-md-2 text-center">
                             {% if categoria.activa %}
-                                <span class="status-badge status-active">
-                                    <i class="fas fa-check-circle"></i> Activa
-                                </span>
+                                <span class="status-badge status-active">Activa</span>
                             {% else %}
-                                <span class="status-badge status-inactive">
-                                    <i class="fas fa-times-circle"></i> Inactiva
-                                </span>
+                                <span class="status-badge status-inactive">Inactiva</span>
                             {% endif %}
                         </div>
                         
-                        <div class="col-md-1">
+                        <div class="col-md-4">
                             <div class="category-actions">
                                 <a href="{% url 'editar_categoria' categoria.id %}" class="btn-action btn-edit" title="Editar">
-                                    <i class="fas fa-edit"></i>
+                                    <i class="fas fa-edit"></i> Editar
                                 </a>
                                 <a href="{% url 'eliminar_categoria' categoria.id %}" class="btn-action btn-delete" title="Eliminar">
-                                    <i class="fas fa-trash"></i>
+                                    <i class="fas fa-trash"></i> Eliminar
                                 </a>
                             </div>
                         </div>

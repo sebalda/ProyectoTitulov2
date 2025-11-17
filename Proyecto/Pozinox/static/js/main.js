@@ -147,7 +147,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (searchForm) {
         searchForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            const query = this.querySelector('input[name="q"]').value;
+            const searchInput = this.querySelector('input[name="q"]');
+            if (!searchInput) return;
+            const query = searchInput.value;
             if (query.trim()) {
                 // Implement search logic here
                 console.log('Searching for:', query);
@@ -195,36 +197,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 confirmButton: 'btn btn-primary px-4'
             },
             buttonsStyling: false
-        });
-    }
-    
-    // Contact form handling
-    const contactForm = document.querySelector('#contact-form');
-    if (contactForm) {
-        contactForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Basic form validation
-            const name = this.querySelector('input[name="name"]').value;
-            const email = this.querySelector('input[name="email"]').value;
-            const message = this.querySelector('textarea[name="message"]').value;
-            
-            if (!name || !email || !message) {
-                showNotification('Por favor, completa todos los campos', 'warning');
-                return;
-            }
-            
-            // Simulate form submission
-            const submitButton = this.querySelector('button[type="submit"]');
-            submitButton.disabled = true;
-            submitButton.textContent = 'Enviando...';
-            
-            setTimeout(() => {
-                showNotification('Mensaje enviado correctamente. Te contactaremos pronto.', 'success');
-                this.reset();
-                submitButton.disabled = false;
-                submitButton.textContent = 'Enviar Mensaje';
-            }, 2000);
         });
     }
     

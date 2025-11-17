@@ -1,181 +1,165 @@
-{% extends 'base.html' %}
+{% extends 'admin/base_admin.html' %}
 {% load static %}
 
-{% block title %}Usuarios - Pozinox{% endblock %}
+{% block admin_title %}Gestión de Usuarios{% endblock %}
 
-{% block extra_css %}
+{% block admin_extra_css %}
 <style>
-    .admin-container {
-        padding: 6rem 2rem 2rem 2rem;
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-    
-    .header {
+    .admin-header {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        padding: 1.5rem 2rem;
+        margin-bottom: 2rem;
+        border-radius: 8px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2rem;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid #e5e7eb;
     }
     
-    .header h1 {
+    .admin-header h1 {
         margin: 0;
-        color: #1f2937;
-        font-size: 1.875rem;
         font-weight: 600;
     }
     
-    .btn-primary {
-        background: #3b82f6;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
+    .btn-create {
+        background: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.3);
         color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
         text-decoration: none;
         font-weight: 500;
+        transition: all 0.3s ease;
     }
     
-    .btn-primary:hover {
-        background: #2563eb;
-        color: white;
-    }
-    
-    .filters {
-        background: #f9fafb;
-        padding: 1rem;
-        border-radius: 8px;
-        margin-bottom: 1.5rem;
-    }
-    
-    .filters form {
-        display: flex;
-        gap: 1rem;
-        align-items: end;
-    }
-    
-    .filters input, .filters select {
-        padding: 0.5rem;
-        border: 1px solid #d1d5db;
-        border-radius: 4px;
-        font-size: 0.875rem;
-    }
-    
-    .btn-secondary {
-        background: #6b7280;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
+    .btn-create:hover {
+        background: white;
+        color: #007bff;
         text-decoration: none;
-        font-size: 0.875rem;
     }
     
-    .btn-secondary:hover {
-        background: #4b5563;
-        color: white;
-    }
-    
-    .users-table {
+    .filters-card {
         background: white;
         border-radius: 8px;
+        padding: 1.5rem;
+        border: 1px solid #e9ecef;
+        margin-bottom: 2rem;
+    }
+    
+    .users-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         overflow: hidden;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    
-    th, td {
-        padding: 1rem;
-        text-align: left;
+    .user-item {
         border-bottom: 1px solid #e5e7eb;
+        padding: 1rem 1.5rem;
+        transition: background-color 0.3s ease;
     }
     
-    th {
-        background: #f9fafb;
-        font-weight: 600;
-        color: #374151;
-        font-size: 0.875rem;
+    .user-item:hover {
+        background-color: #f9fafb;
     }
     
-    tr:hover {
-        background: #f9fafb;
-    }
-    
-    tr:last-child td {
+    .user-item:last-child {
         border-bottom: none;
     }
     
     .user-info h5 {
         margin: 0 0 0.25rem 0;
-        color: #1f2937;
+        color: #1e3a8a;
         font-weight: 600;
+        font-size: 0.95rem;
     }
     
     .user-email {
         color: #6b7280;
-        font-size: 0.875rem;
+        font-size: 0.8rem;
     }
     
-    .badge {
-        padding: 0.25rem 0.5rem;
-        border-radius: 4px;
+    .user-username {
+        color: #9ca3af;
         font-size: 0.75rem;
-        font-weight: 500;
     }
     
-    .badge-active { background: #dcfce7; color: #166534; }
-    .badge-inactive { background: #fee2e2; color: #991b1b; }
-    .badge-staff { background: #dbeafe; color: #1e40af; }
-    .badge-super { background: #fef3c7; color: #92400e; }
+    .status-badge {
+        padding: 0.2rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
     
-    .actions {
+    .status-active {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .status-inactive {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    
+    .badge-staff {
+        background: #dbeafe;
+        color: #1e40af;
+        padding: 0.2rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .badge-super {
+        background: #fef3c7;
+        color: #92400e;
+        padding: 0.2rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    
+    .user-actions {
         display: flex;
         gap: 0.5rem;
+        justify-content: flex-end;
     }
     
-    .btn-sm {
-        padding: 0.25rem 0.5rem;
+    .btn-action {
+        padding: 0.35rem 0.65rem;
         border-radius: 4px;
         text-decoration: none;
-        font-size: 0.75rem;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-edit {
+        background: #3b82f6;
+        color: white;
         border: none;
     }
     
-    .btn-edit { background: #3b82f6; color: white; }
-    .btn-delete { background: #ef4444; color: white; }
-    
-    .btn-edit:hover { background: #2563eb; color: white; }
-    .btn-delete:hover { background: #dc2626; color: white; }
-    
-    .actions .btn-sm {
-        margin-right: 0.5rem;
-    }
-    
-    .actions .btn-sm:last-child {
-        margin-right: 0;
-    }
-    
-    .pagination {
-        padding: 1rem;
-        text-align: center;
-        background: #f9fafb;
-    }
-    
-    .pagination a {
-        color: #3b82f6;
+    .btn-edit:hover {
+        background: #2563eb;
+        color: white;
         text-decoration: none;
-        padding: 0.5rem;
-        margin: 0 0.25rem;
-        border-radius: 4px;
     }
     
-    .pagination a:hover {
-        background: #e5e7eb;
+    .btn-delete {
+        background: #ef4444;
+        color: white;
+        border: none;
+    }
+    
+    .btn-delete:hover {
+        background: #dc2626;
+        color: white;
+        text-decoration: none;
+    }
+    
+    .pagination-wrapper {
+        padding: 1rem;
+        background: #f9fafb;
     }
     
     .no-users {
@@ -183,127 +167,161 @@
         padding: 3rem;
         color: #6b7280;
     }
+    
+    .no-users i {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+        color: #d1d5db;
+    }
 </style>
 {% endblock %}
 
-{% block content %}
-<div class="admin-container">
-    <div class="header">
-        <h1>Usuarios</h1>
-        <a href="{% url 'crear_usuario' %}" class="btn-primary">Nuevo Usuario</a>
-    </div>
+{% block admin_content %}
+<div class="admin-header">
+    <h1><i class="fas fa-users me-3"></i>Gestión de Usuarios</h1>
+    <a href="{% url 'crear_usuario' %}" class="btn-create">
+        <i class="fas fa-plus me-2"></i>Nuevo Usuario
+    </a>
+</div>
     
-    <div class="filters">
-        <form method="get">
-            <div>
-                <input type="text" name="q" value="{% if busqueda %}{{ busqueda }}{% endif %}" placeholder="Buscar usuario..." style="width: 200px;">
+    <!-- Filtros -->
+    <div class="filters-card">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Buscar</label>
+                <input type="text" class="form-control" name="q" value="{% if busqueda %}{{ busqueda }}{% endif %}" placeholder="Nombre, usuario o email">
             </div>
-            <div>
-                <select name="tipo">
+            <div class="col-md-3">
+                <label class="form-label">Tipo de Usuario</label>
+                <select class="form-select" name="tipo">
                     <option value="">Todos los tipos</option>
                     {% for tipo_key, tipo_label in tipos_usuario %}
                         <option value="{{ tipo_key }}" {% if tipo_actual == tipo_key %}selected{% endif %}>{{ tipo_label }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div>
-                <select name="estado">
+            <div class="col-md-3">
+                <label class="form-label">Estado</label>
+                <select class="form-select" name="estado">
                     <option value="">Todos</option>
                     <option value="activos" {% if estado_actual == "activos" %}selected{% endif %}>Activos</option>
                     <option value="inactivos" {% if estado_actual == "inactivos" %}selected{% endif %}>Inactivos</option>
                 </select>
             </div>
-            <button type="submit" class="btn-secondary">Filtrar</button>
-            <a href="{% url 'lista_usuarios_admin' %}" class="btn-secondary">Limpiar</a>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search me-2"></i>Filtrar
+                </button>
+            </div>
         </form>
     </div>
     
-    <div class="users-table">
+    <!-- Lista de usuarios -->
+    <div class="users-card">
         {% if usuarios %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Usuario</th>
-                        <th>Tipo</th>
-                        <th>Rol</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for usuario in usuarios %}
-                        <tr>
-                            <td>
-                                <div class="user-info">
-                                    <h5>{{ usuario.get_full_name|default:usuario.username }}</h5>
-                                    <div class="user-email">{{ usuario.email }}</div>
-                                    <small class="text-muted">{{ usuario.username }}</small>
-                                </div>
-                            </td>
-                            
-                            <td>
-                                {% if usuario.perfil.tipo_usuario %}
-                                    {{ usuario.perfil.get_tipo_usuario_display }}
-                                {% else %}
-                                    <span class="text-muted">Sin tipo</span>
+            {% for usuario in usuarios %}
+                <div class="user-item">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <div class="user-info">
+                                <h5>{{ usuario.get_full_name|default:usuario.username }}</h5>
+                                <div class="user-email">{{ usuario.email }}</div>
+                                <div class="user-username">@{{ usuario.username }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-2 text-center">
+                            {% if usuario.perfil.tipo_usuario %}
+                                <span class="text-muted small">{{ usuario.perfil.get_tipo_usuario_display }}</span>
+                            {% else %}
+                                <span class="text-muted small">Sin tipo</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-2 text-center">
+                            {% if usuario.is_superuser %}
+                                <span class="badge-super">Superusuario</span>
+                            {% elif usuario.is_staff %}
+                                <span class="badge-staff">Staff</span>
+                            {% else %}
+                                <span class="status-badge status-active">Usuario</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-2 text-center">
+                            {% if usuario.is_active %}
+                                <span class="status-badge status-active">Activo</span>
+                            {% else %}
+                                <span class="status-badge status-inactive">Inactivo</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <div class="user-actions">
+                                <a href="{% url 'editar_usuario' usuario.id %}" class="btn-action btn-edit" title="Editar">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                                {% if usuario != request.user %}
+                                    <a href="{% url 'eliminar_usuario' usuario.id %}" class="btn-action btn-delete" title="Eliminar">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </a>
                                 {% endif %}
-                            </td>
-                            
-                            <td>
-                                {% if usuario.is_superuser %}
-                                    <span class="badge badge-super">Superusuario</span>
-                                {% elif usuario.is_staff %}
-                                    <span class="badge badge-staff">Staff</span>
-                                {% else %}
-                                    <span class="badge badge-active">Usuario</span>
-                                {% endif %}
-                            </td>
-                            
-                            <td>
-                                {% if usuario.is_active %}
-                                    <span class="badge badge-active">Activo</span>
-                                {% else %}
-                                    <span class="badge badge-inactive">Inactivo</span>
-                                {% endif %}
-                            </td>
-                            
-                            <td>
-                                <div class="actions">
-                                    <a href="{% url 'editar_usuario' usuario.id %}" class="btn-sm btn-edit">Editar</a>
-                                    {% if usuario != request.user %}
-                                        <a href="{% url 'eliminar_usuario' usuario.id %}" class="btn-sm btn-delete">Eliminar</a>
-                                    {% else %}
-                                        <span class="btn-sm" style="opacity: 0.5;">-</span>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
             
+            <!-- Paginación -->
             {% if usuarios.has_other_pages %}
-                <div class="pagination">
-                    {% if usuarios.has_previous %}
-                        <a href="?page=1{% if tipo_actual %}&tipo={{ tipo_actual }}{% endif %}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if busqueda %}&q={{ busqueda }}{% endif %}">Primera</a>
-                        <a href="?page={{ usuarios.previous_page_number }}{% if tipo_actual %}&tipo={{ tipo_actual }}{% endif %}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if busqueda %}&q={{ busqueda }}{% endif %}">Anterior</a>
-                    {% endif %}
-                    
-                    <span>{{ usuarios.number }} de {{ usuarios.paginator.num_pages }}</span>
-                    
-                    {% if usuarios.has_next %}
-                        <a href="?page={{ usuarios.next_page_number }}{% if tipo_actual %}&tipo={{ tipo_actual }}{% endif %}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if busqueda %}&q={{ busqueda }}{% endif %}">Siguiente</a>
-                        <a href="?page={{ usuarios.paginator.num_pages }}{% if tipo_actual %}&tipo={{ tipo_actual }}{% endif %}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if busqueda %}&q={{ busqueda }}{% endif %}">Última</a>
-                    {% endif %}
+                <div class="pagination-wrapper">
+                    <nav aria-label="Paginación de usuarios">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if usuarios.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if tipo_actual %}&tipo={{ tipo_actual }}{% endif %}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if busqueda %}&q={{ busqueda }}{% endif %}">
+                                        <i class="fas fa-angle-double-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ usuarios.previous_page_number }}{% if tipo_actual %}&tipo={{ tipo_actual }}{% endif %}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if busqueda %}&q={{ busqueda }}{% endif %}">
+                                        <i class="fas fa-angle-left"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    {{ usuarios.number }} de {{ usuarios.paginator.num_pages }}
+                                </span>
+                            </li>
+                            
+                            {% if usuarios.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ usuarios.next_page_number }}{% if tipo_actual %}&tipo={{ tipo_actual }}{% endif %}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if busqueda %}&q={{ busqueda }}{% endif %}">
+                                        <i class="fas fa-angle-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ usuarios.paginator.num_pages }}{% if tipo_actual %}&tipo={{ tipo_actual }}{% endif %}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if busqueda %}&q={{ busqueda }}{% endif %}">
+                                        <i class="fas fa-angle-double-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
                 </div>
             {% endif %}
         {% else %}
             <div class="no-users">
+                <i class="fas fa-users"></i>
                 <h4>No se encontraron usuarios</h4>
                 <p>No hay usuarios que coincidan con los filtros aplicados.</p>
-                <a href="{% url 'crear_usuario' %}" class="btn-primary">Crear Usuario</a>
+                <a href="{% url 'crear_usuario' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Crear Usuario
+                </a>
             </div>
         {% endif %}
     </div>
-</div>
 {% endblock %}

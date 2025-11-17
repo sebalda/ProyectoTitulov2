@@ -1,6 +1,8 @@
 import random
 from django.core.mail import send_mail
 from django.conf import settings
+from django.shortcuts import render
+from apps.tienda.models import Producto, CategoriaAcero
 
 def home(request):
     # ...tu lógica actual...
@@ -57,7 +59,7 @@ Mensaje: {mensaje}
                 subject="Nuevo mensaje de contacto Pozinox",
                 message=cuerpo,
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=["benj.veliz@duocuc.cl"],
+                recipient_list=["pozinox.empresa@gmail.com"],
                 fail_silently=False,
             )
             success = "¡Mensaje enviado correctamente! Nos contactaremos pronto."
