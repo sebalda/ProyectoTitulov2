@@ -157,19 +157,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Cart functionality (basic implementation)
-    const addToCartButtons = document.querySelectorAll('.add-to-cart');
-    addToCartButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            const productId = this.dataset.productId;
-            const productName = this.dataset.productName;
-            
-            // Add to cart logic here
-            showNotification(`Agregado al carrito: ${productName}`, 'success');
-        });
-    });
-    
     // Notification system con SweetAlert2
     function showNotification(message, type = 'info') {
         let icon = type;
