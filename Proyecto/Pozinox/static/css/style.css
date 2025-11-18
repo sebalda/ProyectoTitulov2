@@ -397,3 +397,84 @@ footer {
 .swal2-container {
     backdrop-filter: blur(5px) !important;
 }
+
+/* ==================================
+   BOTÓN FLOTANTE DE TELEGRAM
+   ================================== */
+
+.telegram-float-btn {
+    position: fixed !important;
+    bottom: 30px !important;
+    right: 30px !important;
+    width: 60px !important;
+    height: 60px !important;
+    background: linear-gradient(135deg, #0088cc, #229ED9) !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: white !important;
+    font-size: 28px !important;
+    box-shadow: 0 4px 20px rgba(0, 136, 204, 0.4) !important;
+    z-index: 9999 !important;
+    transition: all 0.3s ease !important;
+    text-decoration: none !important;
+    animation: pulse 2s infinite !important;
+    border: none !important;
+    cursor: pointer !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.telegram-float-btn i,
+.telegram-float-btn svg {
+    color: white !important;
+    fill: white !important;
+    font-size: 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+}
+
+.telegram-float-btn:hover {
+    transform: scale(1.1) !important;
+    box-shadow: 0 6px 30px rgba(0, 136, 204, 0.6) !important;
+    color: white !important;
+    text-decoration: none !important;
+}
+
+.telegram-float-btn:active {
+    transform: scale(0.95) !important;
+}
+
+.telegram-float-btn:focus {
+    outline: 3px solid rgba(0, 136, 204, 0.5) !important;
+    outline-offset: 2px !important;
+}
+
+/* Animación de pulso */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 4px 20px rgba(0, 136, 204, 0.4);
+    }
+    50% {
+        box-shadow: 0 4px 30px rgba(0, 136, 204, 0.7);
+    }
+    100% {
+        box-shadow: 0 4px 20px rgba(0, 136, 204, 0.4);
+    }
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+    .telegram-float-btn {
+        width: 55px !important;
+        height: 55px !important;
+        bottom: 20px !important;
+        right: 20px !important;
+        font-size: 24px !important;
+    }
+    
+    .telegram-float-btn i {
+        font-size: 24px !important;
+    }
+}
