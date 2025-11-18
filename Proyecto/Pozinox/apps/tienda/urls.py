@@ -42,4 +42,8 @@ urlpatterns = [
     path('cotizaciones/<int:cotizacion_id>/pagar-efectivo/', views.procesar_pago_efectivo, name='procesar_pago_efectivo'),
     path('cotizaciones/<int:cotizacion_id>/transferencia/', views.detalle_transferencia, name='detalle_transferencia'),
     path('cotizaciones/<int:cotizacion_id>/subir-comprobante/', views.subir_comprobante, name='subir_comprobante'),
+    
+    # Páginas legales
+    path('politica-privacidad/', views.politica_privacidad, name='politica_privacidad'),
+    path('terminos-condiciones/', views.terminos_condiciones, name='terminos_condiciones'),
 ]

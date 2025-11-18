@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .legal-container {
+        padding: 2rem 0;
+        padding-top: 6rem;
+        min-height: calc(100vh - 200px);
+    }
+    
+    .legal-content {
+        background: white;
+        border-radius: 15px;
+        padding: 3rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    .legal-content h1 {
+        color: #1e3a8a;
+        font-weight: 700;
+        margin-bottom: 2rem;
+        border-bottom: 3px solid #3b82f6;
+        padding-bottom: 1rem;
+    }
+    
+    .legal-content h2 {
+        color: #1e3a8a;
+        font-weight: 600;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+    }
+    
+    .legal-content h3 {
+        color: #374151;
+        font-weight: 600;
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .legal-content p {
+        color: #4b5563;
+        line-height: 1.8;
+        margin-bottom: 1rem;
+        text-align: justify;
+    }
+    
+    .legal-content ul, .legal-content ol {
+        color: #4b5563;
+        line-height: 1.8;
+        margin-bottom: 1rem;
+        padding-left: 2rem;
+    }
+    
+    .legal-content li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .last-updated {
+        color: #6b7280;
+        font-style: italic;
+        font-size: 0.9rem;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="legal-container">
+    <div class="container">
+        <div class="legal-content">
+            <h1><i class="fas fa-file-contract me-2"></i>Términos y Condiciones</h1>
+            <p class="last-updated">Última actualización: {{ "now"|date:"d/m/Y" }}</p>
+            
+            <p>
+                Bienvenido a Pozinox. Estos Términos y Condiciones rigen el uso de nuestro sitio web y la compra de productos a través de nuestra plataforma. Al acceder y utilizar nuestros servicios, usted acepta estar sujeto a estos términos y condiciones.
+            </p>
+            
+            <h2>1. Aceptación de los Términos</h2>
+            <p>
+                Al acceder y utilizar el sitio web de Pozinox, usted reconoce que ha leído, entendido y acepta estar legalmente vinculado por estos Términos y Condiciones. Si no está de acuerdo con alguna parte de estos términos, no debe utilizar nuestros servicios.
+            </p>
+            
+            <h2>2. Información de la Empresa</h2>
+            <ul>
+                <li><strong>Razón Social:</strong> Pozinox S.A.</li>
+                <li><strong>Dirección:</strong> Av. Principal 123, Santiago, Chile</li>
+                <li><strong>Teléfono:</strong> +56 2 1234 5678</li>
+                <li><strong>Email:</strong> info@pozinox.cl</li>
+            </ul>
+            
+            <h2>3. Productos y Precios</h2>
+            
+            <h3>3.1. Descripción de Productos</h3>
+            <p>
+                Nos esforzamos por proporcionar descripciones precisas de nuestros productos. Sin embargo, no garantizamos que las descripciones, imágenes u otra información del sitio sean completamente precisas, completas, actualizadas o libres de errores.
+            </p>
+            
+            <h3>3.2. Precios</h3>
+            <p>
+                Todos los precios están expresados en pesos chilenos (CLP) e incluyen IVA cuando corresponda. Nos reservamos el derecho de modificar los precios en cualquier momento sin previo aviso. Los precios aplicables serán los que figuren en el momento de la confirmación de su pedido.
+            </p>
+            
+            <h3>3.3. Disponibilidad</h3>
+            <p>
+                La disponibilidad de productos está sujeta a cambios sin previo aviso. Si un producto solicitado no está disponible, nos contactaremos con usted para informarle y ofrecer alternativas o la cancelación del pedido.
+            </p>
+            
+            <h2>4. Cotizaciones y Pedidos</h2>
+            
+            <h3>4.1. Cotizaciones</h3>
+            <p>
+                Las cotizaciones proporcionadas a través de nuestro sitio web son estimaciones preliminares y no constituyen una oferta vinculante. Los precios finales serán confirmados al momento de procesar su pedido.
+            </p>
+            
+            <h3>4.2. Proceso de Pedido</h3>
+            <p>
+                Al realizar un pedido, usted realiza una oferta para comprar productos. Nos reservamos el derecho de aceptar o rechazar cualquier pedido por cualquier motivo, incluyendo errores en el precio o disponibilidad del producto.
+            </p>
+            
+            <h3>4.3. Confirmación</h3>
+            <p>
+                Recibirá una confirmación por correo electrónico una vez que su pedido haya sido recibido. La confirmación no constituye la aceptación de su pedido, sino únicamente el reconocimiento de que lo hemos recibido.
+            </p>
+            
+            <h2>5. Formas de Pago</h2>
+            <p>Aceptamos los siguientes métodos de pago:</p>
+            <ul>
+                <li>MercadoPago (tarjetas de crédito/débito)</li>
+                <li>Transferencia bancaria</li>
+                <li>Efectivo al retirar</li>
+            </ul>
+            <p>
+                El pago debe completarse según los términos acordados. En caso de pago por transferencia, los productos se enviarán o estarán disponibles para retiro una vez confirmado el pago.
+            </p>
+            
+            <h2>6. Entrega y Retiro</h2>
+            
+            <h3>6.1. Plazos de Entrega</h3>
+            <p>
+                Los plazos de entrega son estimados y pueden variar según la disponibilidad del producto y la ubicación. Le informaremos sobre los tiempos de entrega estimados al confirmar su pedido.
+            </p>
+            
+            <h3>6.2. Retiro en Tienda</h3>
+            <p>
+                Si selecciona retiro en tienda, deberá recoger su pedido dentro de los plazos indicados. Los productos no retirados dentro del plazo establecido podrán ser cancelados y el reembolso será procesado según corresponda.
+            </p>
+            
+            <h3>6.3. Costos de Envío</h3>
+            <p>
+                Los costos de envío se calcularán según el destino y el peso/volumen de los productos. Se le informará el costo total de envío antes de confirmar su pedido.
+            </p>
+            
+            <h2>7. Cancelaciones y Reembolsos</h2>
+            
+            <h3>7.1. Cancelación por el Cliente</h3>
+            <p>
+                Puede cancelar su pedido antes de que sea procesado contactándonos. Una vez procesado el pedido, las cancelaciones estarán sujetas a nuestra política de cancelación.
+            </p>
+            
+            <h3>7.2. Cancelación por Pozinox</h3>
+            <p>
+                Nos reservamos el derecho de cancelar pedidos en caso de errores en el precio, falta de disponibilidad, problemas de pago o cualquier otra razón justificada.
+            </p>
+            
+            <h3>7.3. Reembolsos</h3>
+            <p>
+                Los reembolsos se procesarán según el método de pago original y pueden tardar entre 5 a 10 días hábiles en reflejarse.
+            </p>
+            
+            <h2>8. Garantías y Devoluciones</h2>
+            <p>
+                Todos nuestros productos cumplen con estándares de calidad. Si recibe un producto defectuoso o que no corresponde a su pedido, contáctenos dentro de 7 días hábiles para coordinar la devolución o reemplazo.
+            </p>
+            
+            <h2>9. Propiedad Intelectual</h2>
+            <p>
+                Todo el contenido de este sitio web, incluyendo textos, gráficos, logotipos, imágenes y software, es propiedad de Pozinox y está protegido por leyes de propiedad intelectual. No está permitida la reproducción sin autorización previa.
+            </p>
+            
+            <h2>10. Limitación de Responsabilidad</h2>
+            <p>
+                En la medida permitida por la ley, Pozinox no será responsable de daños indirectos, incidentales o consecuentes que surjan del uso o la imposibilidad de usar nuestros productos o servicios.
+            </p>
+            
+            <h2>11. Modificaciones</h2>
+            <p>
+                Nos reservamos el derecho de modificar estos Términos y Condiciones en cualquier momento. Las modificaciones entrarán en vigor al ser publicadas en este sitio web. Le recomendamos revisar periódicamente estos términos.
+            </p>
+            
+            <h2>12. Ley Aplicable y Jurisdicción</h2>
+            <p>
+                Estos Términos y Condiciones se rigen por las leyes de la República de Chile. Cualquier disputa será sometida a la jurisdicción de los tribunales de Santiago, Chile.
+            </p>
+            
+            <h2>13. Contacto</h2>
+            <p>
+                Si tiene preguntas sobre estos Términos y Condiciones, puede contactarnos:
+            </p>
+            <ul>
+                <li><strong>Email:</strong> info@pozinox.cl</li>
+                <li><strong>Teléfono:</strong> +56 2 1234 5678</li>
+                <li><strong>Dirección:</strong> Av. Principal 123, Santiago, Chile</li>
+            </ul>
+            
+            <div class="text-center mt-5">
+                <a href="{% url 'home' %}" class="btn btn-primary">
+                    <i class="fas fa-home me-2"></i>Volver al Inicio
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

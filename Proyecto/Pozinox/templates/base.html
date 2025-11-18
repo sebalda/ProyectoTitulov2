@@ -14,6 +14,29 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/admin.css' %}">
     
+    <style>
+        /* Estilos para reducir el tamaño de fuente del footer */
+        footer {
+            font-size: 0.875rem;
+        }
+        
+        footer h5 {
+            font-size: 1rem;
+        }
+        
+        footer h6 {
+            font-size: 0.9rem;
+        }
+        
+        footer p, footer li, footer a {
+            font-size: 0.875rem;
+        }
+        
+        footer .social-links a {
+            font-size: 1rem;
+        }
+    </style>
+    
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -92,14 +115,14 @@
 
     <!-- Footer -->
     {% if 'panel-admin' not in request.path %}
-    <footer class="bg-light text-dark py-5 mt-5 border-top">
+    <footer class="bg-light text-dark py-3 mt-5 border-top">
         <div class="container">
             <div class="row">
-                <div class="col-lg-4 mb-4">
-                    <h5 class="fw-bold mb-3">
+                <div class="col-lg-4 mb-3">
+                    <h5 class="fw-bold mb-2">
                         <i class="fas fa-industry me-2"></i>POZINOX
                     </h5>
-                    <p class="text-muted">
+                    <p class="text-muted mb-2">
                         Tu tienda de confianza para productos de acero de alta calidad.
                     </p>
                     <div class="social-links">
@@ -110,8 +133,8 @@
                     </div>
                 </div>
                 
-                <div class="col-lg-2 col-md-6 mb-4">
-                    <h6 class="fw-bold mb-3">Productos</h6>
+                <div class="col-lg-2 col-md-6 mb-3">
+                    <h6 class="fw-bold mb-2">Productos</h6>
                     <ul class="list-unstyled">
                         <li><a href="#" class="text-muted text-decoration-none">Perfiles</a></li>
                         <li><a href="#" class="text-muted text-decoration-none">Planchas</a></li>
@@ -120,8 +143,8 @@
                     </ul>
                 </div>
                 
-                <div class="col-lg-2 col-md-6 mb-4">
-                    <h6 class="fw-bold mb-3">Servicios</h6>
+                <div class="col-lg-2 col-md-6 mb-3">
+                    <h6 class="fw-bold mb-2">Servicios</h6>
                     <ul class="list-unstyled">
                         <li><a href="#" class="text-muted text-decoration-none">Corte</a></li>
                         <li><a href="#" class="text-muted text-decoration-none">Doblado</a></li>
@@ -130,22 +153,22 @@
                     </ul>
                 </div>
                 
-                <div class="col-lg-4 mb-4">
-                    <h6 class="fw-bold mb-3">Contacto</h6>
+                <div class="col-lg-4 mb-3">
+                    <h6 class="fw-bold mb-2">Contacto</h6>
                     <div class="contact-info">
-                        <p class="text-muted mb-2">
+                        <p class="text-muted mb-1">
                             <i class="fas fa-map-marker-alt me-2"></i>
                             Av. Principal 123, Santiago, Chile
                         </p>
-                        <p class="text-muted mb-2">
+                        <p class="text-muted mb-1">
                             <i class="fas fa-phone me-2"></i>
                             +56 2 1234 5678
                         </p>
-                        <p class="text-muted mb-2">
+                        <p class="text-muted mb-1">
                             <i class="fas fa-envelope me-2"></i>
                             info@pozinox.cl
                         </p>
-                        <p class="text-muted">
+                        <p class="text-muted mb-0">
                             <i class="fas fa-clock me-2"></i>
                             Lun - Vie: 8:00 - 18:00
                         </p>
@@ -153,7 +176,7 @@
                 </div>
             </div>
             
-            <hr class="my-4">
+            <hr class="my-2">
             
             <div class="row align-items-center">
                 <div class="col-md-6">
@@ -162,8 +185,8 @@
                     </p>
                 </div>
                 <div class="col-md-6 text-md-end">
-                    <a href="#" class="text-muted text-decoration-none me-3">Política de Privacidad</a>
-                    <a href="#" class="text-muted text-decoration-none">Términos y Condiciones</a>
+                    <a href="{% url 'politica_privacidad' %}" class="text-muted text-decoration-none me-3">Política de Privacidad</a>
+                    <a href="{% url 'terminos_condiciones' %}" class="text-muted text-decoration-none">Términos y Condiciones</a>
                 </div>
             </div>
         </div>

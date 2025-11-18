@@ -138,8 +138,8 @@ def productos_publicos(request):
     context = {
         'productos': paginar_queryset(productos, request, 12),
         'categorias': CategoriaAcero.objects.filter(activa=True),
-        'categoria_actual': request.GET.get('categoria'),
-        'busqueda': request.GET.get('q'),
+        'categoria_actual': request.GET.get('categoria') or '',
+        'busqueda': request.GET.get('q') or '',
     }
     return render(request, 'tienda/productos.html', context)
 
@@ -1278,3 +1278,21 @@ def verificar_transferencia(request, transferencia_id):
         'transferencia': transferencia,
     }
     return render(request, 'tienda/transferencias/verificar_transferencia.html', context)
+
+
+# ============================================
+# PÁGINAS LEGALES
+# ============================================
+
+def politica_privacidad(request):
+    """Vista de política de privacidad"""
+    return render(request, 'tienda/legal/politica_privacidad.html', {
+        'titulo': 'Política de Privacidad - Pozinox'
+    })
+
+
+def terminos_condiciones(request):
+    """Vista de términos y condiciones"""
+    return render(request, 'tienda/legal/terminos_condiciones.html', {
+        'titulo': 'Términos y Condiciones - Pozinox'
+    })
