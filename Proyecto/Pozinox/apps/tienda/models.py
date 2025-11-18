@@ -25,10 +25,10 @@ class CategoriaAcero(models.Model):
 class Producto(models.Model):
     """Productos de acero de la tienda Pozinox"""
     TIPOS_ACERO = [
-        ('inoxidable', 'Acero Inoxidable'),
-        ('carbono', 'Acero al Carbono'),
-        ('galvanizado', 'Acero Galvanizado'),
-        ('estructural', 'Acero Estructural'),
+        ('304', '304'),
+        ('304L', '304L'),
+        ('316', '316'),
+        ('316L', '316L'),
     ]
     
     nombre = models.CharField(max_length=200)
