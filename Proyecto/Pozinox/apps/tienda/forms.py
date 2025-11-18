@@ -39,8 +39,8 @@ class ProductoForm(forms.ModelForm):
         model = Producto
         fields = [
             'nombre', 'descripcion', 'codigo_producto', 'categoria', 'tipo_acero',
-            'grosor', 'ancho', 'largo', 'peso_por_metro',
-            'precio_por_unidad', 'precio_por_metro', 'precio_por_kg',
+            'grosor', 'ancho', 'largo', 'peso_por_metro', 'medidas',
+            'precio_por_unidad',
             'stock_actual', 'stock_minimo', 'unidad_medida', 'imagen', 'activo'
         ]
         widgets = {
@@ -49,13 +49,12 @@ class ProductoForm(forms.ModelForm):
             'codigo_producto': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Código único del producto'}),
             'categoria': forms.Select(attrs={'class': 'form-select'}),
             'tipo_acero': forms.Select(attrs={'class': 'form-select'}),
+            'medidas': forms.HiddenInput(),
             'grosor': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Grosor en mm'}),
             'ancho': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Ancho en mm'}),
             'largo': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Largo en mm'}),
             'peso_por_metro': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Peso por metro en kg'}),
             'precio_por_unidad': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Precio por unidad'}),
-            'precio_por_metro': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Precio por metro'}),
-            'precio_por_kg': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Precio por kilogramo'}),
             'stock_actual': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Stock actual'}),
             'stock_minimo': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Stock mínimo'}),
             'unidad_medida': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'unidad, metro, kg, etc.'}),
@@ -71,9 +70,8 @@ class ProductoForm(forms.ModelForm):
             'nombre': 'Nombre del Producto', 'descripcion': 'Descripción', 'codigo_producto': 'Código de Producto',
             'categoria': 'Categoría', 'tipo_acero': 'Tipo de Acero', 'grosor': 'Grosor (mm)', 'ancho': 'Ancho (mm)',
             'largo': 'Largo (mm)', 'peso_por_metro': 'Peso por Metro (kg/m)', 'precio_por_unidad': 'Precio por Unidad ($)',
-            'precio_por_metro': 'Precio por Metro ($)', 'precio_por_kg': 'Precio por Kilogramo ($)',
             'stock_actual': 'Stock Actual', 'stock_minimo': 'Stock Mínimo', 'unidad_medida': 'Unidad de Medida',
-            'imagen': 'Imagen del Producto', 'activo': 'Producto Activo'
+            'imagen': 'Imagen del Producto', 'activo': 'Producto Activo', 'medidas': 'Medidas'
         }
         for field, label in labels.items():
             self.fields[field].label = label

@@ -259,6 +259,31 @@
                     </div>
                 </div>
             </div>
+            <!-- Medidas -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-ruler"></i>
+                    Medidas
+                </h3>
+
+                {{ form.medidas }}
+
+                <div class="mb-3">
+                    <div class="d-flex mb-2">
+                        <input type="text" id="medida-input" class="form-control me-2" placeholder="Ej: 1/2\" , 2\'\' , 25mm">
+                        <button type="button" id="add-medida-btn" class="btn btn-outline-primary">Agregar</button>
+                    </div>
+                    <ul id="medidas-list" class="list-group"></ul>
+                    <div class="help-text">Agrega todas las medidas disponibles para este producto.</div>
+                    {% if form.medidas.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.medidas.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
             
             <!-- Precios -->
             <div class="form-section">
@@ -277,36 +302,6 @@
                             {% if form.precio_por_unidad.errors %}
                                 <div class="text-danger small mt-1">
                                     {% for error in form.precio_por_unidad.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <label for="{{ form.precio_por_metro.id_for_label }}" class="form-label">
-                                {{ form.precio_por_metro.label }}
-                            </label>
-                            {{ form.precio_por_metro }}
-                            {% if form.precio_por_metro.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.precio_por_metro.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <label for="{{ form.precio_por_kg.id_for_label }}" class="form-label">
-                                {{ form.precio_por_kg.label }}
-                            </label>
-                            {{ form.precio_por_kg }}
-                            {% if form.precio_por_kg.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.precio_por_kg.errors %}
                                         {{ error }}
                                     {% endfor %}
                                 </div>
@@ -348,22 +343,6 @@
                             {% if form.stock_minimo.errors %}
                                 <div class="text-danger small mt-1">
                                     {% for error in form.stock_minimo.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <label for="{{ form.unidad_medida.id_for_label }}" class="form-label required-field">
-                                {{ form.unidad_medida.label }}
-                            </label>
-                            {{ form.unidad_medida }}
-                            <div class="help-text">Ej: unidad, metro, kg, m², etc.</div>
-                            {% if form.unidad_medida.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.unidad_medida.errors %}
                                         {{ error }}
                                     {% endfor %}
                                 </div>
@@ -452,6 +431,63 @@
             };
             reader.readAsDataURL(file);
         }
+    });
+</script>
+<script>
+    // Medidas dinámicas: agregar/eliminar y serializar en campo hidden
+    document.addEventListener('DOMContentLoaded', function() {
+        const medidasInput = document.getElementById('{{ form.medidas.id_for_label }}');
+        if (!medidasInput) return;
+        const listEl = document.getElementById('medidas-list');
+        const addBtn = document.getElementById('add-medida-btn');
+        const medidaField = document.getElementById('medida-input');
+        let medidas = [];
+
+        try {
+            medidas = JSON.parse(medidasInput.value || '[]');
+        } catch (e) {
+            medidas = [];
+        }
+
+        function render() {
+            listEl.innerHTML = '';
+            medidas.forEach((m, idx) => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                const span = document.createElement('span');
+                span.textContent = m;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn btn-sm btn-danger';
+                btn.textContent = 'Eliminar';
+                btn.addEventListener('click', () => {
+                    medidas.splice(idx, 1);
+                    render();
+                });
+                li.appendChild(span);
+                li.appendChild(btn);
+                listEl.appendChild(li);
+            });
+            medidasInput.value = JSON.stringify(medidas);
+        }
+
+        addBtn.addEventListener('click', function() {
+            const val = medidaField.value.trim();
+            if (!val) return;
+            medidas.push(val);
+            medidaField.value = '';
+            render();
+        });
+
+        // Allow Enter key
+        medidaField.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addBtn.click();
+            }
+        });
+
+        render();
     });
 </script>
 {% endblock %}

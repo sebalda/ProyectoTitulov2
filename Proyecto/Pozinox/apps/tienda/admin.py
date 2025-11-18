@@ -28,7 +28,7 @@ class ProductoAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
         ('Precios', {
-            'fields': ('precio_por_unidad', 'precio_por_metro', 'precio_por_kg')
+            'fields': ('precio_por_unidad',)
         }),
         ('Stock', {
             'fields': ('stock_actual', 'stock_minimo', 'unidad_medida')

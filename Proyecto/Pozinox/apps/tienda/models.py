@@ -42,11 +42,11 @@ class Producto(models.Model):
     ancho = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="En mm")
     largo = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="En mm")
     peso_por_metro = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="En kg/m")
+    # Medidas dinámicas: almacenadas como JSON string de lista, e.g. ['1/2"', '3/4"']
+    medidas = models.TextField(blank=True, default='[]', help_text='JSON array de medidas disponibles para el producto')
     
     # Precios
     precio_por_unidad = models.DecimalField(max_digits=10, decimal_places=2)
-    precio_por_metro = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    precio_por_kg = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     
     # Stock y disponibilidad
     stock_actual = models.PositiveIntegerField(default=0)
