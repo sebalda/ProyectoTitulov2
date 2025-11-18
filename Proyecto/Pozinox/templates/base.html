@@ -33,42 +33,8 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'home' %}">Inicio</a>
                     </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            Productos
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{% url 'productos' %}">
-                                <i class="fas fa-th-large me-2"></i>Ver Todos los Productos
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item" href="#">Sanitarios</a>
-                                <small class="text-muted ms-2 d-block">Industria vitivinicola, cervecera, lechera, entre otros.</small>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="#">Industriales</a>
-                                <small class="text-muted ms-2 d-block">Val. Bola de 1,2 y 3 cuerpos, Val. C/FLANGE, codos SCH10 - 40 CODO NPT, entre otros.</small>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="#">Tuberías</a>
-                                <small class="text-muted ms-2 d-block">Sanitarias 304 y 316L, normas DIN - SMS</small>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="#">Cañerías</a>
-                                <small class="text-muted ms-2 d-block">Calidad 304 y 316L de SCH10 - SCH40</small>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="#">Polipropileno</a>
-                                <small class="text-muted ms-2 d-block">Linea de acomples camblock A,B,C,D,E,F, DC Y DP.</small>
-                            </li>
-                        </ul>
-                    </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Servicios</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Nosotros</a>
+                        <a class="nav-link" href="#">Productos</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#">Contacto</a>
@@ -134,8 +100,7 @@
                         <i class="fas fa-industry me-2"></i>POZINOX
                     </h5>
                     <p class="text-muted">
-                        Tu tienda de confianza para productos de acero de alta calidad. 
-                        Especialistas en perfiles, planchas, tubos y más.
+                        Tu tienda de confianza para productos de acero de alta calidad.
                     </p>
                     <div class="social-links">
                         <a href="#" class="text-light me-3"><i class="fab fa-facebook-f"></i></a>
@@ -217,16 +182,7 @@
     <!-- SweetAlert2 Notificaciones de Django -->
     {% if messages %}
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const messages = [
-                {% for message in messages %}
-                {
-                    type: '{{ message.tags }}',
-                    text: '{{ message|escapejs }}'
-                }{% if not forloop.last %},{% endif %}
-                {% endfor %}
-            ];
-            
+        document.addEventListener('DOMContentLoaded', function() {            
             // Mostrar notificaciones secuencialmente
             let currentIndex = 0;
             
