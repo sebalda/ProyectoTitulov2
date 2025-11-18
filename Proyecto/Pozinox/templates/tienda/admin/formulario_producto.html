@@ -171,6 +171,8 @@
     <div class="form-card">
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
+                    {# Ensure unidad_medida is posted even when not shown: keep as hidden with default 'unidad' #}
+                    <input type="hidden" name="unidad_medida" id="{{ form.unidad_medida.id_for_label }}" value="{{ form.unidad_medida.value|default:'unidad' }}">
             
             <!-- Información Básica -->
             <div class="form-section">
