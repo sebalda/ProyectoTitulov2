@@ -129,10 +129,28 @@
                         {% for producto in productos_disponibles %}
                         <div class="col-md-6 mb-3">
                             <div class="card h-100">
-                                <div class="card-body">
-                                    <h6 class="card-title">{{ producto.nombre }}</h6>
+                                <div class="card-body position-relative">
+                                    <!-- Imagen pequeña arriba a la derecha -->
+                                    <div style="position: absolute; top: 10px; right: 10px; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                        {% if producto.imagen %}
+                                            <img src="{{ producto.imagen.url }}" 
+                                                 alt="{{ producto.nombre }}" 
+                                                 style="width: 100%; height: 100%; object-fit: cover;">
+                                        {% else %}
+                                            <div style="width: 100%; height: 100%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 1.5rem;">
+                                                <i class="fas fa-image"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <h6 class="card-title" style="padding-right: 90px;">{{ producto.nombre }}</h6>
+                                    {% if user.is_staff %}
                                     <p class="card-text small text-muted mb-2">
                                         <strong>Código:</strong> {{ producto.codigo_producto }}
+                                    </p>
+                                    {% endif %}
+                                    <p class="card-text small text-muted mb-2">
+                                        <strong>Material:</strong> {{ producto.get_tipo_acero_display }}
                                     </p>
                                     <p class="card-text">
                                         <strong class="text-primary">${{ producto.precio_por_unidad|floatformat:0 }}</strong>

@@ -402,6 +402,30 @@ def crear_cotizacion(request):
         cotizacion = Cotizacion.objects.create(usuario=request.user)
         messages.success(request, f'Nueva cotización {cotizacion.numero_cotizacion} creada.')
     
+    # Si se proporciona un producto_id, agregarlo automáticamente
+    producto_id = request.GET.get('producto_id')
+    if producto_id:
+        try:
+            producto = Producto.objects.get(id=producto_id, activo=True)
+            cantidad = int(request.GET.get('cantidad', 1))
+            
+            # Verificar si el producto ya está en la cotización
+            detalle, created = DetalleCotizacion.objects.get_or_create(
+                cotizacion=cotizacion,
+                producto=producto,
+                defaults={'cantidad': cantidad, 'precio_unitario': producto.precio_por_unidad}
+            )
+            
+            if not created:
+                # Si ya existe, incrementar la cantidad
+                detalle.cantidad += cantidad
+                detalle.save()
+                messages.success(request, f'Se agregó {cantidad} más de "{producto.nombre}" a tu cotización.')
+            else:
+                messages.success(request, f'"{producto.nombre}" agregado a tu cotización.')
+        except Producto.DoesNotExist:
+            messages.error(request, 'El producto seleccionado no está disponible.')
+    
     return redirect('detalle_cotizacion', cotizacion_id=cotizacion.id)
 
 

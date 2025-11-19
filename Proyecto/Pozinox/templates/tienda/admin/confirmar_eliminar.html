@@ -145,7 +145,7 @@
             <h5>{{ producto.nombre }}</h5>
             <p><strong>Código:</strong> {{ producto.codigo_producto }}</p>
             <p><strong>Categoría:</strong> {{ producto.categoria.nombre }}</p>
-            <p><strong>Tipo:</strong> {{ producto.get_tipo_acero_display }}</p>
+            <p><strong>Material:</strong> {{ producto.get_tipo_acero_display }}</p>
             <p><strong>Precio:</strong> ${{ producto.precio_por_unidad|floatformat:0 }}</p>
             <p><strong>Stock:</strong> {{ producto.stock_actual }} {{ producto.unidad_medida }}</p>
             {% if producto.activo %}

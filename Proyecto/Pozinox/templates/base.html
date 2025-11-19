@@ -35,6 +35,23 @@
         footer .social-links a {
             font-size: 1rem;
         }
+        
+        /* Estilos para el logo */
+        .navbar-brand img {
+            height: 50px;
+            width: auto;
+            transition: transform 0.2s ease;
+        }
+        
+        .navbar-brand:hover img {
+            transform: scale(1.05);
+        }
+        
+        footer .footer-logo {
+            height: 65px;
+            width: auto;
+            margin-bottom: 0.5rem;
+        }
     </style>
     
     {% block extra_css %}{% endblock %}
@@ -43,8 +60,8 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'home' %}">
-                <i class="fas fa-industry me-2"></i>POZINOX
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <img src="{% static 'images/nav_logoblanco.png' %}" alt="Pozinox">
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -119,9 +136,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-4 mb-3">
-                    <h5 class="fw-bold mb-2">
-                        <i class="fas fa-industry me-2"></i>POZINOX
-                    </h5>
+                    <img src="{% static 'images/Footer_logoPozi.png' %}" alt="Pozinox" class="footer-logo">
                     <p class="text-muted mb-2">
                         Tu tienda de confianza para productos de acero de alta calidad.
                     </p>
@@ -133,45 +148,34 @@
                     </div>
                 </div>
                 
-                <div class="col-lg-2 col-md-6 mb-3">
-                    <h6 class="fw-bold mb-2">Productos</h6>
-                    <ul class="list-unstyled">
-                        <li><a href="#" class="text-muted text-decoration-none">Perfiles</a></li>
-                        <li><a href="#" class="text-muted text-decoration-none">Planchas</a></li>
-                        <li><a href="#" class="text-muted text-decoration-none">Tubos</a></li>
-                        <li><a href="#" class="text-muted text-decoration-none">Varillas</a></li>
-                    </ul>
-                </div>
-                
-                <div class="col-lg-2 col-md-6 mb-3">
-                    <h6 class="fw-bold mb-2">Servicios</h6>
-                    <ul class="list-unstyled">
-                        <li><a href="#" class="text-muted text-decoration-none">Corte</a></li>
-                        <li><a href="#" class="text-muted text-decoration-none">Doblado</a></li>
-                        <li><a href="#" class="text-muted text-decoration-none">Soldadura</a></li>
-                        <li><a href="#" class="text-muted text-decoration-none">Asesoría</a></li>
-                    </ul>
+                <div class="col-lg-4 mb-3">
                 </div>
                 
                 <div class="col-lg-4 mb-3">
                     <h6 class="fw-bold mb-2">Contacto</h6>
                     <div class="contact-info">
-                        <p class="text-muted mb-1">
-                            <i class="fas fa-map-marker-alt me-2"></i>
-                            Av. Principal 123, Santiago, Chile
-                        </p>
-                        <p class="text-muted mb-1">
-                            <i class="fas fa-phone me-2"></i>
-                            +56 2 1234 5678
-                        </p>
-                        <p class="text-muted mb-1">
-                            <i class="fas fa-envelope me-2"></i>
-                            info@pozinox.cl
-                        </p>
-                        <p class="text-muted mb-0">
-                            <i class="fas fa-clock me-2"></i>
-                            Lun - Vie: 8:00 - 18:00
-                        </p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="text-muted mb-1">
+                                    <i class="fas fa-map-marker-alt me-2"></i>
+                                    Santiago, Chile
+                                </p>
+                                <p class="text-muted mb-1">
+                                    <i class="fas fa-phone me-2"></i>
+                                    +56 2 1234 5678
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-muted mb-1">
+                                    <i class="fas fa-envelope me-2"></i>
+                                    info@pozinox.cl
+                                </p>
+                                <p class="text-muted mb-0">
+                                    <i class="fas fa-clock me-2"></i>
+                                    Lun - Vie: 8:30 - 19:00
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

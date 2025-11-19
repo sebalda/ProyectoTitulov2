@@ -71,15 +71,13 @@
         box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         overflow: hidden;
         transition: all 0.3s ease;
-        text-decoration: none;
-        color: inherit;
+        display: flex;
+        flex-direction: column;
     }
     
     .product-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-        text-decoration: none;
-        color: inherit;
     }
     
     .product-image {
@@ -310,27 +308,33 @@
             {% if productos %}
                 <div class="products-grid">
                     {% for producto in productos %}
-                        <a href="{% url 'detalle_producto' producto.id %}" class="product-card">
-                            {% if producto.imagen %}
-                                <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" class="product-image">
-                            {% else %}
-                                <div class="product-placeholder">
-                                    <i class="fas fa-image"></i>
-                                </div>
-                            {% endif %}
+                        <div class="product-card">
+                            <a href="{% url 'detalle_producto' producto.id %}">
+                                {% if producto.imagen %}
+                                    <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" class="product-image">
+                                {% else %}
+                                    <div class="product-placeholder">
+                                        <i class="fas fa-image"></i>
+                                    </div>
+                                {% endif %}
+                            </a>
                             
                             <div class="product-info">
                                 <div class="product-category">{{ producto.categoria.nombre }}</div>
-                                <h5 class="product-name">{{ producto.nombre }}</h5>
+                                <a href="{% url 'detalle_producto' producto.id %}" style="text-decoration: none; color: inherit;">
+                                    <h5 class="product-name">{{ producto.nombre }}</h5>
+                                </a>
                                 <p class="product-description">{{ producto.descripcion }}</p>
                                 
                                 <div class="product-specs">
+                                    {% if user.is_authenticated and user.is_staff %}
                                     <div class="spec-item">
                                         <span class="spec-label">Código:</span>
                                         <span class="spec-value">{{ producto.codigo_producto }}</span>
                                     </div>
+                                    {% endif %}
                                     <div class="spec-item">
-                                        <span class="spec-label">Tipo:</span>
+                                        <span class="spec-label">Material:</span>
                                         <span class="spec-value">{{ producto.get_tipo_acero_display }}</span>
                                     </div>
                                     {% if producto.grosor %}
@@ -361,8 +365,23 @@
                                         </span>
                                     {% endif %}
                                 </div>
+                                
+                                <div class="product-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                                    <a href="{% url 'detalle_producto' producto.id %}" class="btn btn-sm btn-outline-primary" style="flex: 1;">
+                                        <i class="fas fa-eye"></i> Ver
+                                    </a>
+                                    {% if user.is_authenticated %}
+                                        <a href="{% url 'crear_cotizacion' %}?producto_id={{ producto.id }}&cantidad=1" class="btn btn-sm btn-primary" style="flex: 1;">
+                                            <i class="fas fa-cart-plus"></i> Cotizar
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'login' %}?next={% url 'productos' %}" class="btn btn-sm btn-primary" style="flex: 1;">
+                                            <i class="fas fa-sign-in-alt"></i> Cotizar
+                                        </a>
+                                    {% endif %}
+                                </div>
                             </div>
-                        </a>
+                        </div>
                     {% endfor %}
                 </div>
                 

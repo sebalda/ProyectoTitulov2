@@ -154,7 +154,15 @@ def lista_usuarios_admin(request):
     busqueda = request.GET.get('q')
     
     if tipo_usuario:
-        usuarios = usuarios.filter(perfil__tipo_usuario=tipo_usuario)
+        if tipo_usuario == 'administrador':
+            # Mostrar solo superusuarios
+            usuarios = usuarios.filter(is_superuser=True)
+        else:
+            # Para otros tipos, filtrar por perfil y excluir superusuarios
+            usuarios = usuarios.filter(
+                perfil__tipo_usuario=tipo_usuario,
+                is_superuser=False
+            )
     
     if estado == 'activos':
         usuarios = usuarios.filter(is_active=True)
