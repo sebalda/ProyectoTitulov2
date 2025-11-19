@@ -168,11 +168,58 @@ def detalle_producto(request, producto_id):
 @user_passes_test(es_superusuario)
 def panel_admin(request):
     """Panel de administración para superusuarios"""
+    from apps.usuarios.models import VisitorLog
+    from django.db.models import Count
+    from datetime import timedelta
+    
+    # Estadísticas de productos
+    total_productos = Producto.objects.count()
+    productos_activos = Producto.objects.filter(activo=True).count()
+    productos_stock_bajo = Producto.objects.filter(stock_actual__lte=F('stock_minimo')).count()
+    total_categorias = CategoriaAcero.objects.count()
+    
+    # Estadísticas de visitantes
+    now = timezone.now()
+    visitas_hoy = VisitorLog.objects.filter(timestamp__date=now.date()).count()
+    visitas_semana = VisitorLog.objects.filter(timestamp__gte=now - timedelta(days=7)).count()
+    visitas_mes = VisitorLog.objects.filter(timestamp__gte=now - timedelta(days=30)).count()
+    
+    # Visitantes únicos (por session_id)
+    visitantes_unicos_hoy = VisitorLog.objects.filter(
+        timestamp__date=now.date()
+    ).values('session_id').distinct().count()
+    
+    visitantes_unicos_semana = VisitorLog.objects.filter(
+        timestamp__gte=now - timedelta(days=7)
+    ).values('session_id').distinct().count()
+    
+    # Páginas más visitadas
+    paginas_populares = VisitorLog.objects.filter(
+        timestamp__gte=now - timedelta(days=30)
+    ).values('page_url').annotate(
+        visitas=Count('id')
+    ).order_by('-visitas')[:10]
+    
+    # Dispositivos
+    dispositivos = VisitorLog.objects.filter(
+        timestamp__gte=now - timedelta(days=30)
+    ).values('device_type').annotate(
+        cantidad=Count('id')
+    ).order_by('-cantidad')
+    
     context = {
-        'total_productos': Producto.objects.count(),
-        'productos_activos': Producto.objects.filter(activo=True).count(),
-        'productos_stock_bajo': Producto.objects.filter(stock_actual__lte=F('stock_minimo')).count(),
-        'total_categorias': CategoriaAcero.objects.count(),
+        'total_productos': total_productos,
+        'productos_activos': productos_activos,
+        'productos_stock_bajo': productos_stock_bajo,
+        'total_categorias': total_categorias,
+        # Estadísticas de visitantes
+        'visitas_hoy': visitas_hoy,
+        'visitas_semana': visitas_semana,
+        'visitas_mes': visitas_mes,
+        'visitantes_unicos_hoy': visitantes_unicos_hoy,
+        'visitantes_unicos_semana': visitantes_unicos_semana,
+        'paginas_populares': paginas_populares,
+        'dispositivos': dispositivos,
     }
     return render(request, 'tienda/panel_admin.html', context)
 

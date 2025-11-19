@@ -301,3 +301,40 @@ class PasswordResetToken(models.Model):
         """Marcar token como usado"""
         self.is_used = True
         self.save()
+
+
+class VisitorLog(models.Model):
+    """
+    Modelo para registrar visitantes del sitio (complemento a las cookies)
+    """
+    # Identificación
+    session_id = models.CharField(max_length=100, db_index=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='visitor_logs')
+    
+    # Información del visitante
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    
+    # Información de la visita
+    page_url = models.CharField(max_length=500)
+    referrer = models.CharField(max_length=500, blank=True)
+    
+    # Timestamps
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+    
+    # Información adicional
+    device_type = models.CharField(max_length=50, blank=True)  # mobile, tablet, desktop
+    browser = models.CharField(max_length=50, blank=True)
+    os = models.CharField(max_length=50, blank=True)
+    
+    class Meta:
+        verbose_name = 'Registro de Visitante'
+        verbose_name_plural = 'Registros de Visitantes'
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['session_id', '-timestamp']),
+            models.Index(fields=['ip_address', '-timestamp']),
+        ]
+    
+    def __str__(self):
+        return f"{self.session_id} - {self.page_url} - {self.timestamp.strftime('%Y-%m-%d %H:%M')}"

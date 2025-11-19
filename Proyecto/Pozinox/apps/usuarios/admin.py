@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import PerfilUsuario, ConfiguracionSistema, LogActividad, Notificacion, EmailVerificationToken
+from .models import PerfilUsuario, ConfiguracionSistema, LogActividad, Notificacion, EmailVerificationToken, VisitorLog
 
 
 @admin.register(PerfilUsuario)
@@ -50,3 +50,15 @@ class NotificacionAdmin(admin.ModelAdmin):
     list_filter = ['tipo', 'leida', 'fecha_creacion']
     search_fields = ['usuario__username', 'titulo', 'mensaje']
     readonly_fields = ['fecha_creacion', 'fecha_leida']
+
+
+@admin.register(VisitorLog)
+class VisitorLogAdmin(admin.ModelAdmin):
+    list_display = ['session_id', 'user', 'ip_address', 'page_url', 'device_type', 'timestamp']
+    list_filter = ['device_type', 'timestamp']
+    search_fields = ['session_id', 'ip_address', 'page_url', 'user__username']
+    readonly_fields = ['timestamp']
+    date_hierarchy = 'timestamp'
+    
+    def has_add_permission(self, request):
+        return False  # No permitir crear registros manualmente

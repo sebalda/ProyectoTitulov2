@@ -48,6 +48,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'apps.usuarios.middleware.VisitorTrackingMiddleware',  # Rastreo de visitantes
 ]
 
 ROOT_URLCONF = 'Pozinox.urls'
@@ -62,6 +63,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'apps.usuarios.context_processors.visitor_info',  # Info del visitante
             ],
         },
     },

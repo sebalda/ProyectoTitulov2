@@ -343,9 +343,6 @@
                 </div>
                 <h3 class="stat-number">{{ total_productos }}</h3>
                 <p class="stat-label">Total de Productos</p>
-                <div class="stat-change positive">
-                    <i class="fas fa-arrow-up me-1"></i>+12% este mes
-                </div>
             </div>
             
             <div class="stat-card success">
@@ -354,9 +351,6 @@
                 </div>
                 <h3 class="stat-number">{{ productos_activos }}</h3>
                 <p class="stat-label">Productos Activos</p>
-                <div class="stat-change positive">
-                    <i class="fas fa-arrow-up me-1"></i>+3 nuevos
-                </div>
             </div>
             
             <div class="stat-card warning">
@@ -365,9 +359,6 @@
                 </div>
                 <h3 class="stat-number">{{ productos_stock_bajo }}</h3>
                 <p class="stat-label">Stock Bajo</p>
-                <div class="stat-change negative">
-                    <i class="fas fa-arrow-down me-1"></i>Requiere atención
-                </div>
             </div>
             
             <div class="stat-card">
@@ -376,8 +367,122 @@
                 </div>
                 <h3 class="stat-number">{{ total_categorias }}</h3>
                 <p class="stat-label">Categorías</p>
-                <div class="stat-change positive">
-                    <i class="fas fa-arrow-up me-1"></i>+1 nueva
+            </div>
+        </div>
+        
+        <!-- Estadísticas de Visitantes -->
+        <div class="dashboard-header">
+            <h2><i class="fas fa-users me-2"></i>Estadísticas de Visitantes</h2>
+            <p>Seguimiento de tráfico y comportamiento de usuarios</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card" style="border-left-color: #17a2b8;">
+                <div class="stat-header">
+                    <i class="fas fa-eye stat-icon" style="color: #17a2b8;"></i>
+                </div>
+                <h3 class="stat-number">{{ visitas_hoy }}</h3>
+                <p class="stat-label">Visitas Hoy</p>
+                <small class="text-muted">{{ visitantes_unicos_hoy }} visitante{{ visitantes_unicos_hoy|pluralize }} único{{ visitantes_unicos_hoy|pluralize }}</small>
+            </div>
+            
+            <div class="stat-card success">
+                <div class="stat-header">
+                    <i class="fas fa-calendar-week stat-icon"></i>
+                </div>
+                <h3 class="stat-number">{{ visitas_semana }}</h3>
+                <p class="stat-label">Visitas esta Semana</p>
+                <small class="text-muted">{{ visitantes_unicos_semana }} visitante{{ visitantes_unicos_semana|pluralize }} único{{ visitantes_unicos_semana|pluralize }}</small>
+            </div>
+            
+            <div class="stat-card" style="border-left-color: #6f42c1;">
+                <div class="stat-header">
+                    <i class="fas fa-calendar-alt stat-icon" style="color: #6f42c1;"></i>
+                </div>
+                <h3 class="stat-number">{{ visitas_mes }}</h3>
+                <p class="stat-label">Visitas este Mes</p>
+            </div>
+            
+            <div class="stat-card" style="border-left-color: #fd7e14;">
+                <div class="stat-header">
+                    <i class="fas fa-chart-line stat-icon" style="color: #fd7e14;"></i>
+                </div>
+                <h3 class="stat-number">{{ visitantes_unicos_semana }}</h3>
+                <p class="stat-label">Usuarios Únicos (7 días)</p>
+            </div>
+        </div>
+        
+        <!-- Páginas Populares y Dispositivos -->
+        <div class="row mt-4">
+            <div class="col-lg-6 mb-4">
+                <div class="recent-activity">
+                    <h3><i class="fas fa-chart-bar me-2"></i>Páginas Más Visitadas</h3>
+                    <p class="text-muted mb-3">Últimos 30 días</p>
+                    
+                    {% if paginas_populares %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Página</th>
+                                        <th class="text-end">Visitas</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for pagina in paginas_populares %}
+                                    <tr>
+                                        <td>
+                                            <code>{{ pagina.page_url }}</code>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge bg-primary">{{ pagina.visitas }}</span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No hay datos de visitantes aún.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="col-lg-6 mb-4">
+                <div class="recent-activity">
+                    <h3><i class="fas fa-mobile-alt me-2"></i>Dispositivos</h3>
+                    <p class="text-muted mb-3">Distribución por tipo de dispositivo (30 días)</p>
+                    
+                    {% if dispositivos %}
+                        {% for dispositivo in dispositivos %}
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold">
+                                    {% if dispositivo.device_type == 'mobile' %}
+                                        <i class="fas fa-mobile-alt me-2"></i>Móvil
+                                    {% elif dispositivo.device_type == 'tablet' %}
+                                        <i class="fas fa-tablet-alt me-2"></i>Tablet
+                                    {% else %}
+                                        <i class="fas fa-desktop me-2"></i>Escritorio
+                                    {% endif %}
+                                </span>
+                                <span class="text-muted">{{ dispositivo.cantidad }} visita{{ dispositivo.cantidad|pluralize }}</span>
+                            </div>
+                            <div class="progress" style="height: 10px;">
+                                {% widthratio dispositivo.cantidad visitas_mes 100 as percentage %}
+                                <div class="progress-bar bg-{% if dispositivo.device_type == 'mobile' %}info{% elif dispositivo.device_type == 'tablet' %}warning{% else %}primary{% endif %}" 
+                                     role="progressbar" 
+                                     style="width: {{ percentage }}%"
+                                     aria-valuenow="{{ percentage }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No hay datos de dispositivos aún.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
