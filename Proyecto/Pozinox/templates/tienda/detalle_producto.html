@@ -501,6 +501,17 @@
                         {% endif %}
                         
                         <!-- Precio por metro y por kg removed -->
+
+                        {% if medidas_list %}
+                        <div class="spec-item">
+                            <label class="form-label">Seleccionar medida:</label>
+                            <select id="medida-select" class="form-select">
+                                {% for m in medidas_list %}
+                                    <option value="{{ m }}">{{ m }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 
