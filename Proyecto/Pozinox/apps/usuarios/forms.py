@@ -420,8 +420,16 @@ class UsuarioForm(forms.ModelForm):
         self.fields['first_name'].required = True
         self.fields['last_name'].required = True
         
-        # Si es edición, cargar datos del perfil
+        # Si es edición, hacer username y email de solo lectura
         if self.is_edit and self.instance.pk:
+            # Hacer username y email de solo lectura (no se pueden editar)
+            self.fields['username'].widget.attrs['readonly'] = True
+            self.fields['username'].widget.attrs['class'] = self.fields['username'].widget.attrs.get('class', '') + ' bg-light'
+            self.fields['username'].initial = self.instance.username
+            self.fields['email'].widget.attrs['readonly'] = True
+            self.fields['email'].widget.attrs['class'] = self.fields['email'].widget.attrs.get('class', '') + ' bg-light'
+            self.fields['email'].initial = self.instance.email
+            
             try:
                 perfil = self.instance.perfil
                 # Si es superusuario, siempre mostrar administrador y deshabilitar el campo
@@ -444,6 +452,10 @@ class UsuarioForm(forms.ModelForm):
     def clean_username(self):
         username = self.cleaned_data.get('username')
         if username:
+            # Si es edición y el username no ha cambiado, no validar
+            if self.is_edit and self.instance.pk:
+                if username == self.instance.username:
+                    return username
             # Verificar si el username ya existe (excepto para la instancia actual)
             queryset = User.objects.filter(username=username)
             if self.instance.pk:
@@ -455,6 +467,10 @@ class UsuarioForm(forms.ModelForm):
     def clean_email(self):
         email = self.cleaned_data.get('email')
         if email:
+            # Si es edición y el email no ha cambiado, no validar
+            if self.is_edit and self.instance.pk:
+                if email == self.instance.email:
+                    return email
             # Verificar si el email ya existe (excepto para la instancia actual)
             queryset = User.objects.filter(email=email)
             if self.instance.pk:

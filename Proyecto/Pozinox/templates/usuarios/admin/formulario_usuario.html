@@ -56,8 +56,6 @@
         font-weight: 600;
         margin-bottom: 1rem;
         font-size: 1.125rem;
-        border-bottom: 1px solid #e5e7eb;
-        padding-bottom: 0.5rem;
     }
     
     .form-label {
@@ -130,7 +128,6 @@
         gap: 1rem;
         margin-top: 2rem;
         padding-top: 2rem;
-        border-top: 1px solid #e5e7eb;
     }
     
     .btn-save {
@@ -198,12 +195,18 @@
                         {% if form.username.errors %}
                             <div class="error-message">{{ form.username.errors.0 }}</div>
                         {% endif %}
+                        {% if form.instance.pk %}
+                            <div class="help-text">El nombre de usuario no se puede modificar</div>
+                        {% endif %}
                     </div>
                     <div>
                         <label for="{{ form.email.id_for_label }}" class="form-label required">Email</label>
                         {{ form.email }}
                         {% if form.email.errors %}
                             <div class="error-message">{{ form.email.errors.0 }}</div>
+                        {% endif %}
+                        {% if form.instance.pk %}
+                            <div class="help-text">El email no se puede modificar</div>
                         {% endif %}
                     </div>
                 </div>
@@ -255,24 +258,12 @@
             <div class="form-section">
                 <h3 class="section-title">Perfil</h3>
                 
-                <div class="row">
-                    <div>
-                        <label for="{{ form.tipo_usuario.id_for_label }}" class="form-label">Tipo de Usuario</label>
-                        {{ form.tipo_usuario }}
-                        {% if form.tipo_usuario.help_text %}
-                            <small class="form-text text-muted">{{ form.tipo_usuario.help_text }}</small>
-                        {% endif %}
-                        {% if form.tipo_usuario.errors %}
-                            <div class="error-message">{{ form.tipo_usuario.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                    <div>
-                        <label for="{{ form.telefono.id_for_label }}" class="form-label">Teléfono</label>
-                        {{ form.telefono }}
-                        {% if form.telefono.errors %}
-                            <div class="error-message">{{ form.telefono.errors.0 }}</div>
-                        {% endif %}
-                    </div>
+                <div class="full-width">
+                    <label for="{{ form.telefono.id_for_label }}" class="form-label">Teléfono</label>
+                    {{ form.telefono }}
+                    {% if form.telefono.errors %}
+                        <div class="error-message">{{ form.telefono.errors.0 }}</div>
+                    {% endif %}
                 </div>
                 
                 <div class="full-width">
@@ -305,24 +296,24 @@
             <div class="form-section">
                 <h3 class="section-title">Permisos</h3>
                 
-                <div class="form-check">
-                    {{ form.is_active }}
-                    <label for="{{ form.is_active.id_for_label }}" class="form-check-label">Usuario Activo</label>
-                    <div class="help-text">Los usuarios inactivos no podrán acceder al sistema</div>
+                <div>
+                    <label for="{{ form.tipo_usuario.id_for_label }}" class="form-label">Rol de Usuario</label>
+                    {{ form.tipo_usuario }}
+                    {% if form.tipo_usuario.help_text %}
+                        <small class="form-text text-muted">{{ form.tipo_usuario.help_text }}</small>
+                    {% endif %}
+                    {% if form.tipo_usuario.errors %}
+                        <div class="error-message">{{ form.tipo_usuario.errors.0 }}</div>
+                    {% endif %}
+                    <div class="help-text">Cliente, Trabajador o Administrador</div>
                 </div>
                 
-                <div class="form-check">
-                    {{ form.is_staff }}
-                    <label for="{{ form.is_staff.id_for_label }}" class="form-check-label">Personal Administrativo</label>
-                </div>
-                
-                <div class="form-check">
-                    {{ form.is_superuser }}
-                    <label for="{{ form.is_superuser.id_for_label }}" class="form-check-label">Superusuario</label>
-                </div>
-                
-                <div class="warning">
-                    <strong>Advertencia:</strong> Los permisos de Staff y Superusuario otorgan acceso administrativo al sistema.
+                <div class="form-check" style="margin-top: 1.5rem; flex-direction: column; align-items: flex-start;">
+                    <div style="display: flex; align-items: center;">
+                        {{ form.is_active }}
+                        <label for="{{ form.is_active.id_for_label }}" class="form-check-label">Usuario Activo</label>
+                    </div>
+                    <div class="help-text" style="margin-top: 0.5rem; margin-left: 1.5rem;">Los usuarios inactivos no podrán acceder al sistema</div>
                 </div>
             </div>
             
