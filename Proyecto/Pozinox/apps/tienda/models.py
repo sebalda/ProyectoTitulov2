@@ -29,6 +29,8 @@ class Producto(models.Model):
         ('304L', '304L'),
         ('316', '316'),
         ('316L', '316L'),
+        ('Viton', 'Viton'),
+        ('Silicona', 'Silicona'),
     ]
     
     nombre = models.CharField(max_length=200)
