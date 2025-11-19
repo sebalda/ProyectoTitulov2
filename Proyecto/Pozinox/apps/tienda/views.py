@@ -147,11 +147,19 @@ def productos_publicos(request):
 def detalle_producto(request, producto_id):
     """Vista de detalle de un producto específico"""
     producto = get_object_or_404(Producto, id=producto_id, activo=True)
+    # Parse medidas JSON into a Python list for the template
+    medidas_list = []
+    try:
+        import json
+        medidas_list = json.loads(producto.medidas or '[]')
+    except Exception:
+        medidas_list = []
     context = {
         'producto': producto,
         'productos_relacionados': Producto.objects.filter(
             categoria=producto.categoria, activo=True
         ).exclude(id=producto.id)[:4],
+        'medidas_list': medidas_list,
     }
     return render(request, 'tienda/detalle_producto.html', context)
 
