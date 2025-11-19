@@ -20,6 +20,10 @@ urlpatterns = [
     path('panel-admin/transferencias/', views.panel_verificacion_transferencias, name='panel_verificacion_transferencias'),
     path('panel-admin/transferencias/<int:transferencia_id>/verificar/', views.verificar_transferencia, name='verificar_transferencia'),
     
+    # Gestión de estados para trabajadores
+    path('trabajadores/estados-preparacion/', views.gestionar_estados_preparacion, name='gestionar_estados_preparacion'),
+    path('trabajadores/estados-preparacion/<int:cotizacion_id>/cambiar/', views.cambiar_estado_preparacion, name='cambiar_estado_preparacion'),
+    
     # Cotizaciones
     path('cotizaciones/', views.mis_cotizaciones, name='mis_cotizaciones'),
     path('cotizaciones/crear/', views.crear_cotizacion, name='crear_cotizacion'),

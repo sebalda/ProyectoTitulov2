@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmación de Compra - Pozinox</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .header .icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .success-message {
+            background-color: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .order-info {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .order-info p {
+            margin: 5px 0;
+        }
+        .order-info strong {
+            color: #1e3a8a;
+        }
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .products-table th {
+            background-color: #1e3a8a;
+            color: white;
+            padding: 10px;
+            text-align: left;
+        }
+        .products-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .products-table tr:last-child td {
+            border-bottom: none;
+        }
+        .total-row {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .payment-method {
+            display: inline-block;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .payment-mercadopago {
+            background-color: #009ee3;
+            color: white;
+        }
+        .payment-transferencia {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .payment-efectivo {
+            background-color: #10b981;
+            color: white;
+        }
+        .next-steps {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .next-steps h3 {
+            margin-top: 0;
+            color: #92400e;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #1e3a8a;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 8px 15px;
+            background-color: #10b981;
+            color: white;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="icon">✅</div>
+            <h1>¡Compra Confirmada!</h1>
+            <p>Tu pedido ha sido recibido y procesado exitosamente</p>
+        </div>
+        
+        <div class="content">
+            <div class="success-message">
+                <p><strong>¡Gracias por tu compra, {{ cliente_nombre }}!</strong></p>
+                <p>Hemos recibido tu pedido y estamos preparando todo para ti.</p>
+            </div>
+            
+            <div class="order-info">
+                <h3 style="margin-top: 0; color: #1e3a8a;">Detalles de tu Orden</h3>
+                <p><strong>Número de Orden:</strong> {{ cotizacion.numero_cotizacion }}</p>
+                <p><strong>Fecha:</strong> {{ cotizacion.fecha_creacion|date:"d/m/Y H:i" }}</p>
+                <p><strong>Estado:</strong> <span class="status-badge">Pagada</span></p>
+                <p><strong>Método de Pago:</strong> 
+                    {% if cotizacion.metodo_pago == 'mercadopago' %}
+                        <span class="payment-method payment-mercadopago">💳 MercadoPago</span>
+                    {% elif cotizacion.metodo_pago == 'transferencia' %}
+                        <span class="payment-method payment-transferencia">🏦 Transferencia Bancaria</span>
+                    {% elif cotizacion.metodo_pago == 'efectivo' %}
+                        <span class="payment-method payment-efectivo">💵 Efectivo</span>
+                    {% endif %}
+                </p>
+            </div>
+            
+            <h3 style="color: #1e3a8a;">Productos de tu Pedido</h3>
+            <table class="products-table">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Precio Unit.</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detalle in detalles %}
+                    <tr>
+                        <td>{{ detalle.producto.nombre }}</td>
+                        <td>{{ detalle.cantidad }}</td>
+                        <td>${{ detalle.precio_unitario|floatformat:0 }}</td>
+                        <td>${{ detalle.subtotal|floatformat:0 }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="total-row">
+                        <td colspan="3" style="text-align: right;">Subtotal:</td>
+                        <td>${{ cotizacion.subtotal|floatformat:0 }}</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td colspan="3" style="text-align: right;">IVA (19%):</td>
+                        <td>${{ cotizacion.iva|floatformat:0 }}</td>
+                    </tr>
+                    <tr class="total-row" style="font-size: 20px; background-color: #1e3a8a; color: white;">
+                        <td colspan="3" style="text-align: right;">TOTAL:</td>
+                        <td>${{ cotizacion.total|floatformat:0 }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="next-steps">
+                <h3>📋 Próximos Pasos</h3>
+                {% if cotizacion.metodo_pago == 'efectivo' %}
+                    <p>Tu pedido con pago en efectivo está confirmado. Recibirás actualizaciones sobre el estado de preparación de tu pedido.</p>
+                    <p><strong>Podrás recoger tu pedido en:</strong></p>
+                    <ul>
+                        <li>📍 Dirección: Av. Principal 123, Santiago, Chile</li>
+                        <li>🕒 Horario: Lunes a Viernes de 8:30 a 19:00</li>
+                        <li>📞 Teléfono: +56 2 1234 5678</li>
+                    </ul>
+                    <p><strong>Importante:</strong> Trae el número de orden <strong>{{ cotizacion.numero_cotizacion }}</strong> al momento del retiro.</p>
+                {% elif cotizacion.metodo_pago == 'transferencia' %}
+                    <p>Tu pago por transferencia ha sido verificado y aprobado.</p>
+                    <p>Recibirás notificaciones sobre el progreso de tu pedido por email.</p>
+                {% else %}
+                    <p>Tu pago ha sido procesado exitosamente.</p>
+                    <p>Recibirás notificaciones sobre el progreso de tu pedido por email.</p>
+                {% endif %}
+                
+                <p style="margin-top: 15px;">Puedes verificar el estado de tu pedido en cualquier momento desde tu cuenta.</p>
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'detalle_cotizacion' cotizacion.id %}" class="btn">
+                    Ver Detalles de mi Pedido
+                </a>
+            </div>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+                <p style="color: #666; font-size: 14px;">
+                    <strong>¿Necesitas ayuda?</strong><br>
+                    Si tienes alguna pregunta sobre tu pedido, no dudes en contactarnos:
+                </p>
+                <p style="color: #666; font-size: 14px;">
+                    📧 Email: info@pozinox.cl<br>
+                    📞 Teléfono: +56 2 1234 5678<br>
+                    💬 WhatsApp: +56 9 1234 5678
+                </p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>POZINOX</strong> - Tu tienda de confianza para productos de acero</p>
+            <p>
+                📧 info@pozinox.cl | 📞 +56 2 1234 5678<br>
+                📍 Av. Principal 123, Santiago, Chile
+            </p>
+            <p style="font-size: 12px; color: #999; margin-top: 15px;">
+                Este es un correo automático, por favor no respondas a este mensaje.<br>
+                Si necesitas ayuda, contáctanos a través de los medios indicados arriba.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

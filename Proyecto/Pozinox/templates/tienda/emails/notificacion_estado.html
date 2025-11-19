@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actualización de Estado - Pozinox</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 18px;
+            margin: 20px 0;
+        }
+        .status-iniciada {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .status-embalando {
+            background-color: #f59e0b;
+            color: white;
+        }
+        .status-listo_retiro {
+            background-color: #10b981;
+            color: white;
+        }
+        .info-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid #1e3a8a;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .info-box p {
+            margin: 5px 0;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #1e3a8a;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="icon">📦</div>
+            <h1>¡Actualización de tu Pedido!</h1>
+        </div>
+        
+        <div class="content">
+            <p>Hola {{ cliente_nombre }},</p>
+            
+            <p>Te informamos que el estado de tu pedido ha sido actualizado:</p>
+            
+            <div style="text-align: center;">
+                <span class="status-badge status-{{ cotizacion.estado_preparacion }}">
+                    {{ nombre_estado }}
+                </span>
+            </div>
+            
+            <div class="info-box">
+                <p><strong>Número de Cotización:</strong> {{ cotizacion.numero_cotizacion }}</p>
+                <p><strong>Total:</strong> ${{ cotizacion.total|floatformat:0 }}</p>
+                <p><strong>Fecha del pedido:</strong> {{ cotizacion.fecha_creacion|date:"d/m/Y H:i" }}</p>
+            </div>
+            
+            {% if cotizacion.estado_preparacion == 'iniciada' %}
+                <p>Tu pedido ha sido recibido y está en proceso. Pronto comenzaremos a preparar tus productos.</p>
+            {% elif cotizacion.estado_preparacion == 'embalando' %}
+                <p>¡Buenas noticias! Estamos preparando y embalando tus productos con el mayor cuidado. Muy pronto estará listo para que lo retires.</p>
+            {% elif cotizacion.estado_preparacion == 'listo_retiro' %}
+                <p><strong>🎉 ¡Tu pedido está listo para retiro!</strong></p>
+                <p>Puedes pasar a recogerlo en nuestro local en el siguiente horario:</p>
+                <div class="info-box">
+                    <p><strong>Dirección:</strong> Av. Principal 123, Santiago, Chile</p>
+                    <p><strong>Horario:</strong> Lunes a Viernes de 8:30 a 19:00</p>
+                    <p><strong>Teléfono:</strong> +56 2 1234 5678</p>
+                </div>
+                <p><strong>Importante:</strong> Por favor trae tu número de cotización ({{ cotizacion.numero_cotizacion }}) al momento del retiro.</p>
+            {% endif %}
+            
+            <div style="text-align: center;">
+                <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'detalle_cotizacion' cotizacion.id %}" class="btn">
+                    Ver Detalles del Pedido
+                </a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>POZINOX</strong> - Tu tienda de confianza para productos de acero</p>
+            <p>
+                📧 info@pozinox.cl | 📞 +56 2 1234 5678<br>
+                📍 Av. Principal 123, Santiago, Chile
+            </p>
+            <p style="font-size: 12px; color: #999; margin-top: 15px;">
+                Este es un correo automático, por favor no respondas a este mensaje.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

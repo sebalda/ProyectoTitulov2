@@ -1,0 +1,259 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Estados de Preparación - Pozinox{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-boxes me-2"></i>
+                Gestión de Estados de Preparación
+            </h2>
+            <p class="text-muted">Gestiona el estado de preparación de todas las cotizaciones pagadas. Mantén informados a tus clientes sobre el progreso de sus pedidos.</p>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="estado_preparacion" class="form-label">Filtrar por estado:</label>
+                            <select name="estado_preparacion" id="estado_preparacion" class="form-select">
+                                <option value="">Todos los estados</option>
+                                {% for codigo, nombre in estados_preparacion %}
+                                    <option value="{{ codigo }}" {% if estado_filtro == codigo %}selected{% endif %}>
+                                        {{ nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="metodo_pago" class="form-label">Filtrar por método de pago:</label>
+                            <select name="metodo_pago" id="metodo_pago" class="form-select">
+                                <option value="">Todos los métodos</option>
+                                {% for codigo, nombre in metodos_pago %}
+                                    <option value="{{ codigo }}" {% if metodo_pago_filtro == codigo %}selected{% endif %}>
+                                        {{ nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-filter me-2"></i>Filtrar
+                            </button>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <a href="{% url 'gestionar_estados_preparacion' %}" class="btn btn-secondary w-100">
+                                <i class="fas fa-redo me-2"></i>Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de cotizaciones -->
+    <div class="row">
+        <div class="col-12">
+            {% if cotizaciones %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Número</th>
+                                <th>Cliente</th>
+                                <th>Fecha</th>
+                                <th>Método de Pago</th>
+                                <th>Estado Pago</th>
+                                <th>Total</th>
+                                <th>Estado Preparación</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cotizacion in cotizaciones %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ cotizacion.numero_cotizacion }}</strong>
+                                    </td>
+                                    <td>
+                                        {{ cotizacion.usuario.get_full_name|default:cotizacion.usuario.username }}<br>
+                                        <small class="text-muted">{{ cotizacion.usuario.email }}</small>
+                                    </td>
+                                    <td>
+                                        {{ cotizacion.fecha_creacion|date:"d/m/Y H:i" }}
+                                    </td>
+                                    <td>
+                                        {% if cotizacion.metodo_pago == 'mercadopago' %}
+                                            <span class="badge bg-primary">
+                                                <i class="fas fa-credit-card me-1"></i>MercadoPago
+                                            </span>
+                                        {% elif cotizacion.metodo_pago == 'transferencia' %}
+                                            <span class="badge bg-info">
+                                                <i class="fas fa-exchange-alt me-1"></i>Transferencia
+                                            </span>
+                                        {% elif cotizacion.metodo_pago == 'efectivo' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-money-bill me-1"></i>Efectivo
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if cotizacion.estado == 'pagada' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>Pagada
+                                            </span>
+                                        {% elif cotizacion.estado == 'en_revision' %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-clock me-1"></i>En Revisión
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>${{ cotizacion.total|floatformat:0 }}</strong>
+                                    </td>
+                                    <td>
+                                        {% if cotizacion.estado_preparacion == 'iniciada' %}
+                                            <span class="badge bg-info">
+                                                <i class="fas fa-play-circle me-1"></i>
+                                                Iniciada
+                                            </span>
+                                        {% elif cotizacion.estado_preparacion == 'embalando' %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-box me-1"></i>
+                                                Embalando
+                                            </span>
+                                        {% elif cotizacion.estado_preparacion == 'listo_retiro' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>
+                                                Listo para retiro
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Sin estado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalCambiarEstado{{ cotizacion.id }}">
+                                                <i class="fas fa-edit me-1"></i>Cambiar Estado
+                                            </button>
+                                            <a href="{% url 'detalle_cotizacion' cotizacion.id %}" class="btn btn-sm btn-info" target="_blank">
+                                                <i class="fas fa-eye me-1"></i>Ver Detalles
+                                            </a>
+                                        </div>
+
+                                        <!-- Modal para cambiar estado -->
+                                        <div class="modal fade" id="modalCambiarEstado{{ cotizacion.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Cambiar Estado de Preparación</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <form method="post" action="{% url 'cambiar_estado_preparacion' cotizacion.id %}">
+                                                        {% csrf_token %}
+                                                        <div class="modal-body">
+                                                            <p><strong>Cotización:</strong> {{ cotizacion.numero_cotizacion }}</p>
+                                                            <p><strong>Cliente:</strong> {{ cotizacion.usuario.get_full_name|default:cotizacion.usuario.username }}</p>
+                                                            <p><strong>Estado actual:</strong> 
+                                                                <span class="badge bg-secondary">
+                                                                    {{ cotizacion.get_estado_preparacion_display|default:"Sin estado" }}
+                                                                </span>
+                                                            </p>
+                                                            <hr>
+                                                            <div class="mb-3">
+                                                                <label for="nuevo_estado{{ cotizacion.id }}" class="form-label">Nuevo estado:</label>
+                                                                <select name="nuevo_estado" id="nuevo_estado{{ cotizacion.id }}" class="form-select" required>
+                                                                    {% for codigo, nombre in estados_preparacion %}
+                                                                        <option value="{{ codigo }}" {% if cotizacion.estado_preparacion == codigo %}selected{% endif %}>
+                                                                            {{ nombre }}
+                                                                        </option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                            <div class="alert alert-info">
+                                                                <i class="fas fa-info-circle me-2"></i>
+                                                                Se enviará una notificación por email al cliente informando el cambio de estado.
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                            <button type="submit" class="btn btn-primary">
+                                                                <i class="fas fa-save me-2"></i>Guardar Cambio
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No hay cotizaciones pagadas pendientes de gestión en este momento.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Leyenda de estados -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-info-circle me-2"></i>Estados de Preparación
+                    </h5>
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-info me-2">
+                                    <i class="fas fa-play-circle"></i>
+                                </span>
+                                <div>
+                                    <strong>Iniciada:</strong>
+                                    <p class="mb-0 small text-muted">El pedido ha sido recibido y está en espera de procesamiento.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-warning me-2">
+                                    <i class="fas fa-box"></i>
+                                </span>
+                                <div>
+                                    <strong>Embalando tus productos:</strong>
+                                    <p class="mb-0 small text-muted">Los productos están siendo preparados y embalados.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-success me-2">
+                                    <i class="fas fa-check-circle"></i>
+                                </span>
+                                <div>
+                                    <strong>Listo para retiro:</strong>
+                                    <p class="mb-0 small text-muted">El pedido está listo para ser retirado por el cliente.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

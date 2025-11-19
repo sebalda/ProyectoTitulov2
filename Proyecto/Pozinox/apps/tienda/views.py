@@ -544,8 +544,14 @@ def finalizar_cotizacion(request, cotizacion_id):
     if cotizacion.estado != 'borrador':
         messages.error(request, 'Esta cotización ya fue finalizada.')
         return redirect('detalle_cotizacion', cotizacion_id=cotizacion.id)
+    
     if not cotizacion.detalles.exists():
         messages.error(request, 'Debe agregar al menos un producto a la cotización.')
+        return redirect('detalle_cotizacion', cotizacion_id=cotizacion.id)
+    
+    # Verificar si la cotización ha vencido
+    if cotizacion.esta_vencida():
+        messages.error(request, 'Esta cotización ha vencido. Los precios pueden haber cambiado. Por favor, crea una nueva cotización.')
         return redirect('detalle_cotizacion', cotizacion_id=cotizacion.id)
     
     cotizacion.estado = 'finalizada'
@@ -564,6 +570,11 @@ def seleccionar_pago(request, cotizacion_id):
     if cotizacion.estado not in ['finalizada', 'pagada']:
         messages.error(request, 'La cotización debe estar finalizada para proceder al pago.')
         return redirect('detalle_cotizacion', cotizacion_id=cotizacion.id)
+    
+    # Verificar si la cotización ha vencido
+    if cotizacion.esta_vencida():
+        messages.error(request, 'Esta cotización ha vencido. Los precios pueden haber cambiado. Por favor, crea una nueva cotización.')
+        return redirect('mis_cotizaciones')
     
     return render(request, 'tienda/cotizaciones/seleccionar_pago.html', {
         'cotizacion': cotizacion,
@@ -837,6 +848,13 @@ def pago_pendiente(request, cotizacion_id):
                         cotizacion.pago_completado = True
                         cotizacion.mercadopago_payment_id = str(payment.get("id", ""))
                         cotizacion.save()
+                        
+                        # Enviar email de confirmación de compra
+                        try:
+                            enviar_confirmacion_compra(cotizacion)
+                        except Exception as e:
+                            logger.exception(f'Error al enviar confirmación de compra: {e}')
+                        
                         messages.success(request, '¡Tu pago ha sido confirmado!')
                         return redirect('pago_exitoso', cotizacion_id=cotizacion.id)
                     elif status in ['rejected', 'cancelled']:
@@ -1149,13 +1167,21 @@ def procesar_pago_efectivo(request, cotizacion_id):
     
     # Si es POST, confirmar el pago
     if request.method == 'POST':
-        # Marcar como en revisión (se pagará al retirar)
+        # Marcar como pagada (retiro en tienda con pago confirmado)
         cotizacion.metodo_pago = 'efectivo'
-        cotizacion.estado = 'en_revision'
-        cotizacion.pago_completado = False  # No está completado hasta que se apruebe
+        cotizacion.estado = 'pagada'
+        cotizacion.pago_completado = True
         cotizacion.save()
         
-        messages.success(request, 'Pago en efectivo registrado. Podrás pagar al retirar tu pedido.')
+        # Enviar email de confirmación de compra
+        try:
+            enviar_confirmacion_compra(cotizacion)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.exception(f'Error al enviar confirmación de compra: {e}')
+        
+        messages.success(request, 'Pago en efectivo confirmado. Recibirás notificaciones sobre el estado de tu pedido.')
         return redirect('pago_exitoso', cotizacion_id=cotizacion.id)
     
     detalles = cotizacion.detalles.all().select_related('producto')
@@ -1375,3 +1401,155 @@ def terminos_condiciones(request):
     return render(request, 'tienda/legal/terminos_condiciones.html', {
         'titulo': 'Términos y Condiciones - Pozinox'
     })
+
+
+@login_required
+def gestionar_estados_preparacion(request):
+    """Vista para que los trabajadores gestionen los estados de preparación de cotizaciones pagadas"""
+    # Verificar que el usuario sea trabajador, administrador o superusuario
+    tiene_permiso = request.user.is_superuser or request.user.is_staff
+    
+    # También verificar el tipo de usuario en el perfil
+    if not tiene_permiso and hasattr(request.user, 'perfil'):
+        tipo_usuario = request.user.perfil.get_tipo_usuario_real()
+        tiene_permiso = tipo_usuario in ['administrador', 'trabajador']
+    
+    if not tiene_permiso:
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
+    
+    # Obtener TODAS las cotizaciones pagadas o en revisión (sin importar método de pago)
+    cotizaciones = Cotizacion.objects.filter(
+        estado__in=['pagada', 'en_revision']
+    ).select_related('usuario').prefetch_related('detalles__producto').order_by('-fecha_creacion')
+    
+    # Aplicar filtros si existen
+    estado_filtro = request.GET.get('estado_preparacion')
+    metodo_pago_filtro = request.GET.get('metodo_pago')
+    
+    if estado_filtro:
+        cotizaciones = cotizaciones.filter(estado_preparacion=estado_filtro)
+    if metodo_pago_filtro:
+        cotizaciones = cotizaciones.filter(metodo_pago=metodo_pago_filtro)
+    
+    context = {
+        'cotizaciones': cotizaciones,
+        'estados_preparacion': Cotizacion.ESTADOS_PREPARACION,
+        'metodos_pago': Cotizacion.METODOS_PAGO,
+        'estado_filtro': estado_filtro,
+        'metodo_pago_filtro': metodo_pago_filtro,
+    }
+    
+    return render(request, 'tienda/trabajadores/gestionar_estados.html', context)
+
+
+@login_required
+def cambiar_estado_preparacion(request, cotizacion_id):
+    """Vista para cambiar el estado de preparación de una cotización"""
+    # Verificar que el usuario sea trabajador, administrador o superusuario
+    tiene_permiso = request.user.is_superuser or request.user.is_staff
+    
+    # También verificar el tipo de usuario en el perfil
+    if not tiene_permiso and hasattr(request.user, 'perfil'):
+        tipo_usuario = request.user.perfil.get_tipo_usuario_real()
+        tiene_permiso = tipo_usuario in ['administrador', 'trabajador']
+    
+    if not tiene_permiso:
+        messages.error(request, 'No tienes permisos para realizar esta acción.')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, estado__in=['pagada', 'en_revision'])
+        nuevo_estado = request.POST.get('nuevo_estado')
+        
+        # Validar que el nuevo estado sea válido
+        estados_validos = [estado[0] for estado in Cotizacion.ESTADOS_PREPARACION]
+        if nuevo_estado not in estados_validos:
+            messages.error(request, 'Estado de preparación inválido.')
+            return redirect('gestionar_estados_preparacion')
+        
+        # Guardar el estado anterior para comparar
+        estado_anterior = cotizacion.estado_preparacion
+        
+        # Actualizar el estado
+        cotizacion.estado_preparacion = nuevo_estado
+        cotizacion.save()
+        
+        # Obtener el nombre legible del estado
+        nombre_estado = dict(Cotizacion.ESTADOS_PREPARACION)[nuevo_estado]
+        
+        # Enviar notificación por email al cliente
+        try:
+            enviar_notificacion_cambio_estado(cotizacion, nombre_estado)
+            messages.success(request, f'Estado actualizado a "{nombre_estado}" y notificación enviada al cliente.')
+        except Exception as e:
+            messages.warning(request, f'Estado actualizado pero hubo un error al enviar la notificación: {str(e)}')
+        
+        return redirect('gestionar_estados_preparacion')
+    
+    return redirect('gestionar_estados_preparacion')
+
+
+def enviar_notificacion_cambio_estado(cotizacion, nombre_estado):
+    """Envía un email al cliente notificando el cambio de estado de su cotización"""
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+    from django.utils.html import strip_tags
+    
+    # Preparar el contexto para el email
+    context = {
+        'cotizacion': cotizacion,
+        'nombre_estado': nombre_estado,
+        'cliente_nombre': cotizacion.usuario.get_full_name() or cotizacion.usuario.username,
+    }
+    
+    # Renderizar el template del email
+    html_message = render_to_string('tienda/emails/notificacion_estado.html', context)
+    plain_message = strip_tags(html_message)
+    
+    # Asunto del email según el estado
+    asuntos = {
+        'iniciada': f'Tu pedido #{cotizacion.numero_cotizacion} está en proceso',
+        'embalando': f'Estamos embalando tu pedido #{cotizacion.numero_cotizacion}',
+        'listo_retiro': f'¡Tu pedido #{cotizacion.numero_cotizacion} está listo para retiro!'
+    }
+    
+    asunto = asuntos.get(cotizacion.estado_preparacion, f'Actualización de tu pedido #{cotizacion.numero_cotizacion}')
+    
+    # Enviar el email
+    send_mail(
+        subject=asunto,
+        message=plain_message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[cotizacion.usuario.email],
+        html_message=html_message,
+        fail_silently=False,
+    )
+
+
+def enviar_confirmacion_compra(cotizacion):
+    """Envía un email de confirmación de compra cuando la cotización es pagada"""
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+    from django.utils.html import strip_tags
+    
+    # Preparar el contexto para el email
+    context = {
+        'cotizacion': cotizacion,
+        'cliente_nombre': cotizacion.usuario.get_full_name() or cotizacion.usuario.username,
+        'detalles': cotizacion.detalles.all().select_related('producto'),
+    }
+    
+    # Renderizar el template del email
+    html_message = render_to_string('tienda/emails/confirmacion_compra.html', context)
+    plain_message = strip_tags(html_message)
+    
+    # Enviar el email
+    send_mail(
+        subject=f'Confirmación de Compra - Orden #{cotizacion.numero_cotizacion}',
+        message=plain_message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[cotizacion.usuario.email],
+        html_message=html_message,
+        fail_silently=False,
+    )

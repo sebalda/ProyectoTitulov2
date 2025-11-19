@@ -206,6 +206,12 @@ class Cotizacion(models.Model):
         ('cancelada', 'Cancelada'),
     ]
     
+    ESTADOS_PREPARACION = [
+        ('iniciada', 'Iniciada'),
+        ('embalando', 'Embalando tus productos'),
+        ('listo_retiro', 'Listo para retiro!'),
+    ]
+    
     METODOS_PAGO = [
         ('mercadopago', 'MercadoPago'),
         ('transferencia', 'Transferencia Bancaria'),
@@ -216,10 +222,21 @@ class Cotizacion(models.Model):
     numero_cotizacion = models.CharField(max_length=20, unique=True, blank=True)
     estado = models.CharField(max_length=20, choices=ESTADOS_COTIZACION, default='borrador')
     
+    # Estado de preparación (solo para cotizaciones pagadas con retiro en tienda)
+    estado_preparacion = models.CharField(
+        max_length=20, 
+        choices=ESTADOS_PREPARACION, 
+        default='iniciada',
+        blank=True,
+        null=True,
+        help_text="Estado de preparación del pedido para retiro en tienda"
+    )
+    
     # Fechas
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
     fecha_finalizacion = models.DateTimeField(null=True, blank=True)
+    fecha_vencimiento = models.DateTimeField(null=True, blank=True, help_text="Fecha de vencimiento de la cotización (7 días desde creación)")
     
     # Totales
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -251,11 +268,41 @@ class Cotizacion(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.numero_cotizacion:
-            # Generar número de cotización automáticamente
+            # Generar número de cotización con formato PZAÑOMES####
+            # Ejemplo: PZ20251100001 (Año 2025, Mes 11, Número 0001)
+            from django.db.models import Max
             import datetime
+            
             today = datetime.date.today()
-            last_cotizacion = Cotizacion.objects.filter(fecha_creacion__date=today).count()
-            self.numero_cotizacion = f"COT{today.strftime('%Y%m%d')}{last_cotizacion + 1:04d}"
+            year = today.year
+            month = today.month
+            
+            # Prefijo: PZ + AÑO (4 dígitos) + MES (2 dígitos)
+            prefix = f"PZ{year}{month:02d}"
+            
+            # Obtener el último número de cotización del mes actual
+            last_cotizacion = Cotizacion.objects.filter(
+                numero_cotizacion__startswith=prefix
+            ).aggregate(Max('numero_cotizacion'))['numero_cotizacion__max']
+            
+            if last_cotizacion:
+                # Extraer el número secuencial y sumar 1
+                try:
+                    last_number = int(last_cotizacion[-4:])
+                    new_number = last_number + 1
+                except (ValueError, IndexError):
+                    new_number = 1
+            else:
+                # Primera cotización del mes
+                new_number = 1
+            
+            # Generar el número completo con formato ####
+            self.numero_cotizacion = f"{prefix}{new_number:04d}"
+        
+        # Establecer fecha de vencimiento si no existe (7 días desde la creación)
+        if not self.fecha_vencimiento and not self.pk:
+            self.fecha_vencimiento = timezone.now() + timedelta(days=7)
+        
         super().save(*args, **kwargs)
     
     def calcular_totales(self):
@@ -265,6 +312,37 @@ class Cotizacion(models.Model):
         self.iva = self.subtotal * Decimal('0.19')  # IVA del 19%
         self.total = self.subtotal + self.iva
         self.save()
+    
+    def esta_vencida(self):
+        """Verifica si la cotización ha vencido (solo aplica para borradores y finalizadas)"""
+        if self.estado in ['pagada', 'en_revision', 'cancelada']:
+            return False
+        if self.fecha_vencimiento:
+            return timezone.now() > self.fecha_vencimiento
+        return False
+    
+    def dias_restantes(self):
+        """Calcula los días restantes hasta el vencimiento"""
+        if self.fecha_vencimiento and not self.esta_vencida():
+            diferencia = self.fecha_vencimiento - timezone.now()
+            return max(0, diferencia.days)
+        return 0
+    
+    def get_estado_vencimiento(self):
+        """Retorna el estado de vencimiento con color y mensaje"""
+        if self.estado in ['pagada', 'en_revision']:
+            return {'estado': 'pagada', 'color': 'success', 'mensaje': 'Cotización pagada'}
+        
+        if self.esta_vencida():
+            return {'estado': 'vencida', 'color': 'danger', 'mensaje': 'Cotización vencida'}
+        
+        dias = self.dias_restantes()
+        if dias <= 1:
+            return {'estado': 'critico', 'color': 'danger', 'mensaje': f'Vence hoy'}
+        elif dias <= 3:
+            return {'estado': 'urgente', 'color': 'warning', 'mensaje': f'Vence en {dias} días'}
+        else:
+            return {'estado': 'vigente', 'color': 'info', 'mensaje': f'Vigente por {dias} días'}
 
 
 class DetalleCotizacion(models.Model):
@@ -362,6 +440,15 @@ class TransferenciaBancaria(models.Model):
         self.cotizacion.estado = 'pagada'
         self.cotizacion.pago_completado = True
         self.cotizacion.save()
+        
+        # Enviar email de confirmación de compra
+        from apps.tienda.views import enviar_confirmacion_compra
+        try:
+            enviar_confirmacion_compra(self.cotizacion)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.exception(f'Error al enviar confirmación de compra: {e}')
     
     def rechazar(self, usuario_verificador, observaciones=''):
         """Rechazar la transferencia"""
