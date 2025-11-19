@@ -357,7 +357,7 @@
                         <p class="card-text text-muted small">{{ producto.descripcion|truncatechars:100 }}</p>
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="h5 text-primary mb-0">${{ producto.precio_por_unidad|floatformat:0 }}</span>
-                            <a href="#" class="btn btn-primary btn-sm">Ver Detalles</a>
+                            <a href="{% url 'detalle_producto' producto.id %}" class="btn btn-primary btn-sm">Ver Detalles</a>
                         </div>
                     </div>
                 </div>
