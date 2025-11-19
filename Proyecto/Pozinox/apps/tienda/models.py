@@ -40,9 +40,9 @@ class Producto(models.Model):
     tipo_acero = models.CharField(max_length=20, choices=TIPOS_ACERO)
     
     # Especificaciones técnicas
-    grosor = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="En mm")
-    ancho = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="En mm")
-    largo = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="En mm")
+    # grosor eliminado
+    # ancho eliminado
+    # largo eliminado
     peso_por_metro = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="En kg/m")
     # Medidas dinámicas: almacenadas como JSON string de lista, e.g. ['1/2"', '3/4"']
     medidas = models.TextField(blank=True, default='[]', help_text='JSON array de medidas disponibles para el producto')

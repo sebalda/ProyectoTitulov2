@@ -39,7 +39,7 @@ class ProductoForm(forms.ModelForm):
         model = Producto
         fields = [
             'nombre', 'descripcion', 'codigo_producto', 'categoria', 'tipo_acero',
-            'grosor', 'ancho', 'largo', 'peso_por_metro', 'medidas',
+            'peso_por_metro', 'medidas',
             'precio_por_unidad',
             'stock_actual', 'stock_minimo', 'unidad_medida', 'imagen', 'activo'
         ]
@@ -50,9 +50,9 @@ class ProductoForm(forms.ModelForm):
             'categoria': forms.Select(attrs={'class': 'form-select'}),
             'tipo_acero': forms.Select(attrs={'class': 'form-select'}),
             'medidas': forms.HiddenInput(),
-            'grosor': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Grosor en mm'}),
-            'ancho': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Ancho en mm'}),
-            'largo': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Largo en mm'}),
+            # 'grosor' eliminado
+            # 'ancho' eliminado
+            # 'largo' eliminado
             'peso_por_metro': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Peso por metro en kg'}),
             'precio_por_unidad': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Precio por unidad'}),
             'stock_actual': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Stock actual'}),
@@ -68,8 +68,8 @@ class ProductoForm(forms.ModelForm):
         # Labels personalizados
         labels = {
             'nombre': 'Nombre del Producto', 'descripcion': 'Descripción', 'codigo_producto': 'Código de Producto',
-            'categoria': 'Categoría', 'tipo_acero': 'Tipo de Acero', 'grosor': 'Grosor (mm)', 'ancho': 'Ancho (mm)',
-            'largo': 'Largo (mm)', 'peso_por_metro': 'Peso por Metro (kg/m)', 'precio_por_unidad': 'Precio por Unidad ($)',
+            'categoria': 'Categoría', 'tipo_acero': 'Tipo de Acero',
+            'peso_por_metro': 'Peso por Metro (kg/m)', 'precio_por_unidad': 'Precio por Unidad ($)',
             'stock_actual': 'Stock Actual', 'stock_minimo': 'Stock Mínimo', 'unidad_medida': 'Unidad de Medida',
             'imagen': 'Imagen del Producto', 'activo': 'Producto Activo', 'medidas': 'Medidas'
         }
