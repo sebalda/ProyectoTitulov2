@@ -232,11 +232,7 @@
                         </div>
                         
                         <div class="col-md-2 text-center">
-                            {% if usuario.perfil.tipo_usuario %}
-                                <span class="text-muted small">{{ usuario.perfil.get_tipo_usuario_display }}</span>
-                            {% else %}
-                                <span class="text-muted small">Sin tipo</span>
-                            {% endif %}
+                            <span class="text-muted small">{{ usuario.perfil.get_tipo_usuario_display_real }}</span>
                         </div>
                         
                         <div class="col-md-2 text-center">

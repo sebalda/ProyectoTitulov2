@@ -10,11 +10,9 @@ from datetime import timedelta
 class PerfilUsuario(models.Model):
     """Perfil extendido para usuarios del sistema Pozinox"""
     TIPO_USUARIO = [
-        ('administrador', 'Administrador'),
-        ('vendedor', 'Vendedor'),
-        ('inventario', 'Encargado de Inventario'),
-        ('contabilidad', 'Contabilidad'),
         ('cliente', 'Cliente'),
+        ('trabajador', 'Trabajador'),
+        ('administrador', 'Administrador'),
     ]
     
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='perfil')
@@ -51,6 +49,18 @@ class PerfilUsuario(models.Model):
     
     def __str__(self):
         return f"{self.user.get_full_name()} ({self.get_tipo_usuario_display()})"
+    
+    def get_tipo_usuario_display_real(self):
+        """Obtener el tipo de usuario real considerando si es superusuario"""
+        if self.user.is_superuser:
+            return 'Administrador'
+        return self.get_tipo_usuario_display()
+    
+    def get_tipo_usuario_real(self):
+        """Obtener el código del tipo de usuario real considerando si es superusuario"""
+        if self.user.is_superuser:
+            return 'administrador'
+        return self.tipo_usuario
     
     def generate_api_token(self):
         """Generar nuevo token de API (6 dígitos)"""
@@ -190,12 +200,24 @@ class Notificacion(models.Model):
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
-        PerfilUsuario.objects.create(user=instance)
+        perfil = PerfilUsuario.objects.create(user=instance)
+        # Si es superusuario, automáticamente asignar como administrador
+        if instance.is_superuser:
+            perfil.tipo_usuario = 'administrador'
+            perfil.save()
 
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
-    instance.perfil.save()
+    # Crear perfil si no existe
+    if not hasattr(instance, 'perfil'):
+        PerfilUsuario.objects.create(user=instance)
+    
+    # Si es superusuario, asegurar que el tipo_usuario sea administrador
+    if instance.is_superuser and hasattr(instance, 'perfil'):
+        if instance.perfil.tipo_usuario != 'administrador':
+            instance.perfil.tipo_usuario = 'administrador'
+            instance.perfil.save()
 
 
 class EmailVerificationToken(models.Model):

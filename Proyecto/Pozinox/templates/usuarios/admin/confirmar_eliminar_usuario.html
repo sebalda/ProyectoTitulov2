@@ -187,11 +187,7 @@
             <p><strong>Usuario:</strong> {{ usuario.username }}</p>
             <p><strong>Email:</strong> {{ usuario.email }}</p>
             <p><strong>Tipo:</strong> 
-                {% if usuario.perfil.tipo_usuario %}
-                    {{ usuario.perfil.get_tipo_usuario_display }}
-                {% else %}
-                    Sin tipo asignado
-                {% endif %}
+                {{ usuario.perfil.get_tipo_usuario_display_real }}
             </p>
             <p><strong>Estado:</strong> 
                 {% if usuario.is_active %}

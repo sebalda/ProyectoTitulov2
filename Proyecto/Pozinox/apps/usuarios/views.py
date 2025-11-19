@@ -422,7 +422,7 @@ def api_validate_token(request):
                     'valid': True,
                     'user_id': perfil.user.id,
                     'username': perfil.user.username,
-                    'tipo_usuario': perfil.tipo_usuario,
+                    'tipo_usuario': perfil.get_tipo_usuario_real(),
                     'message': 'Token válido'
                 })
             else:

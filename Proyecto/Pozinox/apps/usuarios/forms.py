@@ -402,6 +402,9 @@ class UsuarioForm(forms.ModelForm):
         self.is_edit = kwargs.get('instance') is not None
         super().__init__(*args, **kwargs)
         
+        # Actualizar choices del campo tipo_usuario para asegurar que use las opciones actualizadas
+        self.fields['tipo_usuario'].choices = PerfilUsuario.TIPO_USUARIO
+        
         # Personalizar labels
         self.fields['username'].label = 'Usuario'
         self.fields['first_name'].label = 'Nombre'
@@ -421,7 +424,16 @@ class UsuarioForm(forms.ModelForm):
         if self.is_edit and self.instance.pk:
             try:
                 perfil = self.instance.perfil
-                self.fields['tipo_usuario'].initial = perfil.tipo_usuario
+                # Si es superusuario, siempre mostrar administrador y deshabilitar el campo
+                if self.instance.is_superuser:
+                    self.fields['tipo_usuario'].initial = 'administrador'
+                    self.fields['tipo_usuario'].widget.attrs['disabled'] = True
+                    self.fields['tipo_usuario'].help_text = 'Los superusuarios siempre son Administradores'
+                    # Guardar el valor inicial para que se use en save si el campo está deshabilitado
+                    self._tipo_usuario_disabled = 'administrador'
+                else:
+                    self.fields['tipo_usuario'].initial = perfil.tipo_usuario
+                    self._tipo_usuario_disabled = None
                 self.fields['telefono'].initial = perfil.telefono
                 self.fields['direccion'].initial = perfil.direccion
                 self.fields['comuna'].initial = perfil.comuna
@@ -482,7 +494,19 @@ class UsuarioForm(forms.ModelForm):
             except PerfilUsuario.DoesNotExist:
                 perfil = PerfilUsuario.objects.create(user=user)
             
-            perfil.tipo_usuario = self.cleaned_data['tipo_usuario']
+            # Si es superusuario, automáticamente asignar como administrador
+            if user.is_superuser:
+                perfil.tipo_usuario = 'administrador'
+            else:
+                # Obtener tipo_usuario del cleaned_data (si fue deshabilitado, usar el valor guardado)
+                tipo_usuario = self.cleaned_data.get('tipo_usuario')
+                if not tipo_usuario and hasattr(self, '_tipo_usuario_disabled') and self._tipo_usuario_disabled:
+                    tipo_usuario = self._tipo_usuario_disabled
+                elif not tipo_usuario and hasattr(self, 'initial') and 'tipo_usuario' in self.initial:
+                    tipo_usuario = self.initial['tipo_usuario']
+                if tipo_usuario:
+                    perfil.tipo_usuario = tipo_usuario
+            
             perfil.telefono = self.cleaned_data['telefono']
             perfil.direccion = self.cleaned_data['direccion']
             perfil.comuna = self.cleaned_data['comuna']

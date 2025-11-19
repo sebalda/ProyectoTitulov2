@@ -1158,7 +1158,7 @@ def subir_comprobante(request, cotizacion_id):
         # Notificar a los trabajadores
         from apps.usuarios.models import Notificacion
         trabajadores = User.objects.filter(
-            perfil__tipo_usuario__in=['administrador', 'vendedor', 'inventario']
+            perfil__tipo_usuario__in=['administrador', 'trabajador']
         )
         
         for trabajador in trabajadores:
@@ -1196,7 +1196,7 @@ def panel_verificacion_transferencias(request):
     # Los superusuarios siempre tienen acceso
     if not request.user.is_superuser:
         # Verificar si tiene perfil y tipo de usuario válido
-        if not hasattr(request.user, 'perfil') or request.user.perfil.tipo_usuario not in ['administrador', 'vendedor', 'inventario']:
+        if not hasattr(request.user, 'perfil') or request.user.perfil.tipo_usuario not in ['administrador', 'trabajador']:
             messages.error(request, 'No tienes permisos para acceder a esta sección.')
             return redirect('home')
     
@@ -1232,7 +1232,7 @@ def verificar_transferencia(request, transferencia_id):
     # Los superusuarios siempre tienen acceso
     if not request.user.is_superuser:
         # Verificar si tiene perfil y tipo de usuario válido
-        if not hasattr(request.user, 'perfil') or request.user.perfil.tipo_usuario not in ['administrador', 'vendedor', 'inventario']:
+        if not hasattr(request.user, 'perfil') or request.user.perfil.tipo_usuario not in ['administrador', 'trabajador']:
             messages.error(request, 'No tienes permisos para acceder a esta sección.')
             return redirect('home')
     
