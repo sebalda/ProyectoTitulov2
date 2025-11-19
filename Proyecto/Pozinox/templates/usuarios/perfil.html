@@ -125,15 +125,91 @@
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);
     }
+
+    /* ------------------ ROLES ------------------ */
+.badge-cliente {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    color: white;
+}
+
+.badge-admin {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: black;
+}
+
+.badge-trabajador {
+    background: linear-gradient(135deg, #047857 0%, #10b981 100%);
+    color: white;
+}
+
+/* Avatar según rol */
+.profile-avatar-cliente {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+}
+
+.profile-avatar-admin {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.profile-avatar-trabajador {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+/* Contenedor según rol */
+.profile-card-cliente {
+    border-left: 6px solid #3b82f6;
+}
+
+.profile-card-admin {
+    border-left: 6px solid #f59e0b;
+}
+
+.profile-card-trabajador {
+    border-left: 6px solid #10b981;
+}
+
+/* Botones dinámicos */
+.btn-edit-cliente {
+    background: #2563eb;
+}
+
+.btn-edit-admin {
+    background: #fbbf24;
+    color: black !important;
+}
+
+.btn-edit-trabajador {
+    background: #10b981;
+}
+
 </style>
 {% endblock %}
 
 {% block content %}
 {% csrf_token %}
 <div class="profile-container">
-    <div class="profile-card">
+    <div class="profile-card 
+    {% if user.is_superuser %}
+        profile-card-admin
+    {% elif user.perfil.tipo_usuario == 'trabajador' %}
+        profile-card-trabajador
+    {% else %}
+        profile-card-cliente
+    {% endif %}
+">
+
         <div class="profile-header">
-            <div class="profile-avatar">
+            <div class="
+    profile-avatar
+    {% if user.is_superuser %}
+        profile-avatar-admin
+    {% elif user.perfil.tipo_usuario == 'trabajador' %}
+        profile-avatar-trabajador
+    {% else %}
+        profile-avatar-cliente
+    {% endif %}
+">
+
                 <i class="fas fa-user"></i>
             </div>
             <h2>Mi Perfil</h2>
@@ -172,7 +248,18 @@
                     <div class="info-group">
                         <div class="info-label">Tipo de Usuario</div>
                         <div class="info-value">
-                            <span class="badge-tipo">{{ user.perfil.get_tipo_usuario_display_real }}</span>
+                            <span class="badge-tipo 
+    {% if user.is_superuser %}
+        badge-admin
+    {% elif user.perfil.tipo_usuario == 'trabajador' %}
+        badge-trabajador
+    {% else %}
+        badge-cliente
+    {% endif %}
+">
+    {{ user.perfil.get_tipo_usuario_display }}
+</span>
+
                         </div>
                     </div>
                     
@@ -260,7 +347,17 @@
             
             <div class="col-md-4">
                 <div class="d-grid gap-2">
-                    <a href="{% url 'editar_perfil' %}" class="btn btn-edit text-white">
+                    <a href="{% url 'editar_perfil' %}" 
+class="btn text-white
+    {% if user.is_superuser %}
+        btn-edit-admin
+    {% elif user.perfil.tipo_usuario == 'trabajador' %}
+        btn-edit-trabajador
+    {% else %}
+        btn-edit-cliente
+    {% endif %}
+">
+
                         <i class="fas fa-edit me-2"></i>
                         Editar Perfil
                     </a>
