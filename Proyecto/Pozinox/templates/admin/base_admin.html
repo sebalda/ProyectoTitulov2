@@ -5,6 +5,89 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+<style>
+    /* Asegurar que el sidebar y menú se vean igual que en dashboard */
+    .admin-sidebar {
+        width: 280px !important;
+        background: #f8f9fa !important;
+        border-right: 1px solid #e9ecef !important;
+        padding: 2rem 0 !important;
+        position: fixed !important;
+        height: calc(100vh - 76px) !important;
+        overflow-y: auto !important;
+    }
+    
+    .sidebar-header {
+        padding: 0 2rem 2rem 2rem !important;
+        border-bottom: 1px solid #e9ecef !important;
+        margin-bottom: 2rem !important;
+    }
+    
+    .sidebar-header h3 {
+        color: #333 !important;
+        font-weight: 600 !important;
+        margin: 0 !important;
+    }
+    
+    .sidebar-menu {
+        padding: 0 1rem !important;
+    }
+    
+    .menu-item {
+        display: flex !important;
+        align-items: center !important;
+        padding: 0.75rem 1rem !important;
+        color: #666 !important;
+        text-decoration: none !important;
+        border-radius: 6px !important;
+        margin-bottom: 0.5rem !important;
+        transition: all 0.3s ease !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .menu-item:hover {
+        background: #007bff !important;
+        color: white !important;
+        text-decoration: none !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    
+    .menu-item.active {
+        background: #007bff !important;
+        color: white !important;
+    }
+    
+    .menu-icon {
+        width: 20px !important;
+        margin-right: 0.75rem !important;
+        text-align: center !important;
+        font-size: inherit !important;
+        color: inherit !important;
+    }
+    
+    .menu-item:hover .menu-icon,
+    .menu-item.active .menu-icon {
+        color: white !important;
+    }
+    
+    .menu-text {
+        flex: 1 !important;
+    }
+    
+    .menu-title {
+        font-weight: 500 !important;
+        margin: 0 !important;
+    }
+    
+    .menu-description {
+        font-size: 0.75rem !important;
+        opacity: 0.8 !important;
+        margin: 0 !important;
+    }
+</style>
 {% block admin_extra_css %}{% endblock %}
 {% endblock %}
 

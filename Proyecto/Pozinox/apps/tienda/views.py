@@ -1203,8 +1203,8 @@ def panel_verificacion_transferencias(request):
     # Verificar que el usuario tenga permisos de trabajador
     # Los superusuarios siempre tienen acceso
     if not request.user.is_superuser:
-        # Verificar si tiene perfil y tipo de usuario válido
-        if not hasattr(request.user, 'perfil') or request.user.perfil.tipo_usuario not in ['administrador', 'trabajador']:
+        # Verificar si tiene perfil y tipo de usuario válido (usa get_tipo_usuario_real para considerar superusuarios)
+        if not hasattr(request.user, 'perfil') or request.user.perfil.get_tipo_usuario_real() not in ['administrador', 'trabajador']:
             messages.error(request, 'No tienes permisos para acceder a esta sección.')
             return redirect('home')
     
@@ -1239,8 +1239,8 @@ def verificar_transferencia(request, transferencia_id):
     # Verificar que el usuario tenga permisos de trabajador
     # Los superusuarios siempre tienen acceso
     if not request.user.is_superuser:
-        # Verificar si tiene perfil y tipo de usuario válido
-        if not hasattr(request.user, 'perfil') or request.user.perfil.tipo_usuario not in ['administrador', 'trabajador']:
+        # Verificar si tiene perfil y tipo de usuario válido (usa get_tipo_usuario_real para considerar superusuarios)
+        if not hasattr(request.user, 'perfil') or request.user.perfil.get_tipo_usuario_real() not in ['administrador', 'trabajador']:
             messages.error(request, 'No tienes permisos para acceder a esta sección.')
             return redirect('home')
     
