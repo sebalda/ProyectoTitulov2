@@ -191,7 +191,7 @@
                         <h5 class="card-title">Calidad Garantizada</h5>
                         <p class="card-text text-muted">
                             Todos nuestros productos cumplen con los más altos estándares 
-                            de calidad y certificaciones internacionales.
+                            de calidad, con normas y calidades 304 / 304L / 316 / 316L.
                         </p>
                     </div>
                 </div>
@@ -205,7 +205,7 @@
                         </div>
                         <h5 class="card-title">Entrega Rápida</h5>
                         <p class="card-text text-muted">
-                            Servicio de entrega a domicilio en Santiago y regiones. 
+                            Servicio de entrega a domicilio en Santiago y regiones a través de empresas de envíos nacionales. 
                             Garantizamos entrega en tiempo y forma.
                         </p>
                     </div>
@@ -218,10 +218,10 @@
                         <div class="mb-3">
                             <i class="fas fa-tools text-primary" style="font-size: 3rem;"></i>
                         </div>
-                        <h5 class="card-title">Servicios Adicionales</h5>
+                        <h5 class="card-title">Disponibilidad y Servicios</h5>
                         <p class="card-text text-muted">
-                            Corte, doblado, soldadura y asesoría técnica especializada 
-                            para todos nuestros productos.
+                            No es necesario esperar una respuesta de nuestros vendedores, contamos con un bot personalizado 
+                            que puede atender a tus necesidades las 24hrs del dia!
                         </p>
                     </div>
                 </div>
@@ -256,77 +256,6 @@
     </div>
 </section>
 
-<!-- Categories Section -->
-<section id="productos" class="py-5">
-    <div class="container">
-        <div class="row mb-5">
-            <div class="col-lg-8 mx-auto text-center">
-                <h2 class="display-5 fw-bold mb-3">Nuestros Productos</h2>
-                <p class="lead text-muted">
-                    Amplia variedad de productos de acero para todas tus necesidades
-                </p>
-            </div>
-        </div>
-        
-    <div class="row justify-content-center" style="gap: 24px;">
-            <div class="col-lg-2 col-md-4">
-                <div class="category-card">
-                    <div class="category-icon">
-                        <!-- Estante de laboratorio (Sanitarios) -->
-                        <i class="fas fa-vials" style="color:#1e3a8a;"></i>
-                    </div>
-                    <div class="category-title">Sanitarios</div>
-                    <div class="category-desc">Industria vitivinicola, cervecera, lechera, entre otros.</div>
-                    <a href="{% url 'productos' %}" class="btn btn-outline-primary">Ver Productos</a>
-                </div>
-            </div>
-            <div class="col-lg-2 col-md-4">
-                <div class="category-card">
-                    <div class="category-icon">
-                        <!-- Industria (Industriales) -->
-                        <i class="fas fa-industry" style="color:#1e3a8a;"></i>
-                    </div>
-                    <div class="category-title">Industriales</div>
-                    <div class="category-desc">Val. Bola de 1,2 y 3 cuerpos, Val. C/FLANGE, codos SCH10 - 40 CODO NPT, entre otros.</div>
-                    <a href="{% url 'productos' %}" class="btn btn-outline-primary">Ver Productos</a>
-                </div>
-            </div>
-            <div class="col-lg-2 col-md-4">
-                <div class="category-card">
-                    <div class="category-icon">
-                        <!-- Ícono alternativo para Tuberías -->
-                        <i class="fas fa-grip-lines" style="color:#1e3a8a;"></i>
-                    </div>
-                    <div class="category-title">Tuberías</div>
-                    <div class="category-desc">Sanitarias 304 y 316L, normas DIN - SMS</div>
-                    <a href="{% url 'productos' %}" class="btn btn-outline-primary">Ver Productos</a>
-                </div>
-            </div>
-            <div class="col-lg-2 col-md-4">
-                <div class="category-card">
-                    <div class="category-icon">
-                        <!-- Cañerías azul (Cañerías) -->
-                        <i class="fas fa-grip-lines-vertical" style="color:#1e3a8a;"></i>
-                    </div>
-                    <div class="category-title">Cañerías</div>
-                    <div class="category-desc">Calidad 304 y 316L de SCH10 - SCH40</div>
-                    <a href="{% url 'productos' %}" class="btn btn-outline-primary">Ver Productos</a>
-                </div>
-            </div>
-            <div class="col-lg-2 col-md-4">
-                <div class="category-card">
-                    <div class="category-icon">
-                        <!-- Ícono de acople para Polipropileno -->
-                        <i class="fas fa-puzzle-piece" style="color:#1e3a8a;"></i>
-                    </div>
-                    <div class="category-title">Polipropileno</div>
-                    <div class="category-desc">LINEA DE ACOPLES CAMLOCK  A, B, C, D, E, F, DC Y DP.</div>
-                    <a href="{% url 'productos' %}" class="btn btn-outline-primary">Ver Productos</a>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
 
 <!-- Featured Products -->
 {% if productos_destacados %}
@@ -428,11 +357,26 @@
                                 <i class="fas fa-exclamation-circle me-2"></i>{{ error_message }}
                             </div>
                         {% endif %}
-                        <div class="text-center">
-                            <button type="submit" class="btn btn-warning fw-bold px-5 py-2 btn-lg">
-                                <i class="fas fa-paper-plane me-2"></i>ENVIAR MENSAJE
-                            </button>
+
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="captcha-small d-flex align-items-center" style="gap:8px;">
+                                <span id="captcha-a" class="fw-semibold"></span>
+                                <span class="fw-semibold">+</span>
+                                <span id="captcha-b" class="fw-semibold"></span>
+                                <span class="fw-semibold">=</span>
+                                <input id="captcha-input" name="captcha_response" type="text" inputmode="numeric" pattern="\d{1,2}" maxlength="2" class="form-control" style="width:72px; padding:6px 8px; height:38px;" autocomplete="off" required>
+                                <input type="hidden" id="captcha-expected" name="captcha_expected">
+                            </div>
+
+                            <div>
+                                <button type="submit" id="contact-submit" class="btn btn-warning fw-bold px-4 py-2 btn-lg">
+                                    <i class="fas fa-paper-plane me-2"></i>ENVIAR MENSAJE
+                                </button>
+                            </div>
                         </div>
+
+                        <div id="captcha-error" class="mt-2 text-danger" style="display:none; font-weight:600;">Respuesta incorrecta. Intente nuevamente.</div>
+
                         {% if success %}
                             <div class="alert alert-success mt-3 fw-bold border border-success text-center" style="background:#d1fae5; color:#065f46;">
                                 <i class="fas fa-check-circle me-2"></i>{{ success }}
@@ -484,24 +428,8 @@
         observer.observe(el);
     });
     
-    // Mostrar notificación cuando se envía el formulario exitosamente
-    {% if success %}
-    document.addEventListener('DOMContentLoaded', function() {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'success',
-                title: '¡Mensaje enviado!',
-                text: '{{ success|escapejs }}',
-                confirmButtonText: 'Aceptar',
-                timer: 5000,
-                timerProgressBar: true,
-                customClass: {
-                    confirmButton: 'btn btn-primary px-4'
-                },
-                buttonsStyling: false
-            });
-        }
-    });
-    {% endif %}
+
+    
+    
 </script>
 {% endblock %}

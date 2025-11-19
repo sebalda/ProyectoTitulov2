@@ -205,31 +205,32 @@
     <!-- SweetAlert2 Notificaciones de Django -->
     {% if messages %}
     <script>
-        document.addEventListener('DOMContentLoaded', function() {            
-            // Mostrar notificaciones secuencialmente
+        document.addEventListener('DOMContentLoaded', function() {
+            // Usar la lista serializada
+            const messages = django_messages;
             let currentIndex = 0;
-            
+
             function showNextMessage() {
                 if (currentIndex < messages.length) {
                     const msg = messages[currentIndex];
                     let icon = 'info';
                     let title = 'Notificación';
-                    
+
                     // Mapear tipos de Django a SweetAlert2
-                    if (msg.type === 'success') {
+                    if (msg.type && msg.type.indexOf('success') !== -1) {
                         icon = 'success';
                         title = '¡Éxito!';
-                    } else if (msg.type === 'error' || msg.type === 'danger') {
+                    } else if (msg.type && (msg.type.indexOf('error') !== -1 || msg.type.indexOf('danger') !== -1)) {
                         icon = 'error';
                         title = 'Error';
-                    } else if (msg.type === 'warning') {
+                    } else if (msg.type && msg.type.indexOf('warning') !== -1) {
                         icon = 'warning';
                         title = 'Advertencia';
-                    } else if (msg.type === 'info') {
+                    } else if (msg.type && msg.type.indexOf('info') !== -1) {
                         icon = 'info';
                         title = 'Información';
                     }
-                    
+
                     Swal.fire({
                         icon: icon,
                         title: title,
@@ -253,7 +254,7 @@
                     });
                 }
             }
-            
+
             showNextMessage();
         });
     </script>
