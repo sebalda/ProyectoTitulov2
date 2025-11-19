@@ -14,8 +14,11 @@ urlpatterns = [
     path('password-reset/<str:token>/', views.password_reset_confirm, name='password_reset_confirm'),
     
     # URLs AJAX para verificación
-    path('ajax/enviar-codigo/', views.enviar_codigo_verificacion_ajax, name='enviar_codigo_ajax'),
+    path('ajax/enviar-codigo/', views.enviar_codigo_verificacion_ajax, name='enviar_codigo_verificacion_ajax'),
     path('ajax/verificar-codigo/', views.verificar_codigo_ajax, name='verificar_codigo_ajax'),
+    path('ajax/verificar-username/', views.verificar_disponibilidad_username, name='verificar_username'),
+    path('ajax/verificar-rut/', views.verificar_disponibilidad_rut, name='verificar_rut'),
+    path('ajax/verificar-email/', views.verificar_disponibilidad_email, name='verificar_email'),
     
     # URLs API para chatbot
     path('api/generate-token/', views.api_generate_token, name='api_generate_token'),

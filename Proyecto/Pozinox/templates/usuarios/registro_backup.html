@@ -1,0 +1,749 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Crear Cuenta - Pozinox{% endblock %}
+
+{% block extra_css %}
+<style>
+    .register-container {
+        min-height: calc(100vh - 200px);
+        padding: 4rem 0 2rem 0;
+        margin-top: 2rem;
+    }
+    
+    .register-card {
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        padding: 2.5rem;
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .register-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .register-header h2 {
+        color: #1e3a8a;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .register-header p {
+        color: #6b7280;
+        margin: 0;
+    }
+    
+    .form-floating {
+        margin-bottom: 1rem;
+    }
+    
+    .btn-register {
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-register:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(30, 58, 138, 0.4);
+    }
+    
+    .btn-register:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    .register-footer {
+        text-align: center;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e5e7eb;
+    }
+    
+    .register-footer a {
+        color: #3b82f6;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .register-footer a:hover {
+        text-decoration: underline;
+    }
+    
+    .alert {
+        border-radius: 10px;
+        border: none;
+        margin-bottom: 1.5rem;
+    }
+    
+    .alert-success {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .alert-danger {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    
+    .form-section {
+        margin-bottom: 2rem;
+    }
+    
+    .section-title {
+        color: #1e3a8a;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e5e7eb;
+    }
+    
+    .password-help {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-top: 0.5rem;
+    }
+    
+    /* Estilos para verificación de email */
+    .verificacion-section {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 1rem;
+        border: 1px solid #e5e7eb;
+        display: none;
+    }
+    
+    .verificacion-section.show {
+        display: block;
+        animation: slideDown 0.3s ease;
+    }
+    
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .codigo-input {
+        font-size: 1.5rem;
+        font-weight: bold;
+        letter-spacing: 6px;
+        text-align: center;
+        font-family: 'Courier New', monospace;
+        padding: 0.75rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        max-width: 200px;
+        margin: 0 auto;
+    }
+    
+    .codigo-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+    
+    .btn-verify {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 12px 24px;
+        font-weight: 600;
+        color: white;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-verify:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(5, 150, 105, 0.4);
+    }
+    
+    .btn-verify:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none;
+        transition: all 0.3s ease;
+    }
+    
+    /* Animación para el cooldown */
+    .btn-verify.cooldown {
+        background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+    
+    /* Estilo para botón de reenvío */
+    .btn-verify.reenviar {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    }
+    
+    .btn-verify.reenviar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+    }
+    
+    .btn-success {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 12px;
+        font-weight: 600;
+        color: white;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(5, 150, 105, 0.4);
+    }
+    
+    /* Estilos para email verificado */
+    .email-verificado {
+        background-color: #f0f9ff;
+        border-color: #10b981 !important;
+        position: relative;
+    }
+    
+    .email-verificado::after {
+        content: "✓";
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #10b981;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    
+    .email-verificado:focus {
+        border-color: #10b981 !important;
+        box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.25) !important;
+    }
+    
+    /* Estilo para campo readonly (email verificado) */
+    .email-verificado[readonly] {
+        background-color: #f8f9fa !important;
+        cursor: not-allowed;
+        opacity: 0.8;
+    }
+    
+    /* Estilos para el toast personalizado */
+    .swal-toast-popup {
+        border-radius: 12px !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+        border: 1px solid #e5e7eb !important;
+        max-width: 400px !important;
+        min-width: 350px !important;
+        z-index: 9999 !important;
+    }
+    
+    /* Contenedor del toast para posicionamiento */
+    .swal2-container.swal2-top-end {
+        padding-top: 80px !important;
+        padding-right: 20px !important;
+    }
+    
+    /* Eliminar backdrop del toast */
+    .swal2-backdrop {
+        display: none !important;
+    }
+    
+    
+    .swal-toast-title {
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+        color: #059669 !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .swal-toast-content {
+        font-size: 0.95rem !important;
+        color: #374151 !important;
+        line-height: 1.4 !important;
+    }
+    
+    .swal2-popup.swal2-toast {
+        flex-direction: row !important;
+        align-items: center !important;
+        padding: 1rem 1.5rem !important;
+    }
+    
+    .swal2-popup.swal2-toast .swal2-title {
+        margin: 0 0 0 0.5rem !important;
+        flex-grow: 1 !important;
+    }
+    
+    .swal2-popup.swal2-toast .swal2-content {
+        margin: 0.5rem 0 0 0.5rem !important;
+        flex-grow: 1 !important;
+    }
+    
+    .swal2-popup.swal2-toast .swal2-icon {
+        margin: 0 !important;
+        width: 2.5rem !important;
+        height: 2.5rem !important;
+        font-size: 1.2rem !important;
+    }
+    
+    .swal2-popup.swal2-toast .swal2-icon.swal2-success {
+        border-color: #10b981 !important;
+        color: #10b981 !important;
+    }
+    
+    .swal2-popup.swal2-toast .swal2-icon.swal2-success [class^=swal2-success-line] {
+        background-color: #10b981 !important;
+    }
+    
+    .swal2-popup.swal2-toast .swal2-icon.swal2-success .swal2-success-ring {
+        border-color: rgba(16, 185, 129, 0.3) !important;
+    }
+    
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-container">
+    <div class="register-card">
+        <div class="register-header">
+            <i class="fas fa-industry fa-3x text-primary mb-3"></i>
+            <h2>Crear Cuenta</h2>
+            <p>Únete a Pozinox y accede a todos nuestros servicios</p>
+        </div>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <form method="post" id="registroForm">
+            {% csrf_token %}
+            
+            <!-- Información Personal -->
+            <div class="form-section">
+                <h5 class="section-title">
+                    <i class="fas fa-user me-2"></i>Información Personal
+                </h5>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.first_name }}
+                            <label for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }}</label>
+                            {% if form.first_name.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.first_name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.last_name }}
+                            <label for="{{ form.last_name.id_for_label }}">{{ form.last_name.label }}</label>
+                            {% if form.last_name.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.last_name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-floating">
+                    {{ form.email }}
+                    <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                    {% if form.email.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.email.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Botón de verificar email al lado del campo email -->
+                <div class="d-grid">
+                    <button type="button" id="btnVerificarEmail" class="btn btn-verify mb-3" disabled>
+                        <i class="fas fa-envelope me-2"></i>
+                        <span id="btnText">Verificar Correo Electrónico</span>
+                        <span id="btnTimer" style="display: none;">
+                            Reenviar en <span id="countdown">30</span>s
+                        </span>
+                    </button>
+                </div>
+                
+                <!-- Sección de verificación (oculta inicialmente) -->
+                <div id="verificacionSection" class="verificacion-section">
+                    <div class="text-center">
+                        <h5 class="mb-3">Verificar Email</h5>
+                        <p class="text-muted mb-3">
+                            Código enviado a: <strong id="emailMostrar" class="text-primary"></strong>
+                        </p>
+                        
+                        <div class="mb-3">
+                            <input type="text" 
+                                   id="codigoVerificacion" 
+                                   class="form-control codigo-input" 
+                                   maxlength="6"
+                                   pattern="[0-9]{6}"
+                                   placeholder="000000"
+                                   autocomplete="off">
+                        </div>
+                        
+                        <button type="button" id="btnVerificarCodigo" class="btn btn-verify mb-2">
+                            <i class="fas fa-check me-2"></i>Verificar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Información de Cuenta -->
+            <div class="form-section">
+                <h5 class="section-title">
+                    <i class="fas fa-key me-2"></i>Información de Cuenta
+                </h5>
+                
+                <div class="form-floating">
+                    {{ form.username }}
+                    <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+                    {% if form.username.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.username.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-floating">
+                    {{ form.password1 }}
+                    <label for="{{ form.password1.id_for_label }}">{{ form.password1.label }}</label>
+                    {% if form.password1.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.password1.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <div class="password-help">
+                        <small>Tu contraseña debe tener al menos 8 caracteres y no ser muy común.</small>
+                    </div>
+                </div>
+                
+                <div class="form-floating">
+                    {{ form.password2 }}
+                    <label for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
+                    {% if form.password2.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.password2.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Información Adicional -->
+            <div class="form-section">
+                <h5 class="section-title">
+                    <i class="fas fa-info-circle me-2"></i>Información Adicional
+                </h5>
+                
+                
+                <div class="form-floating">
+                    {{ form.telefono }}
+                    <label for="{{ form.telefono.id_for_label }}">{{ form.telefono.label }}</label>
+                    {% if form.telefono.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.telefono.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-floating">
+                    {{ form.direccion }}
+                    <label for="{{ form.direccion.id_for_label }}">{{ form.direccion.label }}</label>
+                    {% if form.direccion.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.direccion.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.comuna }}
+                            <label for="{{ form.comuna.id_for_label }}">{{ form.comuna.label }}</label>
+                            {% if form.comuna.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.comuna.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.ciudad }}
+                            <label for="{{ form.ciudad.id_for_label }}">{{ form.ciudad.label }}</label>
+                            {% if form.ciudad.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.ciudad.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botón para completar registro -->
+            <button type="submit" id="btnCrearCuenta" class="btn btn-register w-100 mb-3">
+                <i class="fas fa-user-plus me-2"></i>
+                Completar Registro
+            </button>
+        </form>
+        
+        <div class="register-footer">
+            <p class="mb-2">¿Ya tienes una cuenta?</p>
+            <a href="{% url 'login' %}">Iniciar sesión</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const emailInput = document.getElementById('{{ form.email.id_for_label }}');
+    const btnVerificarEmail = document.getElementById('btnVerificarEmail');
+    const verificacionSection = document.getElementById('verificacionSection');
+    const codigoInput = document.getElementById('codigoVerificacion');
+    const btnVerificarCodigo = document.getElementById('btnVerificarCodigo');
+    
+    let emailActual = '';
+    
+    // Habilitar botón cuando se ingresa email válido
+    emailInput.addEventListener('input', function() {
+        const email = this.value.trim();
+        if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            btnVerificarEmail.disabled = false;
+            emailActual = email;
+        } else {
+            btnVerificarEmail.disabled = true;
+        }
+    });
+    
+    // Enviar código
+    btnVerificarEmail.addEventListener('click', function() {
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
+        
+        fetch('{% url "enviar_codigo_ajax" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: `email=${encodeURIComponent(emailActual)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('emailMostrar').textContent = emailActual;
+                verificacionSection.classList.add('show');
+                
+                // Mostrar botón como enviado exitosamente
+                btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>¡Enviado!';
+                btn.classList.remove('btn-verify');
+                btn.classList.add('btn-success');
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Código Enviado!',
+                    text: data.message,
+                    timer: 4000,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end',
+                    width: '400px',
+                    padding: '1.5rem',
+                    background: '#f8fafc',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    customClass: {
+                        popup: 'swal-toast-popup',
+                        title: 'swal-toast-title',
+                        content: 'swal-toast-content'
+                    }
+                });
+                
+                // Iniciar cooldown de 30 segundos
+                iniciarCooldown(btn);
+            } else {
+                Swal.fire('Error', data.message, 'error');
+                resetearBoton(btn);
+            }
+        })
+        .catch(() => {
+            Swal.fire('Error', 'Error de conexión', 'error');
+            resetearBoton(btn);
+        });
+    });
+    
+    function resetearBoton(btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-envelope me-2"></i>Verificar Correo Electrónico';
+        btn.classList.remove('btn-success', 'cooldown', 'reenviar');
+        btn.classList.add('btn-verify');
+        btn.style.animation = '';
+    }
+    
+    function iniciarCooldown(btn) {
+        let tiempoRestante = 30;
+        
+        // Limpiar cualquier cooldown previo
+        if (window.cooldownTimer) {
+            clearInterval(window.cooldownTimer);
+        }
+        
+        // Agregar clase de cooldown
+        btn.classList.add('cooldown');
+        
+        const actualizarBoton = () => {
+            if (tiempoRestante > 0) {
+                btn.innerHTML = `<i class="fas fa-clock me-2"></i>Reenviar en ${tiempoRestante}s`;
+                btn.disabled = true;
+                tiempoRestante--;
+                window.cooldownTimer = setTimeout(actualizarBoton, 1000);
+            } else {
+                // Finalizar cooldown
+                btn.innerHTML = '<i class="fas fa-redo me-2"></i>Reenviar Código';
+                btn.disabled = false;
+                btn.classList.remove('btn-success', 'cooldown');
+                btn.classList.add('btn-verify', 'reenviar');
+                
+                // Agregar efecto de "listo para reenviar"
+                btn.style.animation = 'none';
+                btn.offsetHeight; // Trigger reflow
+                btn.style.animation = 'pulse 1s ease-in-out';
+                
+                window.cooldownTimer = null;
+            }
+        };
+        
+        actualizarBoton();
+    }
+    
+    // Verificar código
+    btnVerificarCodigo.addEventListener('click', function() {
+        const codigo = codigoInput.value.trim();
+        if (!codigo || codigo.length !== 6) {
+            Swal.fire('Código Incompleto', 'Ingresa los 6 dígitos', 'warning');
+            return;
+        }
+        
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Verificando...';
+        
+        fetch('{% url "verificar_codigo_ajax" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: `email=${encodeURIComponent(emailActual)}&codigo=${codigo}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Detener cualquier cooldown activo
+                if (window.cooldownTimer) {
+                    clearInterval(window.cooldownTimer);
+                    window.cooldownTimer = null;
+                }
+                
+                emailInput.classList.add('email-verificado');
+                emailInput.readOnly = true;
+                btnVerificarEmail.innerHTML = '<i class="fas fa-check-circle me-2"></i>Email Verificado';
+                btnVerificarEmail.classList.remove('btn-verify', 'cooldown', 'reenviar');
+                btnVerificarEmail.classList.add('btn-success');
+                verificacionSection.style.display = 'none';
+                Swal.fire('¡Verificado!', data.message, 'success');
+            } else {
+                Swal.fire('Código Incorrecto', data.message, 'error');
+            }
+        })
+        .catch(() => {
+            Swal.fire('Error', 'Error de conexión', 'error');
+        })
+        .finally(() => {
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-check me-2"></i>Verificar';
+        });
+    });
+    
+    // Auto-submit al completar 6 dígitos
+    codigoInput.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+        if (this.value.length === 6) {
+            btnVerificarCodigo.click();
+        }
+    });
+    
+    // Verificar si el email ya está verificado desde el servidor
+    {% if email_verificado %}
+        const emailVerificado = '{{ email_verificado }}';
+        if (emailVerificado) {
+            emailInput.value = emailVerificado;
+            emailInput.classList.add('email-verificado');
+            emailInput.readOnly = true;
+            btnVerificarEmail.innerHTML = '<i class="fas fa-check-circle me-2"></i>Email Verificado';
+            btnVerificarEmail.classList.remove('btn-verify');
+            btnVerificarEmail.classList.add('btn-success');
+            btnVerificarEmail.disabled = true;
+            emailActual = emailVerificado;
+        }
+    {% endif %}
+});
+</script>
+{% endblock %}

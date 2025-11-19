@@ -70,23 +70,41 @@ def registro_view(request):
                 last_name=form.cleaned_data.get('last_name', ''),
             )
             
-            # Actualizar perfil
+            # Actualizar perfil con datos de facturación
             perfil = user.perfil
             perfil.tipo_usuario = 'cliente'  # Todos los usuarios son clientes
             perfil.telefono = form.cleaned_data.get('telefono', '')
-            perfil.direccion = form.cleaned_data.get('direccion', '')
-            perfil.comuna = form.cleaned_data.get('comuna', '')
-            perfil.ciudad = form.cleaned_data.get('ciudad', '')
             perfil.email_verificado = True  # Ya verificado
             perfil.fecha_verificacion_email = timezone.now()
+            
+            # Guardar datos según tipo de cliente
+            tipo_cliente = form.cleaned_data.get('tipo_cliente')
+            perfil.tipo_cliente = tipo_cliente
+            
+            if tipo_cliente == 'persona':
+                # Datos de persona natural
+                perfil.rut = form.cleaned_data.get('rut_persona', '')
+                perfil.direccion = form.cleaned_data.get('direccion_persona', '')
+                perfil.comuna = form.cleaned_data.get('comuna_persona', '')
+            else:  # empresa
+                # Datos de empresa
+                perfil.rut = form.cleaned_data.get('rut_empresa', '')
+                perfil.razon_social = form.cleaned_data.get('razon_social', '')
+                perfil.giro = form.cleaned_data.get('giro', '')
+                perfil.direccion_comercial = form.cleaned_data.get('direccion_empresa', '')
+                perfil.comuna = form.cleaned_data.get('comuna_empresa', '')
+            
             perfil.save()
             
             # Limpiar sesión
             if 'email_verificado' in request.session:
                 del request.session['email_verificado']
             
+            # Enviar correo de bienvenida
+            enviar_correo_bienvenida(user, tipo_cliente)
+            
             messages.success(request, 
-                '¡Cuenta creada exitosamente! Ya puedes iniciar sesión.')
+                '¡Cuenta creada exitosamente! Revisa tu correo para más información. Ya puedes iniciar sesión.')
             return redirect('login')
         # Si el formulario no es válido, mantener el estado de verificación
         return render(request, 'usuarios/registro.html', {'form': form, 'email_verificado': request.session.get('email_verificado')})
@@ -300,7 +318,68 @@ Equipo Pozinox
         )
         return True
     except Exception as e:
-        print(f"Error al enviar email: {e}")
+        print(f"Error enviando email: {e}")
+        return False
+
+
+def enviar_correo_bienvenida(user, tipo_cliente):
+    """Enviar correo de bienvenida al nuevo usuario"""
+    # Determinar el tipo de cliente en texto legible
+    tipo_cliente_texto = 'Persona Natural' if tipo_cliente == 'persona' else 'Empresa'
+    
+    # Construir URL de login
+    url_login = f"{settings.SITE_URL}/usuarios/login/"
+    
+    # Renderizar template HTML del email
+    html_message = render_to_string('usuarios/email_bienvenida.html', {
+        'nombre_completo': user.get_full_name() or user.username,
+        'username': user.username,
+        'email': user.email,
+        'tipo_cliente': tipo_cliente_texto,
+        'url_login': url_login,
+    })
+    
+    # Crear versión texto plano
+    plain_message = f"""
+¡Bienvenido a Pozinox!
+
+Hola {user.get_full_name() or user.username},
+
+Tu cuenta ha sido creada exitosamente. Estamos emocionados de tenerte con nosotros.
+
+DATOS DE ACCESO:
+- Usuario: {user.username}
+- Correo: {user.email}
+- Tipo de cuenta: {tipo_cliente_texto}
+
+Recuerda: Puedes iniciar sesión con tu nombre de usuario o tu correo electrónico.
+
+¿Qué puedes hacer en Pozinox?
+- Explora nuestro catálogo de productos de acero inoxidable
+- Crea cotizaciones personalizadas
+- Realiza pagos seguros (MercadoPago, Transferencia o Efectivo)
+- Haz seguimiento de tus pedidos
+- Descarga tus cotizaciones en PDF
+
+Si tienes alguna pregunta, no dudes en contactarnos.
+
+Saludos,
+Equipo Pozinox
+    """
+    
+    # Enviar email
+    try:
+        send_mail(
+            subject='¡Bienvenido a Pozinox! - Tu cuenta ha sido creada',
+            message=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        return True
+    except Exception as e:
+        print(f"Error enviando email de bienvenida: {e}")
         return False
 
 
@@ -380,6 +459,100 @@ def verificar_codigo_ajax(request):
             return JsonResponse({'success': False, 'message': 'Código expirado o inválido'})
     
     return JsonResponse({'success': False, 'message': 'Método no permitido'})
+
+
+def verificar_disponibilidad_username(request):
+    """Verificar disponibilidad de nombre de usuario via AJAX"""
+    if request.method == 'GET' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        username = request.GET.get('username', '').strip()
+        
+        if not username:
+            return JsonResponse({'disponible': True, 'message': ''})
+        
+        # Verificar si el username ya existe
+        if User.objects.filter(username=username).exists():
+            return JsonResponse({
+                'disponible': False,
+                'message': 'Este nombre de usuario ya está en uso.'
+            })
+        
+        return JsonResponse({
+            'disponible': True,
+            'message': 'Nombre de usuario disponible.'
+        })
+    
+    return JsonResponse({'disponible': False, 'message': 'Método no permitido'})
+
+
+def verificar_disponibilidad_rut(request):
+    """Verificar disponibilidad de RUT via AJAX"""
+    if request.method == 'GET' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        from .forms import validar_rut_chileno, formatear_rut
+        
+        rut = request.GET.get('rut', '').strip()
+        
+        if not rut:
+            return JsonResponse({'disponible': True, 'valido': True, 'message': ''})
+        
+        # Validar formato del RUT
+        if not validar_rut_chileno(rut):
+            return JsonResponse({
+                'disponible': False,
+                'valido': False,
+                'message': 'RUT inválido. Verifica el número y dígito verificador.'
+            })
+        
+        # Formatear el RUT
+        rut_formateado = formatear_rut(rut)
+        
+        # Verificar si el RUT ya existe
+        from .models import PerfilUsuario
+        if PerfilUsuario.objects.filter(rut=rut_formateado).exists():
+            return JsonResponse({
+                'disponible': False,
+                'valido': True,
+                'message': 'Este RUT ya está registrado en el sistema.'
+            })
+        
+        return JsonResponse({
+            'disponible': True,
+            'valido': True,
+            'message': 'RUT válido y disponible.'
+        })
+    
+    return JsonResponse({'disponible': False, 'valido': False, 'message': 'Método no permitido'})
+
+
+def verificar_disponibilidad_email(request):
+    """Verificar disponibilidad de email via AJAX"""
+    if request.method == 'GET' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        email = request.GET.get('email', '').strip()
+        
+        if not email:
+            return JsonResponse({'disponible': True, 'message': ''})
+        
+        # Validar formato básico del email
+        import re
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_regex, email):
+            return JsonResponse({
+                'disponible': False,
+                'message': 'Formato de correo no válido.'
+            })
+        
+        # Verificar si el email ya existe
+        if User.objects.filter(email=email).exists():
+            return JsonResponse({
+                'disponible': False,
+                'message': 'Este correo ya está registrado en el sistema.'
+            })
+        
+        return JsonResponse({
+            'disponible': True,
+            'message': 'Correo disponible.'
+        })
+    
+    return JsonResponse({'disponible': False, 'message': 'Método no permitido'})
 
 
 # ============================================

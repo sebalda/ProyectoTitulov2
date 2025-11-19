@@ -17,7 +17,7 @@
         box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         padding: 2.5rem;
         width: 100%;
-        max-width: 600px;
+        max-width: 700px;
         margin: 0 auto;
     }
     
@@ -32,13 +32,116 @@
         margin-bottom: 0.5rem;
     }
     
-    .register-header p {
-        color: #6b7280;
-        margin: 0;
+    .section-title {
+        color: #1e3a8a;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e5e7eb;
+        font-size: 1.1rem;
     }
     
-    .form-floating {
+    .tipo-cliente-selector {
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 2px solid #e5e7eb;
+    }
+    
+    .tipo-cliente-option {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
         margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .tipo-cliente-option:hover {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+    
+    .tipo-cliente-option.selected {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+    
+    .tipo-cliente-option input[type="radio"] {
+        width: 20px;
+        height: 20px;
+        margin-right: 1rem;
+    }
+    
+    .tipo-cliente-info {
+        flex: 1;
+    }
+    
+    .tipo-cliente-info h5 {
+        margin: 0 0 0.25rem 0;
+        color: #1e3a8a;
+        font-weight: 600;
+    }
+    
+    .tipo-cliente-info p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+    
+    .campos-persona, .campos-empresa {
+        display: none;
+    }
+    
+    .campos-persona.active, .campos-empresa.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    
+    .form-label .required {
+        color: #dc2626;
+    }
+    
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        padding: 0.625rem 0.875rem;
+    }
+    
+    .form-control:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .help-text {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-top: 0.25rem;
     }
     
     .btn-register {
@@ -50,17 +153,12 @@
         text-transform: uppercase;
         letter-spacing: 0.5px;
         transition: all 0.3s ease;
+        width: 100%;
     }
     
     .btn-register:hover {
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(30, 58, 138, 0.4);
-    }
-    
-    .btn-register:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        transform: none;
     }
     
     .register-footer {
@@ -76,473 +174,417 @@
         font-weight: 500;
     }
     
-    .register-footer a:hover {
-        text-decoration: underline;
-    }
-    
     .alert {
         border-radius: 10px;
-        border: none;
         margin-bottom: 1.5rem;
     }
     
-    .alert-success {
-        background: #d1fae5;
-        color: #065f46;
+    .errorlist {
+        list-style: none;
+        padding: 0;
+        margin: 0.5rem 0 0 0;
     }
     
-    .alert-danger {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-    
-    .form-section {
-        margin-bottom: 2rem;
-    }
-    
-    .section-title {
-        color: #1e3a8a;
-        font-weight: 600;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #e5e7eb;
-    }
-    
-    .password-help {
+    .errorlist li {
+        color: #dc2626;
         font-size: 0.875rem;
-        color: #6b7280;
-        margin-top: 0.5rem;
+        margin-top: 0.25rem;
     }
     
-    /* Estilos para verificación de email */
-    .verificacion-section {
-        background: #f8fafc;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-top: 1rem;
-        border: 1px solid #e5e7eb;
-        display: none;
+    .input-group-text {
+        background-color: #f9fafb;
+        border-left: none;
     }
     
-    .verificacion-section.show {
-        display: block;
-        animation: slideDown 0.3s ease;
-    }
-    
-    @keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    .codigo-input {
-        font-size: 1.5rem;
-        font-weight: bold;
-        letter-spacing: 6px;
-        text-align: center;
-        font-family: 'Courier New', monospace;
-        padding: 0.75rem;
-        border: 2px solid #e5e7eb;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-        max-width: 200px;
-        margin: 0 auto;
-    }
-    
-    .codigo-input:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-    }
-    
-    .btn-verify {
-        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-        border: none;
-        border-radius: 10px;
-        padding: 12px 24px;
-        font-weight: 600;
-        color: white;
-        transition: all 0.3s ease;
-    }
-    
-    .btn-verify:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(5, 150, 105, 0.4);
-    }
-    
-    .btn-verify:disabled {
-        opacity: 0.7;
-        cursor: not-allowed;
-        transform: none;
-        transition: all 0.3s ease;
-    }
-    
-    /* Animación para el cooldown */
-    .btn-verify.cooldown {
-        background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);
-        animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.7; }
-        100% { opacity: 1; }
-    }
-    
-    /* Estilo para botón de reenvío */
-    .btn-verify.reenviar {
-        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    }
-    
-    .btn-verify.reenviar:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
-    }
-    
-    .btn-success {
-        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-        border: none;
-        border-radius: 10px;
-        padding: 12px;
-        font-weight: 600;
-        color: white;
-        transition: all 0.3s ease;
-    }
-    
-    .btn-success:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(5, 150, 105, 0.4);
-    }
-    
-    /* Estilos para email verificado */
-    .email-verificado {
-        background-color: #f0f9ff;
+    .form-control.is-valid {
         border-color: #10b981 !important;
-        position: relative;
     }
     
-    .email-verificado::after {
-        content: "✓";
-        position: absolute;
-        right: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #10b981;
-        font-weight: bold;
-        font-size: 1.2rem;
+    .form-control.is-invalid {
+        border-color: #dc2626 !important;
     }
     
-    .email-verificado:focus {
-        border-color: #10b981 !important;
-        box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.25) !important;
+    .password-strength .progress {
+        background-color: #e5e7eb;
     }
     
-    /* Estilo para campo readonly (email verificado) */
-    .email-verificado[readonly] {
-        background-color: #f8f9fa !important;
-        cursor: not-allowed;
-        opacity: 0.8;
+    .password-requirements {
+        list-style: none;
     }
     
-    /* Estilos para el toast personalizado */
-    .swal-toast-popup {
-        border-radius: 12px !important;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
-        border: 1px solid #e5e7eb !important;
-        max-width: 400px !important;
-        min-width: 350px !important;
-        z-index: 9999 !important;
+    .password-requirements li {
+        margin: 0.25rem 0;
+        transition: all 0.3s ease;
     }
     
-    /* Contenedor del toast para posicionamiento */
-    .swal2-container.swal2-top-end {
-        padding-top: 80px !important;
-        padding-right: 20px !important;
+    .password-requirements li.text-success i {
+        font-size: 0.875rem !important;
     }
-    
-    /* Eliminar backdrop del toast */
-    .swal2-backdrop {
-        display: none !important;
-    }
-    
-    
-    .swal-toast-title {
-        font-size: 1.1rem !important;
-        font-weight: 600 !important;
-        color: #059669 !important;
-        margin-bottom: 0.5rem !important;
-    }
-    
-    .swal-toast-content {
-        font-size: 0.95rem !important;
-        color: #374151 !important;
-        line-height: 1.4 !important;
-    }
-    
-    .swal2-popup.swal2-toast {
-        flex-direction: row !important;
-        align-items: center !important;
-        padding: 1rem 1.5rem !important;
-    }
-    
-    .swal2-popup.swal2-toast .swal2-title {
-        margin: 0 0 0 0.5rem !important;
-        flex-grow: 1 !important;
-    }
-    
-    .swal2-popup.swal2-toast .swal2-content {
-        margin: 0.5rem 0 0 0.5rem !important;
-        flex-grow: 1 !important;
-    }
-    
-    .swal2-popup.swal2-toast .swal2-icon {
-        margin: 0 !important;
-        width: 2.5rem !important;
-        height: 2.5rem !important;
-        font-size: 1.2rem !important;
-    }
-    
-    .swal2-popup.swal2-toast .swal2-icon.swal2-success {
-        border-color: #10b981 !important;
-        color: #10b981 !important;
-    }
-    
-    .swal2-popup.swal2-toast .swal2-icon.swal2-success [class^=swal2-success-line] {
-        background-color: #10b981 !important;
-    }
-    
-    .swal2-popup.swal2-toast .swal2-icon.swal2-success .swal2-success-ring {
-        border-color: rgba(16, 185, 129, 0.3) !important;
-    }
-    
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="register-container">
-    <div class="register-card">
-        <div class="register-header">
-            <i class="fas fa-industry fa-3x text-primary mb-3"></i>
-            <h2>Crear Cuenta</h2>
-            <p>Únete a Pozinox y accede a todos nuestros servicios</p>
-        </div>
-        
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
-        
-        <form method="post" id="registroForm">
-            {% csrf_token %}
-            
-            <!-- Información Personal -->
-            <div class="form-section">
-                <h5 class="section-title">
-                    <i class="fas fa-user me-2"></i>Información Personal
-                </h5>
+    <div class="container">
+        <div class="register-card">
+            <div class="register-header">
+                <h2><i class="fas fa-user-plus me-2"></i>Crear Cuenta</h2>
+                <p>Completa tus datos para registrarte</p>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" id="registroForm">
+                {% csrf_token %}
                 
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-floating">
-                            {{ form.first_name }}
-                            <label for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }}</label>
-                            {% if form.first_name.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.first_name.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
+                <!-- Datos de Usuario -->
+                <div class="mb-4">
+                    <h5 class="section-title">Datos de Usuario</h5>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Usuario <span class="required">*</span></label>
+                        <div class="input-group">
+                            {{ form.username }}
+                            <span class="input-group-text" id="username-status">
+                                <i class="fas fa-question-circle text-muted"></i>
+                            </span>
+                        </div>
+                        <small class="help-text" id="username-help">Elige un nombre único para tu cuenta</small>
+                        {% if form.username.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.username.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Nombre <span class="required">*</span></label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.first_name.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Apellido <span class="required">*</span></label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.last_name.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-floating">
-                            {{ form.last_name }}
-                            <label for="{{ form.last_name.id_for_label }}">{{ form.last_name.label }}</label>
-                            {% if form.last_name.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.last_name.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
+
+                    <div class="form-group">
+                        <label class="form-label">Email <span class="required">*</span></label>
+                        <div class="input-group">
+                            {{ form.email }}
+                            <span class="input-group-text" id="email-status">
+                                <i class="fas fa-question-circle text-muted"></i>
+                            </span>
                         </div>
-                    </div>
-                </div>
-                
-                <div class="form-floating">
-                    {{ form.email }}
-                    <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
-                    {% if form.email.errors %}
-                        <div class="text-danger small mt-1">
-                            {% for error in form.email.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <!-- Botón de verificar email al lado del campo email -->
-                <div class="d-grid">
-                    <button type="button" id="btnVerificarEmail" class="btn btn-verify mb-3" disabled>
-                        <i class="fas fa-envelope me-2"></i>
-                        <span id="btnText">Verificar Correo Electrónico</span>
-                        <span id="btnTimer" style="display: none;">
-                            Reenviar en <span id="countdown">30</span>s
-                        </span>
-                    </button>
-                </div>
-                
-                <!-- Sección de verificación (oculta inicialmente) -->
-                <div id="verificacionSection" class="verificacion-section">
-                    <div class="text-center">
-                        <h5 class="mb-3">Verificar Email</h5>
-                        <p class="text-muted mb-3">
-                            Código enviado a: <strong id="emailMostrar" class="text-primary"></strong>
-                        </p>
+                        <small class="help-text" id="email-help">Email para recibir facturas y notificaciones</small>
+                        {% if form.email.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.email.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
                         
-                        <div class="mb-3">
-                            <input type="text" 
-                                   id="codigoVerificacion" 
-                                   class="form-control codigo-input" 
-                                   maxlength="6"
-                                   pattern="[0-9]{6}"
-                                   placeholder="000000"
-                                   autocomplete="off">
+                        <!-- Sección de Verificación de Email -->
+                        <div class="verificacion-email mt-3">
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-outline-primary" id="btnEnviarCodigo">
+                                    <i class="fas fa-envelope me-2"></i>Verificar Email
+                                </button>
+                            </div>
+                            
+                            <!-- Área de código (oculta inicialmente) -->
+                            <div class="codigo-verificacion mt-3" style="display: none;">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Hemos enviado un código de 6 dígitos a tu email. Por favor ingrésalo abajo.
+                                </div>
+                                
+                                <div class="input-group mb-3">
+                                    <input type="text" class="form-control text-center" id="codigoVerificacion" 
+                                           placeholder="000000" maxlength="6" style="letter-spacing: 5px; font-size: 1.2rem;">
+                                    <button class="btn btn-success" type="button" id="btnVerificarCodigo">
+                                        <i class="fas fa-check me-2"></i>Verificar
+                                    </button>
+                                </div>
+                                
+                                <div class="text-center">
+                                    <button type="button" class="btn btn-link btn-sm" id="btnReenviarCodigo">
+                                        <i class="fas fa-redo me-1"></i>Reenviar código
+                                    </button>
+                                    <div id="cooldownTimer" style="display: none; color: #6b7280; font-size: 0.875rem;">
+                                        Podrás reenviar en <span id="segundos">60</span> segundos
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Mensaje de éxito (oculto inicialmente) -->
+                            <div class="alert alert-success mt-3" id="emailVerificadoMsg" style="display: none;">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>Email verificado correctamente.</strong> Ya puedes completar el registro.
+                            </div>
                         </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Teléfono (Opcional)</label>
+                        {{ form.telefono }}
+                        {% if form.telefono.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.telefono.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Contraseña <span class="required">*</span></label>
+                                {{ form.password1 }}
+                                <small class="help-text">Mínimo 8 caracteres, debe incluir letras y números</small>
+                                
+                                <!-- Indicador de fuerza de contraseña -->
+                                <div class="password-strength mt-2" id="passwordStrength" style="display: none;">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <small class="text-muted">Seguridad:</small>
+                                        <small id="strengthText" class="fw-bold"></small>
+                                    </div>
+                                    <div class="progress" style="height: 5px;">
+                                        <div id="strengthBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <ul class="password-requirements mt-2" style="font-size: 0.8rem; padding-left: 1.2rem; margin: 0;">
+                                        <li id="req-length" class="text-muted">
+                                            <i class="fas fa-circle me-1" style="font-size: 0.5rem;"></i>
+                                            Mínimo 8 caracteres
+                                        </li>
+                                        <li id="req-letter" class="text-muted">
+                                            <i class="fas fa-circle me-1" style="font-size: 0.5rem;"></i>
+                                            Al menos una letra
+                                        </li>
+                                        <li id="req-number" class="text-muted">
+                                            <i class="fas fa-circle me-1" style="font-size: 0.5rem;"></i>
+                                            Al menos un número
+                                        </li>
+                                    </ul>
+                                </div>
+                                
+                                {% if form.password1.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.password1.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Confirmar Contraseña <span class="required">*</span></label>
+                                {{ form.password2 }}
+                                <div id="passwordMatch" style="display: none; margin-top: 0.5rem;">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        <span id="matchText">Las contraseñas deben coincidir</span>
+                                    </small>
+                                </div>
+                                {% if form.password2.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.password2.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tipo de Cliente -->
+                <div class="mb-4">
+                    <h5 class="section-title">Datos para Facturación</h5>
+                    
+                    <div class="tipo-cliente-selector">
+                        <label class="form-label">¿Cómo desea facturar? <span class="required">*</span></label>
                         
-                        <button type="button" id="btnVerificarCodigo" class="btn btn-verify mb-2">
-                            <i class="fas fa-check me-2"></i>Verificar
-                        </button>
+                        <label class="tipo-cliente-option" data-tipo="persona">
+                            <input type="radio" name="tipo_cliente" value="persona" checked>
+                            <div class="tipo-cliente-info">
+                                <h5><i class="fas fa-user me-2"></i>Persona Natural</h5>
+                                <p>Facturación con RUT personal y dirección particular</p>
+                            </div>
+                        </label>
+
+                        <label class="tipo-cliente-option" data-tipo="empresa">
+                            <input type="radio" name="tipo_cliente" value="empresa">
+                            <div class="tipo-cliente-info">
+                                <h5><i class="fas fa-building me-2"></i>Empresa</h5>
+                                <p>Facturación con RUT empresarial, razón social y giro</p>
+                            </div>
+                        </label>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Información de Cuenta -->
-            <div class="form-section">
-                <h5 class="section-title">
-                    <i class="fas fa-key me-2"></i>Información de Cuenta
-                </h5>
-                
-                <div class="form-floating">
-                    {{ form.username }}
-                    <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
-                    {% if form.username.errors %}
-                        <div class="text-danger small mt-1">
-                            {% for error in form.username.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="form-floating">
-                    {{ form.password1 }}
-                    <label for="{{ form.password1.id_for_label }}">{{ form.password1.label }}</label>
-                    {% if form.password1.errors %}
-                        <div class="text-danger small mt-1">
-                            {% for error in form.password1.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                    <div class="password-help">
-                        <small>Tu contraseña debe tener al menos 8 caracteres y no ser muy común.</small>
-                    </div>
-                </div>
-                
-                <div class="form-floating">
-                    {{ form.password2 }}
-                    <label for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
-                    {% if form.password2.errors %}
-                        <div class="text-danger small mt-1">
-                            {% for error in form.password2.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <!-- Información Adicional -->
-            <div class="form-section">
-                <h5 class="section-title">
-                    <i class="fas fa-info-circle me-2"></i>Información Adicional
-                </h5>
-                
-                
-                <div class="form-floating">
-                    {{ form.telefono }}
-                    <label for="{{ form.telefono.id_for_label }}">{{ form.telefono.label }}</label>
-                    {% if form.telefono.errors %}
-                        <div class="text-danger small mt-1">
-                            {% for error in form.telefono.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="form-floating">
-                    {{ form.direccion }}
-                    <label for="{{ form.direccion.id_for_label }}">{{ form.direccion.label }}</label>
-                    {% if form.direccion.errors %}
-                        <div class="text-danger small mt-1">
-                            {% for error in form.direccion.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-floating">
-                            {{ form.comuna }}
-                            <label for="{{ form.comuna.id_for_label }}">{{ form.comuna.label }}</label>
-                            {% if form.comuna.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.comuna.errors %}
-                                        {{ error }}
+
+                    <!-- Campos para Persona Natural -->
+                    <div class="campos-persona active">
+                        <div class="form-group">
+                            <label class="form-label">RUT <span class="required">*</span></label>
+                            <div class="input-group">
+                                {{ form.rut_persona }}
+                                <span class="input-group-text" id="rut-persona-status">
+                                    <i class="fas fa-question-circle text-muted"></i>
+                                </span>
+                            </div>
+                            <small class="help-text">{{ form.rut_persona.help_text }}</small>
+                            {% if form.rut_persona.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.rut_persona.errors %}
+                                        <li>{{ error }}</li>
                                     {% endfor %}
-                                </div>
+                                </ul>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Dirección Personal <span class="required">*</span></label>
+                            {{ form.direccion_persona }}
+                            <small class="help-text">{{ form.direccion_persona.help_text }}</small>
+                            {% if form.direccion_persona.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.direccion_persona.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Comuna <span class="required">*</span></label>
+                            {{ form.comuna_persona }}
+                            {% if form.comuna_persona.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.comuna_persona.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
                             {% endif %}
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-floating">
-                            {{ form.ciudad }}
-                            <label for="{{ form.ciudad.id_for_label }}">{{ form.ciudad.label }}</label>
-                            {% if form.ciudad.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.ciudad.errors %}
-                                        {{ error }}
+
+                    <!-- Campos para Empresa -->
+                    <div class="campos-empresa">
+                        <div class="form-group">
+                            <label class="form-label">RUT Empresa <span class="required">*</span></label>
+                            <div class="input-group">
+                                {{ form.rut_empresa }}
+                                <span class="input-group-text" id="rut-empresa-status">
+                                    <i class="fas fa-question-circle text-muted"></i>
+                                </span>
+                            </div>
+                            <small class="help-text">{{ form.rut_empresa.help_text }}</small>
+                            {% if form.rut_empresa.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.rut_empresa.errors %}
+                                        <li>{{ error }}</li>
                                     {% endfor %}
-                                </div>
+                                </ul>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Razón Social <span class="required">*</span></label>
+                            {{ form.razon_social }}
+                            {% if form.razon_social.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.razon_social.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Giro Comercial <span class="required">*</span></label>
+                            {{ form.giro }}
+                            {% if form.giro.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.giro.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Dirección Comercial <span class="required">*</span></label>
+                            {{ form.direccion_empresa }}
+                            {% if form.direccion_empresa.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.direccion_empresa.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Comuna <span class="required">*</span></label>
+                            {{ form.comuna_empresa }}
+                            {% if form.comuna_empresa.errors %}
+                                <ul class="errorlist">
+                                    {% for error in form.comuna_empresa.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
                             {% endif %}
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Botón para completar registro -->
-            <button type="submit" id="btnCrearCuenta" class="btn btn-register w-100 mb-3">
-                <i class="fas fa-user-plus me-2"></i>
-                Completar Registro
-            </button>
-        </form>
-        
-        <div class="register-footer">
-            <p class="mb-2">¿Ya tienes una cuenta?</p>
-            <a href="{% url 'login' %}">Iniciar sesión</a>
+
+                <!-- Errores generales del formulario -->
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-primary btn-register">
+                    <i class="fas fa-user-plus me-2"></i>Crear Cuenta
+                </button>
+
+                <div class="register-footer">
+                    <p>¿Ya tienes cuenta? <a href="{% url 'login' %}">Iniciar Sesión</a></p>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -551,199 +593,779 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const emailInput = document.getElementById('{{ form.email.id_for_label }}');
-    const btnVerificarEmail = document.getElementById('btnVerificarEmail');
-    const verificacionSection = document.getElementById('verificacionSection');
-    const codigoInput = document.getElementById('codigoVerificacion');
-    const btnVerificarCodigo = document.getElementById('btnVerificarCodigo');
+    const tipoClienteOptions = document.querySelectorAll('.tipo-cliente-option');
+    const camposPersona = document.querySelector('.campos-persona');
+    const camposEmpresa = document.querySelector('.campos-empresa');
     
-    let emailActual = '';
-    
-    // Habilitar botón cuando se ingresa email válido
-    emailInput.addEventListener('input', function() {
-        const email = this.value.trim();
-        if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            btnVerificarEmail.disabled = false;
-            emailActual = email;
-        } else {
-            btnVerificarEmail.disabled = true;
-        }
+    tipoClienteOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            // Remover clase selected de todas las opciones
+            tipoClienteOptions.forEach(opt => opt.classList.remove('selected'));
+            
+            // Agregar clase selected a la opción clickeada
+            this.classList.add('selected');
+            
+            // Marcar el radio button
+            const radio = this.querySelector('input[type="radio"]');
+            radio.checked = true;
+            
+            // Mostrar/ocultar campos según tipo
+            const tipo = this.dataset.tipo;
+            if (tipo === 'persona') {
+                camposPersona.classList.add('active');
+                camposEmpresa.classList.remove('active');
+            } else {
+                camposEmpresa.classList.add('active');
+                camposPersona.classList.remove('active');
+            }
+        });
     });
     
-    // Enviar código
-    btnVerificarEmail.addEventListener('click', function() {
-        const btn = this;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
+    // Seleccionar la opción inicial
+    document.querySelector('.tipo-cliente-option[data-tipo="persona"]').classList.add('selected');
+    
+    // ============================================
+    // VERIFICACIÓN DE DISPONIBILIDAD DE USUARIO
+    // ============================================
+    
+    const usernameInput = document.querySelector('input[name="username"]');
+    const usernameStatus = document.getElementById('username-status');
+    const usernameHelp = document.getElementById('username-help');
+    let usernameTimeout = null;
+    
+    if (usernameInput) {
+        usernameInput.addEventListener('input', function() {
+            const username = this.value.trim();
+            
+            // Limpiar timeout anterior
+            if (usernameTimeout) {
+                clearTimeout(usernameTimeout);
+            }
+            
+            if (username.length === 0) {
+                usernameStatus.innerHTML = '<i class="fas fa-question-circle text-muted"></i>';
+                usernameHelp.textContent = 'Elige un nombre único para tu cuenta';
+                usernameHelp.className = 'help-text';
+                usernameInput.classList.remove('is-valid', 'is-invalid');
+                return;
+            }
+            
+            if (username.length < 3) {
+                usernameStatus.innerHTML = '<i class="fas fa-times-circle text-danger"></i>';
+                usernameHelp.textContent = 'El nombre de usuario debe tener al menos 3 caracteres';
+                usernameHelp.className = 'help-text text-danger';
+                usernameInput.classList.remove('is-valid');
+                usernameInput.classList.add('is-invalid');
+                return;
+            }
+            
+            // Mostrar loading
+            usernameStatus.innerHTML = '<i class="fas fa-spinner fa-spin text-primary"></i>';
+            usernameHelp.textContent = 'Verificando disponibilidad...';
+            usernameHelp.className = 'help-text text-muted';
+            
+            // Esperar 500ms después de que el usuario deje de escribir
+            usernameTimeout = setTimeout(() => {
+                fetch(`{% url "verificar_username" %}?username=${encodeURIComponent(username)}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.disponible) {
+                        usernameStatus.innerHTML = '<i class="fas fa-check-circle text-success"></i>';
+                        usernameHelp.textContent = data.message;
+                        usernameHelp.className = 'help-text text-success';
+                        usernameInput.classList.remove('is-invalid');
+                        usernameInput.classList.add('is-valid');
+                    } else {
+                        usernameStatus.innerHTML = '<i class="fas fa-times-circle text-danger"></i>';
+                        usernameHelp.textContent = data.message;
+                        usernameHelp.className = 'help-text text-danger';
+                        usernameInput.classList.remove('is-valid');
+                        usernameInput.classList.add('is-invalid');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    usernameStatus.innerHTML = '<i class="fas fa-question-circle text-muted"></i>';
+                });
+            }, 500);
+        });
+    }
+    
+    // ============================================
+    // VALIDACIÓN DE EMAIL EN TIEMPO REAL
+    // ============================================
+    const emailInput = document.querySelector('input[name="email"]');
+    const emailStatus = document.getElementById('email-status');
+    const emailHelp = document.getElementById('email-help');
+    let emailTimeout = null;
+    
+    if (emailInput && emailStatus) {
+        emailInput.addEventListener('input', function() {
+            const email = this.value.trim();
+            
+            // Limpiar timeout anterior
+            if (emailTimeout) {
+                clearTimeout(emailTimeout);
+            }
+            
+            if (email.length === 0) {
+                emailStatus.innerHTML = '<i class="fas fa-question-circle text-muted"></i>';
+                emailHelp.textContent = 'Email para recibir facturas y notificaciones';
+                emailHelp.className = 'help-text';
+                emailInput.classList.remove('is-valid', 'is-invalid');
+                return;
+            }
+            
+            // Validar formato básico del email
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!emailRegex.test(email)) {
+                emailStatus.innerHTML = '<i class="fas fa-times-circle text-danger"></i>';
+                emailHelp.textContent = 'Formato de correo no válido';
+                emailHelp.className = 'help-text text-danger';
+                emailInput.classList.remove('is-valid');
+                emailInput.classList.add('is-invalid');
+                return;
+            }
+            
+            // Mostrar loading
+            emailStatus.innerHTML = '<i class="fas fa-spinner fa-spin text-primary"></i>';
+            emailHelp.textContent = 'Verificando disponibilidad...';
+            emailHelp.className = 'help-text text-muted';
+            emailInput.classList.remove('is-valid', 'is-invalid');
+            
+            // Esperar 500ms después de que el usuario deje de escribir
+            emailTimeout = setTimeout(() => {
+                fetch(`{% url "verificar_email" %}?email=${encodeURIComponent(email)}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.disponible) {
+                        emailStatus.innerHTML = '<i class="fas fa-check-circle text-success"></i>';
+                        emailHelp.textContent = data.message;
+                        emailHelp.className = 'help-text text-success';
+                        emailInput.classList.remove('is-invalid');
+                        emailInput.classList.add('is-valid');
+                    } else {
+                        emailStatus.innerHTML = '<i class="fas fa-times-circle text-danger"></i>';
+                        emailHelp.textContent = data.message;
+                        emailHelp.className = 'help-text text-danger';
+                        emailInput.classList.remove('is-valid');
+                        emailInput.classList.add('is-invalid');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    emailStatus.innerHTML = '<i class="fas fa-question-circle text-muted"></i>';
+                    emailHelp.textContent = 'Error al verificar disponibilidad';
+                    emailHelp.className = 'help-text text-warning';
+                });
+            }, 500);
+        });
+    }
+    
+    // ============================================
+    // VERIFICACIÓN DE EMAIL
+    // ============================================
+    const btnEnviarCodigo = document.getElementById('btnEnviarCodigo');
+    const btnVerificarCodigo = document.getElementById('btnVerificarCodigo');
+    const btnReenviarCodigo = document.getElementById('btnReenviarCodigo');
+    const codigoVerificacion = document.getElementById('codigoVerificacion');
+    const codigoVerificacionDiv = document.querySelector('.codigo-verificacion');
+    const emailVerificadoMsg = document.getElementById('emailVerificadoMsg');
+    const registroForm = document.getElementById('registroForm');
+    const cooldownTimer = document.getElementById('cooldownTimer');
+    const segundosSpan = document.getElementById('segundos');
+    
+    let cooldownInterval = null;
+    let emailVerificado = {% if email_verificado %}'{{ email_verificado }}'{% else %}null{% endif %};
+    
+    // Verificar si ya hay email verificado
+    if (emailVerificado && emailInput.value === emailVerificado) {
+        mostrarEmailVerificado();
+    }
+    
+    // Enviar código de verificación
+    btnEnviarCodigo.addEventListener('click', function() {
+        const email = emailInput.value.trim();
         
-        fetch('{% url "enviar_codigo_ajax" %}', {
+        if (!email) {
+            alert('Por favor ingresa un email válido');
+            emailInput.focus();
+            return;
+        }
+        
+        // Validar formato de email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            alert('Por favor ingresa un email válido');
+            emailInput.focus();
+            return;
+        }
+        
+        btnEnviarCodigo.disabled = true;
+        btnEnviarCodigo.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
+        
+        // Enviar petición AJAX
+        fetch('{% url "enviar_codigo_verificacion_ajax" %}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
             },
-            body: `email=${encodeURIComponent(emailActual)}`
+            body: `email=${encodeURIComponent(email)}`
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                document.getElementById('emailMostrar').textContent = emailActual;
-                verificacionSection.classList.add('show');
+                // Mostrar área de código
+                codigoVerificacionDiv.style.display = 'block';
+                btnEnviarCodigo.style.display = 'none';
+                codigoVerificacion.focus();
                 
-                // Mostrar botón como enviado exitosamente
-                btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>¡Enviado!';
-                btn.classList.remove('btn-verify');
-                btn.classList.add('btn-success');
+                // Iniciar cooldown para reenvío
+                iniciarCooldown(60);
                 
-                Swal.fire({
-                    icon: 'success',
-                    title: '¡Código Enviado!',
-                    text: data.message,
-                    timer: 4000,
-                    showConfirmButton: false,
-                    toast: true,
-                    position: 'top-end',
-                    width: '400px',
-                    padding: '1.5rem',
-                    background: '#f8fafc',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false,
-                    customClass: {
-                        popup: 'swal-toast-popup',
-                        title: 'swal-toast-title',
-                        content: 'swal-toast-content'
-                    }
-                });
-                
-                // Iniciar cooldown de 30 segundos
-                iniciarCooldown(btn);
+                // Mostrar mensaje de éxito temporal
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success alert-dismissible fade show mt-2';
+                alertDiv.innerHTML = `
+                    <i class="fas fa-check-circle me-2"></i>${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                codigoVerificacionDiv.insertAdjacentElement('beforebegin', alertDiv);
+                setTimeout(() => alertDiv.remove(), 5000);
             } else {
-                Swal.fire('Error', data.message, 'error');
-                resetearBoton(btn);
+                alert(data.message);
+                btnEnviarCodigo.disabled = false;
+                btnEnviarCodigo.innerHTML = '<i class="fas fa-envelope me-2"></i>Verificar Email';
             }
         })
-        .catch(() => {
-            Swal.fire('Error', 'Error de conexión', 'error');
-            resetearBoton(btn);
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al enviar el código. Por favor intenta de nuevo.');
+            btnEnviarCodigo.disabled = false;
+            btnEnviarCodigo.innerHTML = '<i class="fas fa-envelope me-2"></i>Verificar Email';
         });
     });
     
-    function resetearBoton(btn) {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-envelope me-2"></i>Verificar Correo Electrónico';
-        btn.classList.remove('btn-success', 'cooldown', 'reenviar');
-        btn.classList.add('btn-verify');
-        btn.style.animation = '';
-    }
-    
-    function iniciarCooldown(btn) {
-        let tiempoRestante = 30;
-        
-        // Limpiar cualquier cooldown previo
-        if (window.cooldownTimer) {
-            clearInterval(window.cooldownTimer);
-        }
-        
-        // Agregar clase de cooldown
-        btn.classList.add('cooldown');
-        
-        const actualizarBoton = () => {
-            if (tiempoRestante > 0) {
-                btn.innerHTML = `<i class="fas fa-clock me-2"></i>Reenviar en ${tiempoRestante}s`;
-                btn.disabled = true;
-                tiempoRestante--;
-                window.cooldownTimer = setTimeout(actualizarBoton, 1000);
-            } else {
-                // Finalizar cooldown
-                btn.innerHTML = '<i class="fas fa-redo me-2"></i>Reenviar Código';
-                btn.disabled = false;
-                btn.classList.remove('btn-success', 'cooldown');
-                btn.classList.add('btn-verify', 'reenviar');
-                
-                // Agregar efecto de "listo para reenviar"
-                btn.style.animation = 'none';
-                btn.offsetHeight; // Trigger reflow
-                btn.style.animation = 'pulse 1s ease-in-out';
-                
-                window.cooldownTimer = null;
-            }
-        };
-        
-        actualizarBoton();
-    }
-    
     // Verificar código
     btnVerificarCodigo.addEventListener('click', function() {
-        const codigo = codigoInput.value.trim();
+        const email = emailInput.value.trim();
+        const codigo = codigoVerificacion.value.trim();
+        
         if (!codigo || codigo.length !== 6) {
-            Swal.fire('Código Incompleto', 'Ingresa los 6 dígitos', 'warning');
+            alert('Por favor ingresa el código de 6 dígitos');
+            codigoVerificacion.focus();
             return;
         }
         
-        this.disabled = true;
-        this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Verificando...';
+        btnVerificarCodigo.disabled = true;
+        btnVerificarCodigo.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Verificando...';
         
         fetch('{% url "verificar_codigo_ajax" %}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
             },
-            body: `email=${encodeURIComponent(emailActual)}&codigo=${codigo}`
+            body: `email=${encodeURIComponent(email)}&codigo=${encodeURIComponent(codigo)}`
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Detener cualquier cooldown activo
-                if (window.cooldownTimer) {
-                    clearInterval(window.cooldownTimer);
-                    window.cooldownTimer = null;
-                }
-                
-                emailInput.classList.add('email-verificado');
-                emailInput.readOnly = true;
-                btnVerificarEmail.innerHTML = '<i class="fas fa-check-circle me-2"></i>Email Verificado';
-                btnVerificarEmail.classList.remove('btn-verify', 'cooldown', 'reenviar');
-                btnVerificarEmail.classList.add('btn-success');
-                verificacionSection.style.display = 'none';
-                Swal.fire('¡Verificado!', data.message, 'success');
+                mostrarEmailVerificado();
+                emailVerificado = email;
             } else {
-                Swal.fire('Código Incorrecto', data.message, 'error');
+                alert(data.message);
+                btnVerificarCodigo.disabled = false;
+                btnVerificarCodigo.innerHTML = '<i class="fas fa-check me-2"></i>Verificar';
+                codigoVerificacion.value = '';
+                codigoVerificacion.focus();
             }
         })
-        .catch(() => {
-            Swal.fire('Error', 'Error de conexión', 'error');
-        })
-        .finally(() => {
-            this.disabled = false;
-            this.innerHTML = '<i class="fas fa-check me-2"></i>Verificar';
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al verificar el código. Por favor intenta de nuevo.');
+            btnVerificarCodigo.disabled = false;
+            btnVerificarCodigo.innerHTML = '<i class="fas fa-check me-2"></i>Verificar';
         });
     });
     
-    // Auto-submit al completar 6 dígitos
-    codigoInput.addEventListener('input', function() {
+    // Reenviar código
+    btnReenviarCodigo.addEventListener('click', function() {
+        if (btnReenviarCodigo.disabled) return;
+        
+        const email = emailInput.value.trim();
+        
+        btnReenviarCodigo.disabled = true;
+        btnReenviarCodigo.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Reenviando...';
+        
+        fetch('{% url "enviar_codigo_verificacion_ajax" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: `email=${encodeURIComponent(email)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Código reenviado exitosamente');
+                codigoVerificacion.value = '';
+                codigoVerificacion.focus();
+                iniciarCooldown(60);
+            } else {
+                alert(data.message);
+                btnReenviarCodigo.disabled = false;
+                btnReenviarCodigo.innerHTML = '<i class="fas fa-redo me-1"></i>Reenviar código';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al reenviar el código.');
+            btnReenviarCodigo.disabled = false;
+            btnReenviarCodigo.innerHTML = '<i class="fas fa-redo me-1"></i>Reenviar código';
+        });
+    });
+    
+    // Permitir solo números en el código
+    codigoVerificacion.addEventListener('input', function(e) {
         this.value = this.value.replace(/[^0-9]/g, '');
+    });
+    
+    // Verificar automáticamente cuando se completen 6 dígitos
+    codigoVerificacion.addEventListener('input', function(e) {
         if (this.value.length === 6) {
             btnVerificarCodigo.click();
         }
     });
     
-    // Verificar si el email ya está verificado desde el servidor
-    {% if email_verificado %}
-        const emailVerificado = '{{ email_verificado }}';
-        if (emailVerificado) {
-            emailInput.value = emailVerificado;
-            emailInput.classList.add('email-verificado');
-            emailInput.readOnly = true;
-            btnVerificarEmail.innerHTML = '<i class="fas fa-check-circle me-2"></i>Email Verificado';
-            btnVerificarEmail.classList.remove('btn-verify');
-            btnVerificarEmail.classList.add('btn-success');
-            btnVerificarEmail.disabled = true;
-            emailActual = emailVerificado;
+    // Función para mostrar email verificado
+    function mostrarEmailVerificado() {
+        codigoVerificacionDiv.style.display = 'none';
+        emailVerificadoMsg.style.display = 'block';
+        btnEnviarCodigo.style.display = 'none';
+        emailInput.readOnly = true;
+        emailInput.style.backgroundColor = '#f0fdf4';
+        if (cooldownInterval) clearInterval(cooldownInterval);
+    }
+    
+    // Función para iniciar cooldown
+    function iniciarCooldown(segundos) {
+        btnReenviarCodigo.style.display = 'none';
+        cooldownTimer.style.display = 'block';
+        
+        let tiempoRestante = segundos;
+        segundosSpan.textContent = tiempoRestante;
+        
+        if (cooldownInterval) clearInterval(cooldownInterval);
+        
+        cooldownInterval = setInterval(() => {
+            tiempoRestante--;
+            segundosSpan.textContent = tiempoRestante;
+            
+            if (tiempoRestante <= 0) {
+                clearInterval(cooldownInterval);
+                cooldownTimer.style.display = 'none';
+                btnReenviarCodigo.style.display = 'inline-block';
+                btnReenviarCodigo.disabled = false;
+                btnReenviarCodigo.innerHTML = '<i class="fas fa-redo me-1"></i>Reenviar código';
+            }
+        }, 1000);
+    }
+    
+    // Si cambia el email, resetear verificación
+    emailInput.addEventListener('change', function() {
+        if (this.value.trim() !== emailVerificado) {
+            emailVerificadoMsg.style.display = 'none';
+            btnEnviarCodigo.style.display = 'block';
+            this.readOnly = false;
+            this.style.backgroundColor = '';
+            emailVerificado = null;
         }
-    {% endif %}
+    });
+    
+    // ============================================
+    // VALIDACIÓN DE RUT CHILENO
+    // ============================================
+    
+    function validarRutChileno(rut) {
+        // Limpiar el RUT
+        rut = rut.toUpperCase().replace(/\./g, '').replace(/-/g, '').trim();
+        
+        if (!rut || rut.length < 2) {
+            return false;
+        }
+        
+        // Separar número y dígito verificador
+        const numero = rut.slice(0, -1);
+        const dv = rut.slice(-1);
+        
+        // Validar que el número sea numérico
+        if (!/^\d+$/.test(numero)) {
+            return false;
+        }
+        
+        // Validar que el dígito verificador sea válido
+        if (!/^[0-9K]$/.test(dv)) {
+            return false;
+        }
+        
+        // Calcular el dígito verificador
+        let suma = 0;
+        let multiplicador = 2;
+        
+        for (let i = numero.length - 1; i >= 0; i--) {
+            suma += parseInt(numero[i]) * multiplicador;
+            multiplicador++;
+            if (multiplicador > 7) {
+                multiplicador = 2;
+            }
+        }
+        
+        const resto = suma % 11;
+        const dvCalculado = 11 - resto;
+        
+        let dvEsperado;
+        if (dvCalculado === 11) {
+            dvEsperado = '0';
+        } else if (dvCalculado === 10) {
+            dvEsperado = 'K';
+        } else {
+            dvEsperado = dvCalculado.toString();
+        }
+        
+        return dv === dvEsperado;
+    }
+    
+    function formatearRut(rut) {
+        // Limpiar el RUT
+        rut = rut.toUpperCase().replace(/\./g, '').replace(/-/g, '').trim();
+        
+        if (rut.length < 2) {
+            return rut;
+        }
+        
+        const numero = rut.slice(0, -1);
+        const dv = rut.slice(-1);
+        
+        // Formatear con puntos
+        let numeroFormateado = '';
+        for (let i = numero.length - 1, j = 0; i >= 0; i--, j++) {
+            if (j > 0 && j % 3 === 0) {
+                numeroFormateado = '.' + numeroFormateado;
+            }
+            numeroFormateado = numero[i] + numeroFormateado;
+        }
+        
+        return `${numeroFormateado}-${dv}`;
+    }
+    
+    function actualizarEstadoRut(input, statusElement, esValido, mensaje = '') {
+        if (esValido) {
+            input.classList.remove('is-invalid');
+            input.classList.add('is-valid');
+            input.style.borderColor = '#10b981';
+            statusElement.innerHTML = '<i class="fas fa-check-circle text-success"></i>';
+            statusElement.title = mensaje || 'RUT válido y disponible';
+        } else {
+            input.classList.remove('is-valid');
+            input.classList.add('is-invalid');
+            input.style.borderColor = '#dc2626';
+            statusElement.innerHTML = '<i class="fas fa-times-circle text-danger"></i>';
+            statusElement.title = mensaje || 'RUT inválido o no disponible';
+        }
+    }
+    
+    function limpiarEstadoRut(input, statusElement) {
+        input.classList.remove('is-valid', 'is-invalid');
+        input.style.borderColor = '';
+        statusElement.innerHTML = '<i class="fas fa-question-circle text-muted"></i>';
+        statusElement.title = '';
+    }
+    
+    function verificarDisponibilidadRut(rut, input, statusElement) {
+        // Mostrar loading
+        statusElement.innerHTML = '<i class="fas fa-spinner fa-spin text-primary"></i>';
+        
+        fetch(`{% url "verificar_rut" %}?rut=${encodeURIComponent(rut)}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.valido) {
+                actualizarEstadoRut(input, statusElement, false, 'RUT inválido');
+            } else if (!data.disponible) {
+                actualizarEstadoRut(input, statusElement, false, data.message);
+            } else {
+                actualizarEstadoRut(input, statusElement, true, data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            limpiarEstadoRut(input, statusElement);
+        });
+    }
+    
+    // Validación de RUT Persona
+    const rutPersonaInput = document.querySelector('input[name="rut_persona"]');
+    const rutPersonaStatus = document.getElementById('rut-persona-status');
+    let rutPersonaTimeout = null;
+    
+    if (rutPersonaInput) {
+        rutPersonaInput.addEventListener('input', function(e) {
+            let valor = e.target.value.replace(/[^0-9kK]/g, '');
+            
+            if (valor.length > 9) {
+                valor = valor.substring(0, 9);
+            }
+            
+            e.target.value = valor;
+            
+            // Limpiar timeout anterior
+            if (rutPersonaTimeout) {
+                clearTimeout(rutPersonaTimeout);
+            }
+            
+            if (valor.length === 0) {
+                limpiarEstadoRut(rutPersonaInput, rutPersonaStatus);
+                return;
+            }
+            
+            if (valor.length >= 8) {
+                const esValido = validarRutChileno(valor);
+                if (esValido) {
+                    // Esperar 500ms antes de verificar disponibilidad
+                    rutPersonaTimeout = setTimeout(() => {
+                        verificarDisponibilidadRut(valor, rutPersonaInput, rutPersonaStatus);
+                    }, 500);
+                } else {
+                    actualizarEstadoRut(rutPersonaInput, rutPersonaStatus, false, 'RUT inválido');
+                }
+            } else {
+                limpiarEstadoRut(rutPersonaInput, rutPersonaStatus);
+            }
+        });
+        
+        rutPersonaInput.addEventListener('blur', function(e) {
+            const valor = e.target.value.trim();
+            if (valor.length >= 8) {
+                const esValido = validarRutChileno(valor);
+                if (esValido) {
+                    e.target.value = formatearRut(valor);
+                }
+            }
+        });
+    }
+    
+    // Validación de RUT Empresa
+    const rutEmpresaInput = document.querySelector('input[name="rut_empresa"]');
+    const rutEmpresaStatus = document.getElementById('rut-empresa-status');
+    let rutEmpresaTimeout = null;
+    
+    if (rutEmpresaInput) {
+        rutEmpresaInput.addEventListener('input', function(e) {
+            let valor = e.target.value.replace(/[^0-9kK]/g, '');
+            
+            if (valor.length > 9) {
+                valor = valor.substring(0, 9);
+            }
+            
+            e.target.value = valor;
+            
+            // Limpiar timeout anterior
+            if (rutEmpresaTimeout) {
+                clearTimeout(rutEmpresaTimeout);
+            }
+            
+            if (valor.length === 0) {
+                limpiarEstadoRut(rutEmpresaInput, rutEmpresaStatus);
+                return;
+            }
+            
+            if (valor.length >= 8) {
+                const esValido = validarRutChileno(valor);
+                if (esValido) {
+                    // Esperar 500ms antes de verificar disponibilidad
+                    rutEmpresaTimeout = setTimeout(() => {
+                        verificarDisponibilidadRut(valor, rutEmpresaInput, rutEmpresaStatus);
+                    }, 500);
+                } else {
+                    actualizarEstadoRut(rutEmpresaInput, rutEmpresaStatus, false, 'RUT inválido');
+                }
+            } else {
+                limpiarEstadoRut(rutEmpresaInput, rutEmpresaStatus);
+            }
+        });
+        
+        rutEmpresaInput.addEventListener('blur', function(e) {
+            const valor = e.target.value.trim();
+            if (valor.length >= 8) {
+                const esValido = validarRutChileno(valor);
+                if (esValido) {
+                    e.target.value = formatearRut(valor);
+                }
+            }
+        });
+    }
+    
+    // ============================================
+    // VALIDACIÓN DE CONTRASEÑA
+    // ============================================
+    
+    const password1Input = document.querySelector('input[name="password1"]');
+    const password2Input = document.querySelector('input[name="password2"]');
+    const passwordStrength = document.getElementById('passwordStrength');
+    const strengthBar = document.getElementById('strengthBar');
+    const strengthText = document.getElementById('strengthText');
+    const passwordMatch = document.getElementById('passwordMatch');
+    const matchText = document.getElementById('matchText');
+    
+    // Elementos de requisitos
+    const reqLength = document.getElementById('req-length');
+    const reqLetter = document.getElementById('req-letter');
+    const reqNumber = document.getElementById('req-number');
+    
+    function actualizarRequisito(elemento, cumple) {
+        if (cumple) {
+            elemento.classList.remove('text-muted');
+            elemento.classList.add('text-success');
+            elemento.querySelector('i').className = 'fas fa-check-circle me-1';
+        } else {
+            elemento.classList.remove('text-success');
+            elemento.classList.add('text-muted');
+            elemento.querySelector('i').className = 'fas fa-circle me-1';
+            elemento.querySelector('i').style.fontSize = '0.5rem';
+        }
+    }
+    
+    function validarPassword(password) {
+        const requisitos = {
+            longitud: password.length >= 8,
+            letra: /[a-zA-Z]/.test(password),
+            numero: /[0-9]/.test(password)
+        };
+        
+        // Actualizar indicadores visuales
+        actualizarRequisito(reqLength, requisitos.longitud);
+        actualizarRequisito(reqLetter, requisitos.letra);
+        actualizarRequisito(reqNumber, requisitos.numero);
+        
+        // Calcular fuerza
+        let fuerza = 0;
+        if (requisitos.longitud) fuerza += 33;
+        if (requisitos.letra) fuerza += 33;
+        if (requisitos.numero) fuerza += 34;
+        
+        // Actualizar barra de progreso
+        strengthBar.style.width = fuerza + '%';
+        
+        if (fuerza === 100) {
+            strengthBar.className = 'progress-bar bg-success';
+            strengthText.textContent = 'Fuerte';
+            strengthText.className = 'fw-bold text-success';
+        } else if (fuerza >= 66) {
+            strengthBar.className = 'progress-bar bg-warning';
+            strengthText.textContent = 'Media';
+            strengthText.className = 'fw-bold text-warning';
+        } else if (fuerza > 0) {
+            strengthBar.className = 'progress-bar bg-danger';
+            strengthText.textContent = 'Débil';
+            strengthText.className = 'fw-bold text-danger';
+        }
+        
+        return requisitos.longitud && requisitos.letra && requisitos.numero;
+    }
+    
+    if (password1Input) {
+        password1Input.addEventListener('input', function() {
+            const password = this.value;
+            
+            if (password.length > 0) {
+                passwordStrength.style.display = 'block';
+                validarPassword(password);
+            } else {
+                passwordStrength.style.display = 'none';
+            }
+            
+            // Validar coincidencia si password2 tiene valor
+            if (password2Input.value.length > 0) {
+                validarCoincidencia();
+            }
+        });
+    }
+    
+    function validarCoincidencia() {
+        const password1 = password1Input.value;
+        const password2 = password2Input.value;
+        
+        if (password2.length > 0) {
+            passwordMatch.style.display = 'block';
+            
+            if (password1 === password2 && password2.length > 0) {
+                matchText.innerHTML = '<i class="fas fa-check-circle me-1"></i>Las contraseñas coinciden';
+                matchText.parentElement.className = 'text-success';
+                password2Input.classList.remove('is-invalid');
+                password2Input.classList.add('is-valid');
+            } else {
+                matchText.innerHTML = '<i class="fas fa-times-circle me-1"></i>Las contraseñas no coinciden';
+                matchText.parentElement.className = 'text-danger';
+                password2Input.classList.remove('is-valid');
+                password2Input.classList.add('is-invalid');
+            }
+        } else {
+            passwordMatch.style.display = 'none';
+            password2Input.classList.remove('is-valid', 'is-invalid');
+        }
+    }
+    
+    if (password2Input) {
+        password2Input.addEventListener('input', validarCoincidencia);
+        password2Input.addEventListener('blur', validarCoincidencia);
+    }
+    
+    // Validar antes de enviar el formulario
+    registroForm.addEventListener('submit', function(e) {
+        if (!emailVerificado || emailInput.value.trim() !== emailVerificado) {
+            e.preventDefault();
+            alert('Por favor verifica tu email antes de completar el registro.');
+            emailInput.focus();
+            return false;
+        }
+        
+        // Validar contraseña
+        const password1 = password1Input.value;
+        if (!validarPassword(password1)) {
+            e.preventDefault();
+            alert('La contraseña debe tener al menos 8 caracteres, incluir letras y números.');
+            password1Input.focus();
+            return false;
+        }
+        
+        // Validar que las contraseñas coincidan
+        if (password1 !== password2Input.value) {
+            e.preventDefault();
+            alert('Las contraseñas no coinciden.');
+            password2Input.focus();
+            return false;
+        }
+    });
 });
 </script>
 {% endblock %}

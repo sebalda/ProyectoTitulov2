@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenido a Pozinox</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f3f4f6;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <!-- Header con degradado -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 40px 30px; text-align: center;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: bold;">
+                                ¡Bienvenido a Pozinox! 🎉
+                            </h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Contenido principal -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="font-size: 18px; color: #374151; margin: 0 0 20px 0;">
+                                Hola <strong>{{ nombre_completo }}</strong>,
+                            </p>
+                            
+                            <p style="font-size: 16px; color: #6b7280; line-height: 1.6; margin: 0 0 25px 0;">
+                                ¡Tu cuenta ha sido creada exitosamente! Estamos emocionados de tenerte con nosotros en Pozinox, tu proveedor de confianza en acero inoxidable de alta calidad.
+                            </p>
+                            
+                            <!-- Datos de acceso -->
+                            <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 20px; margin: 25px 0; border-radius: 5px;">
+                                <h3 style="margin: 0 0 15px 0; color: #1e3a8a; font-size: 18px;">
+                                    📋 Datos de Acceso
+                                </h3>
+                                <table width="100%" cellpadding="8" cellspacing="0">
+                                    <tr>
+                                        <td style="color: #6b7280; font-weight: 600; width: 40%;">Usuario:</td>
+                                        <td style="color: #1f2937; font-weight: bold;">{{ username }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="color: #6b7280; font-weight: 600;">Correo:</td>
+                                        <td style="color: #1f2937; font-weight: bold;">{{ email }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="color: #6b7280; font-weight: 600;">Tipo de cuenta:</td>
+                                        <td style="color: #1f2937; font-weight: bold;">{{ tipo_cliente }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 25px 0; border-radius: 5px;">
+                                <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.5;">
+                                    <strong>💡 Recuerda:</strong> Puedes iniciar sesión con tu <strong>nombre de usuario</strong> o tu <strong>correo electrónico</strong>, junto con la contraseña que elegiste durante el registro.
+                                </p>
+                            </div>
+                            
+                            <!-- Botón de acceso -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ url_login }}" style="display: inline-block; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                                            Iniciar Sesión Ahora
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+                            
+                            <!-- Qué puedes hacer -->
+                            <h3 style="color: #1e3a8a; font-size: 18px; margin: 0 0 15px 0;">
+                                ¿Qué puedes hacer en Pozinox?
+                            </h3>
+                            
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 25px;">
+                                <tr>
+                                    <td style="padding: 10px 0;">
+                                        <span style="font-size: 20px; margin-right: 10px;">🛒</span>
+                                        <span style="color: #374151; font-size: 15px;">Explora nuestro catálogo de productos de acero inoxidable</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px 0;">
+                                        <span style="font-size: 20px; margin-right: 10px;">📝</span>
+                                        <span style="color: #374151; font-size: 15px;">Crea cotizaciones personalizadas</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px 0;">
+                                        <span style="font-size: 20px; margin-right: 10px;">💳</span>
+                                        <span style="color: #374151; font-size: 15px;">Realiza pagos seguros (MercadoPago, Transferencia o Efectivo)</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px 0;">
+                                        <span style="font-size: 20px; margin-right: 10px;">📦</span>
+                                        <span style="color: #374151; font-size: 15px;">Haz seguimiento de tus pedidos</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px 0;">
+                                        <span style="font-size: 20px; margin-right: 10px;">📄</span>
+                                        <span style="color: #374151; font-size: 15px;">Descarga tus cotizaciones en PDF</span>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="font-size: 16px; color: #6b7280; line-height: 1.6; margin: 25px 0 0 0;">
+                                Si tienes alguna pregunta o necesitas ayuda, no dudes en contactarnos. Estamos aquí para ayudarte.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0 0 10px 0; color: #374151; font-weight: 600; font-size: 16px;">
+                                POZINOX
+                            </p>
+                            <p style="margin: 0 0 15px 0; color: #6b7280; font-size: 14px;">
+                                Tu proveedor de confianza en acero inoxidable
+                            </p>
+                            
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 20px;">
+                                <tr>
+                                    <td align="center">
+                                        <table cellpadding="5" cellspacing="0">
+                                            <tr>
+                                                <td>
+                                                    <span style="color: #6b7280; font-size: 14px;">📧</span>
+                                                    <a href="mailto:contacto@pozinox.cl" style="color: #3b82f6; text-decoration: none; font-size: 14px;">
+                                                        contacto@pozinox.cl
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <span style="color: #6b7280; font-size: 14px;">📞</span>
+                                                    <span style="color: #6b7280; font-size: 14px;">+56 9 1234 5678</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="margin: 20px 0 0 0; color: #9ca3af; font-size: 12px;">
+                                Este es un correo automático, por favor no responder a este mensaje.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

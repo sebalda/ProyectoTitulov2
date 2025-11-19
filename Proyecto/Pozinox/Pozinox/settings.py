@@ -20,6 +20,9 @@ DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+# URL del sitio (para correos y enlaces)
+SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
+
 
 # Application definition
 

@@ -15,12 +15,30 @@ class PerfilUsuario(models.Model):
         ('administrador', 'Administrador'),
     ]
     
+    TIPO_CLIENTE = [
+        ('persona', 'Persona Natural'),
+        ('empresa', 'Empresa'),
+    ]
+    
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='perfil')
     tipo_usuario = models.CharField(max_length=20, choices=TIPO_USUARIO, default='cliente')
+    
+    # Tipo de cliente para facturación
+    tipo_cliente = models.CharField(max_length=20, choices=TIPO_CLIENTE, default='persona', help_text='Tipo de cliente para facturación')
+    
+    # Campos comunes
     telefono = models.CharField(max_length=20, blank=True)
     direccion = models.TextField(blank=True)
     comuna = models.CharField(max_length=100, blank=True)
     ciudad = models.CharField(max_length=100, blank=True)
+    
+    # Campos para Persona Natural
+    rut = models.CharField(max_length=12, blank=True, help_text='RUT de persona natural o empresa')
+    
+    # Campos para Empresa
+    razon_social = models.CharField(max_length=200, blank=True, help_text='Razón social de la empresa')
+    giro = models.CharField(max_length=200, blank=True, help_text='Giro o actividad comercial')
+    direccion_comercial = models.TextField(blank=True, help_text='Dirección comercial de la empresa')
     
     # Información adicional
     fecha_nacimiento = models.DateField(null=True, blank=True)
