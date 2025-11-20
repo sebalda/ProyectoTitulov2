@@ -1007,7 +1007,19 @@ def pago_fallido(request, cotizacion_id):
 @login_required
 def pago_pendiente(request, cotizacion_id):
     """Página de pago pendiente"""
-    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
+    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id)
+    
+    # Verificar permisos
+    es_propietario = cotizacion.usuario == request.user
+    es_creador = cotizacion.creado_por == request.user if cotizacion.creado_por else False
+    es_staff = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
+    
+    if not (es_propietario or es_creador or es_staff):
+        messages.error(request, 'No tienes permisos para ver esta página.')
+        return redirect('home')
     
     # Verificar si es pago por Transferencia
     es_transferencia = cotizacion.metodo_pago == 'transferencia'
