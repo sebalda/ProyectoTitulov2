@@ -29,6 +29,23 @@ logger = logging.getLogger(__name__)
 def es_superusuario(user):
     return user.is_superuser
 
+def puede_editar_cotizacion(user, cotizacion):
+    """Verifica si el usuario puede editar la cotización"""
+    # Verificar si es staff (superusuario, trabajador o administrador)
+    es_staff = user.is_superuser or (
+        hasattr(user, 'perfil') and 
+        user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
+    
+    # Puede editar si: está en borrador Y (es el propietario O es quien la creó O es staff)
+    return (
+        cotizacion.estado == 'borrador' and (
+            cotizacion.usuario == user or 
+            cotizacion.creado_por == user or
+            es_staff
+        )
+    )
+
 def aplicar_filtros_productos(queryset, request):
     """Aplicar filtros comunes a productos"""
     categoria_id = request.GET.get('categoria')
@@ -394,6 +411,46 @@ def mis_cotizaciones(request):
 
 
 @login_required
+def todas_cotizaciones(request):
+    """Lista de TODAS las cotizaciones - Solo para staff/trabajadores/administradores"""
+    # Verificar permisos
+    tiene_permiso = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
+    
+    if not tiene_permiso:
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('mis_cotizaciones')
+    
+    # Obtener TODAS las cotizaciones
+    cotizaciones = Cotizacion.objects.all().select_related('usuario', 'creado_por').order_by('-fecha_creacion')
+    
+    # Aplicar filtros
+    estado = request.GET.get('estado')
+    busqueda = request.GET.get('q', '').strip()
+    
+    if estado:
+        cotizaciones = cotizaciones.filter(estado=estado)
+    
+    if busqueda:
+        from django.db.models import Q
+        cotizaciones = cotizaciones.filter(
+            Q(numero_cotizacion__icontains=busqueda) |
+            Q(usuario__username__icontains=busqueda) |
+            Q(usuario__first_name__icontains=busqueda) |
+            Q(usuario__last_name__icontains=busqueda) |
+            Q(usuario__email__icontains=busqueda)
+        )
+    
+    return render(request, 'tienda/cotizaciones/todas_cotizaciones.html', {
+        'cotizaciones': paginar_queryset(cotizaciones, request, 20),
+        'estado_actual': estado,
+        'busqueda': busqueda,
+    })
+
+
+@login_required
 def crear_cotizacion(request):
     """Crear nueva cotización o obtener la cotización en borrador actual"""
     cotizacion = Cotizacion.objects.filter(usuario=request.user, estado='borrador').first()
@@ -430,9 +487,67 @@ def crear_cotizacion(request):
 
 
 @login_required
+def crear_cotizacion_para_cliente(request):
+    """Vista para que trabajadores/administradores creen cotizaciones para clientes"""
+    from django.contrib.auth.models import User
+    
+    # Verificar permisos
+    tiene_permiso = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
+    
+    if not tiene_permiso:
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        cliente_id = request.POST.get('cliente_id')
+        
+        if not cliente_id:
+            messages.error(request, 'Debes seleccionar un cliente.')
+            return redirect('crear_cotizacion_para_cliente')
+        
+        try:
+            cliente = User.objects.get(id=cliente_id)
+            
+            # Verificar si el cliente ya tiene una cotización en borrador
+            cotizacion = Cotizacion.objects.filter(usuario=cliente, estado='borrador').first()
+            
+            if cotizacion:
+                messages.info(request, f'El cliente {cliente.get_full_name() or cliente.username} ya tiene una cotización en borrador.')
+            else:
+                # Crear cotización y registrar quién la creó
+                cotizacion = Cotizacion.objects.create(
+                    usuario=cliente,
+                    creado_por=request.user  # Registrar el trabajador/admin que la creó
+                )
+                messages.success(request, f'Cotización {cotizacion.numero_cotizacion} creada para {cliente.get_full_name() or cliente.username}.')
+            
+            return redirect('detalle_cotizacion', cotizacion_id=cotizacion.id)
+            
+        except User.DoesNotExist:
+            messages.error(request, 'Cliente no encontrado.')
+            return redirect('crear_cotizacion_para_cliente')
+    
+    # GET request - mostrar formulario simple
+    return render(request, 'tienda/cotizaciones/crear_cotizacion_cliente.html', {})
+
+
+@login_required
 def detalle_cotizacion(request, cotizacion_id):
     """Ver detalle de una cotización"""
-    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
+    # Superusuarios, administradores y trabajadores pueden ver cualquier cotización
+    es_staff = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
+    
+    if es_staff:
+        cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id)
+    else:
+        cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
+    
     detalles = cotizacion.detalles.all().select_related('producto')
     
     # Productos disponibles para agregar
@@ -452,12 +567,21 @@ def detalle_cotizacion(request, cotizacion_id):
             Q(nombre__icontains=busqueda) | Q(codigo_producto__icontains=busqueda)
         )
     
+    # Puede editar si: está en borrador Y (es el propietario O es quien la creó O es staff/admin/trabajador)
+    puede_editar = (
+        cotizacion.estado == 'borrador' and (
+            cotizacion.usuario == request.user or 
+            cotizacion.creado_por == request.user or
+            es_staff
+        )
+    )
+    
     return render(request, 'tienda/cotizaciones/detalle_cotizacion.html', {
         'cotizacion': cotizacion,
         'detalles': detalles,
         'productos_disponibles': productos_disponibles[:20],
         'categorias': CategoriaAcero.objects.filter(activa=True),
-        'puede_editar': cotizacion.estado == 'borrador',
+        'puede_editar': puede_editar,
     })
 
 
@@ -465,10 +589,20 @@ def detalle_cotizacion(request, cotizacion_id):
 @require_POST
 def agregar_producto_cotizacion(request, cotizacion_id):
     """Agregar un producto a la cotización"""
-    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
+    # Verificar permisos: staff puede ver cualquier cotización, usuarios solo las suyas
+    es_staff = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
     
-    if cotizacion.estado != 'borrador':
-        messages.error(request, 'No se pueden agregar productos a una cotización finalizada.')
+    if es_staff:
+        cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id)
+    else:
+        cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
+    
+    # Verificar si puede editar
+    if not puede_editar_cotizacion(request.user, cotizacion):
+        messages.error(request, 'No tienes permisos para editar esta cotización.')
         return redirect('detalle_cotizacion', cotizacion_id=cotizacion.id)
     
     producto = get_object_or_404(Producto, id=request.POST.get('producto_id'), activo=True)
@@ -496,10 +630,8 @@ def actualizar_cantidad_producto(request, detalle_id):
     detalle = get_object_or_404(DetalleCotizacion, id=detalle_id)
     cotizacion = detalle.cotizacion
     
-    if cotizacion.usuario != request.user:
+    if not puede_editar_cotizacion(request.user, cotizacion):
         return JsonResponse({'error': 'No autorizado'}, status=403)
-    if cotizacion.estado != 'borrador':
-        return JsonResponse({'error': 'No se puede editar una cotización finalizada'}, status=400)
     
     cantidad = int(request.POST.get('cantidad', 1))
     if cantidad <= 0:
@@ -522,12 +654,9 @@ def eliminar_producto_cotizacion(request, detalle_id):
     detalle = get_object_or_404(DetalleCotizacion, id=detalle_id)
     cotizacion = detalle.cotizacion
     
-    if cotizacion.usuario != request.user:
+    if not puede_editar_cotizacion(request.user, cotizacion):
         messages.error(request, 'No autorizado.')
         return redirect('mis_cotizaciones')
-    if cotizacion.estado != 'borrador':
-        messages.error(request, 'No se pueden eliminar productos de una cotización finalizada.')
-        return redirect('detalle_cotizacion', cotizacion_id=cotizacion.id)
     
     producto_nombre = detalle.producto.nombre
     detalle.delete()
@@ -539,7 +668,20 @@ def eliminar_producto_cotizacion(request, detalle_id):
 @login_required
 def finalizar_cotizacion(request, cotizacion_id):
     """Finalizar cotización y mostrar opciones de pago"""
-    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
+    # Verificar permisos: staff puede ver cualquier cotización, usuarios solo las suyas
+    es_staff = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
+    
+    if es_staff:
+        cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id)
+    else:
+        cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
+    
+    if not puede_editar_cotizacion(request.user, cotizacion):
+        messages.error(request, 'No tienes permisos para finalizar esta cotización.')
+        return redirect('detalle_cotizacion', cotizacion_id=cotizacion.id)
     
     if cotizacion.estado != 'borrador':
         messages.error(request, 'Esta cotización ya fue finalizada.')
@@ -565,7 +707,16 @@ def finalizar_cotizacion(request, cotizacion_id):
 @login_required
 def seleccionar_pago(request, cotizacion_id):
     """Página para seleccionar método de pago"""
-    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
+    # Verificar permisos: staff puede ver cualquier cotización, usuarios solo las suyas
+    es_staff = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
+    
+    if es_staff:
+        cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id)
+    else:
+        cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
     
     if cotizacion.estado not in ['finalizada', 'pagada']:
         messages.error(request, 'La cotización debe estar finalizada para proceder al pago.')
@@ -586,7 +737,16 @@ def seleccionar_pago(request, cotizacion_id):
 @login_required
 def procesar_pago_mercadopago(request, cotizacion_id):
     """Crear preferencia de pago en MercadoPago y redirigir"""
-    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
+    # Verificar permisos: staff puede ver cualquier cotización, usuarios solo las suyas
+    es_staff = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
+    
+    if es_staff:
+        cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id)
+    else:
+        cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
     
     # Verificar que esté finalizada
     if cotizacion.estado not in ['finalizada', 'pagada', 'en_revision']:
@@ -762,7 +922,19 @@ def procesar_pago_mercadopago(request, cotizacion_id):
 @login_required
 def pago_exitoso(request, cotizacion_id):
     """Página de confirmación de pago exitoso"""
-    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
+    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id)
+    
+    # Verificar permisos
+    es_propietario = cotizacion.usuario == request.user
+    es_creador = cotizacion.creado_por == request.user if cotizacion.creado_por else False
+    es_staff = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
+    
+    if not (es_propietario or es_creador or es_staff):
+        messages.error(request, 'No tienes permisos para ver esta página.')
+        return redirect('home')
     
     # Obtener payment_id de MercadoPago si está disponible
     payment_id = request.GET.get('payment_id') or request.GET.get('preference_id')
@@ -812,7 +984,19 @@ def pago_exitoso(request, cotizacion_id):
 @login_required
 def pago_fallido(request, cotizacion_id):
     """Página de pago fallido"""
-    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
+    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id)
+    
+    # Verificar permisos
+    es_propietario = cotizacion.usuario == request.user
+    es_creador = cotizacion.creado_por == request.user if cotizacion.creado_por else False
+    es_staff = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
+    
+    if not (es_propietario or es_creador or es_staff):
+        messages.error(request, 'No tienes permisos para ver esta página.')
+        return redirect('home')
     
     context = {
         'cotizacion': cotizacion,
@@ -1068,7 +1252,16 @@ def descargar_cotizacion_pdf(request, cotizacion_id):
 @login_required
 def procesar_pago_transferencia(request, cotizacion_id):
     """Página para procesar pago por transferencia bancaria"""
-    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
+    # Verificar permisos: staff puede ver cualquier cotización, usuarios solo las suyas
+    es_staff = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
+    
+    if es_staff:
+        cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id)
+    else:
+        cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
     
     # Verificar que esté finalizada
     if cotizacion.estado not in ['finalizada', 'pagada', 'en_revision']:
@@ -1153,7 +1346,16 @@ def procesar_pago_transferencia(request, cotizacion_id):
 @login_required
 def procesar_pago_efectivo(request, cotizacion_id):
     """Página para procesar pago en efectivo"""
-    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
+    # Verificar permisos: staff puede ver cualquier cotización, usuarios solo las suyas
+    es_staff = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
+    
+    if es_staff:
+        cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id)
+    else:
+        cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
     
     # Verificar que esté finalizada
     if cotizacion.estado not in ['finalizada', 'pagada', 'en_revision']:

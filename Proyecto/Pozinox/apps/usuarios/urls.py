@@ -24,6 +24,10 @@ urlpatterns = [
     path('api/generate-token/', views.api_generate_token, name='api_generate_token'),
     path('api/validate-token/', views.api_validate_token, name='api_validate_token'),
     path('api/revoke-token/', views.api_revoke_token, name='api_revoke_token'),
+    path('api/buscar-clientes/', views.api_buscar_clientes, name='api_buscar_clientes'),
+    
+    # URLs para trabajadores
+    path('trabajadores/crear-comprador/', views.crear_comprador_view, name='crear_comprador'),
     
     # URLs del Panel Admin (solo superusuarios)
     path('panel-admin/usuarios/', views.lista_usuarios_admin, name='lista_usuarios_admin'),

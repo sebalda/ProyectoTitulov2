@@ -219,6 +219,7 @@ class Cotizacion(models.Model):
     ]
     
     usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cotizaciones')
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='cotizaciones_creadas', help_text="Usuario que creó esta cotización (trabajador/admin)")
     numero_cotizacion = models.CharField(max_length=20, unique=True, blank=True)
     estado = models.CharField(max_length=20, choices=ESTADOS_COTIZACION, default='borrador')
     

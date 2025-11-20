@@ -1,0 +1,945 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Crear Comprador - Pozinox{% endblock %}
+
+{% block extra_css %}
+<style>
+    .crear-comprador-container {
+        min-height: calc(100vh - 200px);
+        padding: 4rem 0 2rem 0;
+        margin-top: 2rem;
+    }
+    
+    .crear-comprador-card {
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        padding: 2.5rem;
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .crear-comprador-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .crear-comprador-header h2 {
+        color: #1e3a8a;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .crear-comprador-header p {
+        color: #6b7280;
+        font-size: 0.95rem;
+    }
+    
+    .section-title {
+        color: #1e3a8a;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e5e7eb;
+        font-size: 1.1rem;
+    }
+    
+    .tipo-cliente-selector {
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 2px solid #e5e7eb;
+    }
+    
+    .tipo-cliente-option {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .tipo-cliente-option:last-child {
+        margin-bottom: 0;
+    }
+    
+    .tipo-cliente-option:hover {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+    
+    .tipo-cliente-option.selected {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+    
+    .tipo-cliente-option input[type="radio"] {
+        width: 20px;
+        height: 20px;
+        margin-right: 1rem;
+        cursor: pointer;
+    }
+    
+    .tipo-cliente-info {
+        flex: 1;
+    }
+    
+    .tipo-cliente-info h5 {
+        margin: 0 0 0.25rem 0;
+        color: #1e3a8a;
+        font-weight: 600;
+    }
+    
+    .tipo-cliente-info p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+    
+    .campos-persona, .campos-empresa {
+        display: none;
+    }
+    
+    .campos-persona.active, .campos-empresa.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    
+    .form-label .required {
+        color: #dc2626;
+    }
+    
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        padding: 0.625rem 0.875rem;
+    }
+    
+    .form-control:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .help-text {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-top: 0.25rem;
+        display: block;
+    }
+    
+    .btn-crear {
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        width: 100%;
+        color: white;
+    }
+    
+    .btn-crear:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(30, 58, 138, 0.4);
+    }
+    
+    .alert {
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .errorlist {
+        list-style: none;
+        padding: 0;
+        margin: 0.5rem 0 0 0;
+    }
+    
+    .errorlist li {
+        color: #dc2626;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+    
+    .form-control.is-invalid {
+        border-color: #dc2626 !important;
+    }
+    
+    .info-box {
+        background: #eff6ff;
+        border-left: 4px solid #3b82f6;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-radius: 8px;
+    }
+    
+    .info-box i {
+        color: #3b82f6;
+        margin-right: 0.5rem;
+    }
+    
+    .btn-cancelar {
+        background: #6b7280;
+        border: none;
+        border-radius: 10px;
+        padding: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        width: 100%;
+        color: white;
+        margin-top: 0.5rem;
+    }
+    
+    .btn-cancelar:hover {
+        background: #4b5563;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(107, 114, 128, 0.4);
+    }
+    
+    .input-group-text {
+        background-color: #f9fafb;
+        border-left: none;
+    }
+    
+    .form-control.is-valid {
+        border-color: #10b981 !important;
+    }
+    
+    .form-control.is-invalid {
+        border-color: #dc2626 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="crear-comprador-container">
+    <div class="container">
+        <div class="crear-comprador-card">
+            <div class="crear-comprador-header">
+                <h2><i class="fas fa-user-plus me-2"></i>Crear Nuevo Comprador</h2>
+                <p>Registra los datos del cliente para poder facturar y realizar ventas</p>
+            </div>
+
+            <div class="info-box">
+                <i class="fas fa-info-circle"></i>
+                <strong>Importante:</strong> Todos los datos son obligatorios para cumplir con los requisitos de facturación.
+                El cliente recibirá las credenciales y podrá cambiar su contraseña después.
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" id="crearCompradorForm">
+                {% csrf_token %}
+                
+                <!-- Datos de Usuario -->
+                <div class="mb-4">
+                    <h5 class="section-title">Datos de Acceso</h5>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Usuario <span class="required">*</span></label>
+                        <div class="input-group">
+                            {{ form.username }}
+                            <span class="input-group-text" id="username-status">
+                                <i class="fas fa-question-circle text-muted"></i>
+                            </span>
+                        </div>
+                        <small class="help-text">Nombre de usuario único para iniciar sesión</small>
+                        {% if form.username.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.username.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Nombre <span class="required">*</span></label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.first_name.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Apellido <span class="required">*</span></label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <ul class="errorlist">
+                                        {% for error in form.last_name.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Email <span class="required">*</span></label>
+                        <div class="input-group">
+                            {{ form.email }}
+                            <span class="input-group-text" id="email-status">
+                                <i class="fas fa-question-circle text-muted"></i>
+                            </span>
+                        </div>
+                        <small class="help-text">Email para facturación y notificaciones</small>
+                        {% if form.email.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.email.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Contraseña Temporal <span class="required">*</span></label>
+                        {{ form.password }}
+                        <small class="help-text">Contraseña inicial (mínimo 8 caracteres). El cliente podrá cambiarla después.</small>
+                        {% if form.password.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.password.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Teléfono</label>
+                        {{ form.telefono }}
+                        {% if form.telefono.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.telefono.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Tipo de Cliente -->
+                <div class="mb-4">
+                    <h5 class="section-title">Tipo de Cliente</h5>
+                    
+                    <div class="tipo-cliente-selector">
+                        <label class="tipo-cliente-option" id="opcion-persona">
+                            <input type="radio" name="tipo_cliente" value="persona" checked>
+                            <div class="tipo-cliente-info">
+                                <h5><i class="fas fa-user me-2"></i>Persona Natural</h5>
+                                <p>Facturación a nombre de una persona</p>
+                            </div>
+                        </label>
+                        
+                        <label class="tipo-cliente-option" id="opcion-empresa">
+                            <input type="radio" name="tipo_cliente" value="empresa">
+                            <div class="tipo-cliente-info">
+                                <h5><i class="fas fa-building me-2"></i>Empresa</h5>
+                                <p>Facturación a nombre de una empresa</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Campos Persona Natural -->
+                <div class="campos-persona active">
+                    <h5 class="section-title">Datos para Facturación - Persona Natural</h5>
+                    
+                    <div class="form-group">
+                        <label class="form-label">RUT <span class="required">*</span></label>
+                        <div class="input-group">
+                            {{ form.rut_persona }}
+                            <span class="input-group-text" id="rut-persona-status">
+                                <i class="fas fa-question-circle text-muted"></i>
+                            </span>
+                        </div>
+                        {% if form.rut_persona.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.rut_persona.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Dirección <span class="required">*</span></label>
+                        {{ form.direccion_persona }}
+                        {% if form.direccion_persona.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.direccion_persona.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Comuna <span class="required">*</span></label>
+                        {{ form.comuna_persona }}
+                        {% if form.comuna_persona.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.comuna_persona.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Campos Empresa -->
+                <div class="campos-empresa">
+                    <h5 class="section-title">Datos para Facturación - Empresa</h5>
+                    
+                    <div class="form-group">
+                        <label class="form-label">RUT Empresa <span class="required">*</span></label>
+                        <div class="input-group">
+                            {{ form.rut_empresa }}
+                            <span class="input-group-text" id="rut-empresa-status">
+                                <i class="fas fa-question-circle text-muted"></i>
+                            </span>
+                        </div>
+                        {% if form.rut_empresa.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.rut_empresa.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Razón Social <span class="required">*</span></label>
+                        {{ form.razon_social }}
+                        {% if form.razon_social.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.razon_social.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Giro Comercial <span class="required">*</span></label>
+                        {{ form.giro }}
+                        {% if form.giro.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.giro.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Dirección Comercial <span class="required">*</span></label>
+                        {{ form.direccion_empresa }}
+                        {% if form.direccion_empresa.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.direccion_empresa.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Comuna <span class="required">*</span></label>
+                        {{ form.comuna_empresa }}
+                        {% if form.comuna_empresa.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.comuna_empresa.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-crear">
+                        <i class="fas fa-user-plus me-2"></i>Crear Comprador
+                    </button>
+                    <a href="{% url 'home' %}" class="btn btn-cancelar">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const opcionPersona = document.getElementById('opcion-persona');
+    const opcionEmpresa = document.getElementById('opcion-empresa');
+    const camposPersona = document.querySelector('.campos-persona');
+    const camposEmpresa = document.querySelector('.campos-empresa');
+    const form = document.getElementById('crearCompradorForm');
+    
+    // ============================================
+    // CAMBIO DE TIPO DE CLIENTE
+    // ============================================
+    function actualizarVista() {
+        const tipoSeleccionado = document.querySelector('input[name="tipo_cliente"]:checked').value;
+        
+        // Actualizar clases de opciones
+        opcionPersona.classList.toggle('selected', tipoSeleccionado === 'persona');
+        opcionEmpresa.classList.toggle('selected', tipoSeleccionado === 'empresa');
+        
+        // Mostrar/ocultar campos
+        camposPersona.classList.toggle('active', tipoSeleccionado === 'persona');
+        camposEmpresa.classList.toggle('active', tipoSeleccionado === 'empresa');
+    }
+    
+    // Event listeners para cambio de tipo
+    opcionPersona.addEventListener('click', actualizarVista);
+    opcionEmpresa.addEventListener('click', actualizarVista);
+    
+    // Inicializar vista
+    actualizarVista();
+    
+    // ============================================
+    // VALIDACIÓN DE USERNAME
+    // ============================================
+    const usernameInput = document.querySelector('input[name="username"]');
+    const usernameStatus = document.getElementById('username-status');
+    let usernameTimeout = null;
+    
+    function actualizarEstadoUsername(esValido, mensaje) {
+        if (esValido) {
+            usernameInput.classList.remove('is-invalid');
+            usernameInput.classList.add('is-valid');
+            usernameInput.style.borderColor = '#10b981';
+            usernameStatus.innerHTML = '<i class="fas fa-check-circle text-success"></i>';
+            usernameStatus.title = mensaje;
+        } else {
+            usernameInput.classList.remove('is-valid');
+            usernameInput.classList.add('is-invalid');
+            usernameInput.style.borderColor = '#dc2626';
+            usernameStatus.innerHTML = '<i class="fas fa-times-circle text-danger"></i>';
+            usernameStatus.title = mensaje;
+        }
+    }
+    
+    function limpiarEstadoUsername() {
+        usernameInput.classList.remove('is-valid', 'is-invalid');
+        usernameInput.style.borderColor = '';
+        usernameStatus.innerHTML = '<i class="fas fa-question-circle text-muted"></i>';
+        usernameStatus.title = '';
+    }
+    
+    usernameInput.addEventListener('input', function() {
+        const username = this.value.trim();
+        
+        if (usernameTimeout) {
+            clearTimeout(usernameTimeout);
+        }
+        
+        if (username.length === 0) {
+            limpiarEstadoUsername();
+            return;
+        }
+        
+        if (username.length < 3) {
+            actualizarEstadoUsername(false, 'El usuario debe tener al menos 3 caracteres');
+            return;
+        }
+        
+        // Mostrar loading
+        usernameStatus.innerHTML = '<i class="fas fa-spinner fa-spin text-primary"></i>';
+        
+        usernameTimeout = setTimeout(() => {
+            fetch(`{% url "verificar_username" %}?username=${encodeURIComponent(username)}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.disponible) {
+                    actualizarEstadoUsername(true, data.message);
+                } else {
+                    actualizarEstadoUsername(false, data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                limpiarEstadoUsername();
+            });
+        }, 500);
+    });
+    
+    // ============================================
+    // VALIDACIÓN DE EMAIL
+    // ============================================
+    const emailInput = document.querySelector('input[name="email"]');
+    const emailStatus = document.getElementById('email-status');
+    let emailTimeout = null;
+    
+    function actualizarEstadoEmail(esValido, mensaje) {
+        if (esValido) {
+            emailInput.classList.remove('is-invalid');
+            emailInput.classList.add('is-valid');
+            emailInput.style.borderColor = '#10b981';
+            emailStatus.innerHTML = '<i class="fas fa-check-circle text-success"></i>';
+            emailStatus.title = mensaje;
+        } else {
+            emailInput.classList.remove('is-valid');
+            emailInput.classList.add('is-invalid');
+            emailInput.style.borderColor = '#dc2626';
+            emailStatus.innerHTML = '<i class="fas fa-times-circle text-danger"></i>';
+            emailStatus.title = mensaje;
+        }
+    }
+    
+    function limpiarEstadoEmail() {
+        emailInput.classList.remove('is-valid', 'is-invalid');
+        emailInput.style.borderColor = '';
+        emailStatus.innerHTML = '<i class="fas fa-question-circle text-muted"></i>';
+        emailStatus.title = '';
+    }
+    
+    emailInput.addEventListener('input', function() {
+        const email = this.value.trim();
+        
+        if (emailTimeout) {
+            clearTimeout(emailTimeout);
+        }
+        
+        if (email.length === 0) {
+            limpiarEstadoEmail();
+            return;
+        }
+        
+        // Validar formato
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            actualizarEstadoEmail(false, 'Email inválido');
+            return;
+        }
+        
+        // Mostrar loading
+        emailStatus.innerHTML = '<i class="fas fa-spinner fa-spin text-primary"></i>';
+        
+        emailTimeout = setTimeout(() => {
+            fetch(`{% url "verificar_email" %}?email=${encodeURIComponent(email)}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.disponible) {
+                    actualizarEstadoEmail(true, data.message);
+                } else {
+                    actualizarEstadoEmail(false, data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                limpiarEstadoEmail();
+            });
+        }, 500);
+    });
+    
+    // ============================================
+    // VALIDACIÓN DE RUT
+    // ============================================
+    function validarRutChileno(rut) {
+        rut = rut.toUpperCase().replace(/\./g, '').replace(/-/g, '').trim();
+        
+        if (!rut || rut.length < 2) {
+            return false;
+        }
+        
+        const numero = rut.slice(0, -1);
+        const dv = rut.slice(-1);
+        
+        if (!/^\d+$/.test(numero)) {
+            return false;
+        }
+        
+        if (!/^[0-9K]$/.test(dv)) {
+            return false;
+        }
+        
+        let suma = 0;
+        let multiplicador = 2;
+        
+        for (let i = numero.length - 1; i >= 0; i--) {
+            suma += parseInt(numero[i]) * multiplicador;
+            multiplicador++;
+            if (multiplicador > 7) {
+                multiplicador = 2;
+            }
+        }
+        
+        const resto = suma % 11;
+        const dvCalculado = 11 - resto;
+        
+        let dvEsperado;
+        if (dvCalculado === 11) {
+            dvEsperado = '0';
+        } else if (dvCalculado === 10) {
+            dvEsperado = 'K';
+        } else {
+            dvEsperado = dvCalculado.toString();
+        }
+        
+        return dv === dvEsperado;
+    }
+    
+    function formatearRut(rut) {
+        rut = rut.toUpperCase().replace(/\./g, '').replace(/-/g, '').trim();
+        
+        if (rut.length < 2) {
+            return rut;
+        }
+        
+        const numero = rut.slice(0, -1);
+        const dv = rut.slice(-1);
+        
+        let numeroFormateado = '';
+        for (let i = numero.length - 1, j = 0; i >= 0; i--, j++) {
+            if (j > 0 && j % 3 === 0) {
+                numeroFormateado = '.' + numeroFormateado;
+            }
+            numeroFormateado = numero[i] + numeroFormateado;
+        }
+        
+        return `${numeroFormateado}-${dv}`;
+    }
+    
+    function actualizarEstadoRut(input, statusElement, esValido, mensaje = '') {
+        if (esValido) {
+            input.classList.remove('is-invalid');
+            input.classList.add('is-valid');
+            input.style.borderColor = '#10b981';
+            statusElement.innerHTML = '<i class="fas fa-check-circle text-success"></i>';
+            statusElement.title = mensaje || 'RUT válido y disponible';
+        } else {
+            input.classList.remove('is-valid');
+            input.classList.add('is-invalid');
+            input.style.borderColor = '#dc2626';
+            statusElement.innerHTML = '<i class="fas fa-times-circle text-danger"></i>';
+            statusElement.title = mensaje || 'RUT inválido o no disponible';
+        }
+    }
+    
+    function limpiarEstadoRut(input, statusElement) {
+        input.classList.remove('is-valid', 'is-invalid');
+        input.style.borderColor = '';
+        statusElement.innerHTML = '<i class="fas fa-question-circle text-muted"></i>';
+        statusElement.title = '';
+    }
+    
+    function verificarDisponibilidadRut(rut, input, statusElement) {
+        statusElement.innerHTML = '<i class="fas fa-spinner fa-spin text-primary"></i>';
+        
+        fetch(`{% url "verificar_rut" %}?rut=${encodeURIComponent(rut)}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.valido) {
+                actualizarEstadoRut(input, statusElement, false, 'RUT inválido');
+            } else if (!data.disponible) {
+                actualizarEstadoRut(input, statusElement, false, data.message);
+            } else {
+                actualizarEstadoRut(input, statusElement, true, data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            limpiarEstadoRut(input, statusElement);
+        });
+    }
+    
+    // Validación de RUT Persona
+    const rutPersonaInput = document.querySelector('input[name="rut_persona"]');
+    const rutPersonaStatus = document.getElementById('rut-persona-status');
+    let rutPersonaTimeout = null;
+    
+    if (rutPersonaInput) {
+        rutPersonaInput.addEventListener('input', function(e) {
+            let valor = e.target.value.replace(/[^0-9kK]/g, '');
+            
+            if (valor.length > 9) {
+                valor = valor.substring(0, 9);
+            }
+            
+            e.target.value = valor;
+            
+            if (rutPersonaTimeout) {
+                clearTimeout(rutPersonaTimeout);
+            }
+            
+            if (valor.length === 0) {
+                limpiarEstadoRut(rutPersonaInput, rutPersonaStatus);
+                return;
+            }
+            
+            if (valor.length >= 8) {
+                const esValido = validarRutChileno(valor);
+                if (esValido) {
+                    rutPersonaTimeout = setTimeout(() => {
+                        verificarDisponibilidadRut(valor, rutPersonaInput, rutPersonaStatus);
+                    }, 500);
+                } else {
+                    actualizarEstadoRut(rutPersonaInput, rutPersonaStatus, false, 'RUT inválido');
+                }
+            } else {
+                limpiarEstadoRut(rutPersonaInput, rutPersonaStatus);
+            }
+        });
+        
+        rutPersonaInput.addEventListener('blur', function(e) {
+            const valor = e.target.value.trim();
+            if (valor.length >= 8) {
+                const esValido = validarRutChileno(valor);
+                if (esValido) {
+                    e.target.value = formatearRut(valor);
+                }
+            }
+        });
+    }
+    
+    // Validación de RUT Empresa
+    const rutEmpresaInput = document.querySelector('input[name="rut_empresa"]');
+    const rutEmpresaStatus = document.getElementById('rut-empresa-status');
+    let rutEmpresaTimeout = null;
+    
+    if (rutEmpresaInput) {
+        rutEmpresaInput.addEventListener('input', function(e) {
+            let valor = e.target.value.replace(/[^0-9kK]/g, '');
+            
+            if (valor.length > 9) {
+                valor = valor.substring(0, 9);
+            }
+            
+            e.target.value = valor;
+            
+            if (rutEmpresaTimeout) {
+                clearTimeout(rutEmpresaTimeout);
+            }
+            
+            if (valor.length === 0) {
+                limpiarEstadoRut(rutEmpresaInput, rutEmpresaStatus);
+                return;
+            }
+            
+            if (valor.length >= 8) {
+                const esValido = validarRutChileno(valor);
+                if (esValido) {
+                    rutEmpresaTimeout = setTimeout(() => {
+                        verificarDisponibilidadRut(valor, rutEmpresaInput, rutEmpresaStatus);
+                    }, 500);
+                } else {
+                    actualizarEstadoRut(rutEmpresaInput, rutEmpresaStatus, false, 'RUT inválido');
+                }
+            } else {
+                limpiarEstadoRut(rutEmpresaInput, rutEmpresaStatus);
+            }
+        });
+        
+        rutEmpresaInput.addEventListener('blur', function(e) {
+            const valor = e.target.value.trim();
+            if (valor.length >= 8) {
+                const esValido = validarRutChileno(valor);
+                if (esValido) {
+                    e.target.value = formatearRut(valor);
+                }
+            }
+        });
+    }
+    
+    // ============================================
+    // VALIDACIÓN DEL FORMULARIO
+    // ============================================
+    form.addEventListener('submit', function(e) {
+        const tipoCliente = document.querySelector('input[name="tipo_cliente"]:checked').value;
+        let valido = true;
+        
+        if (tipoCliente === 'persona') {
+            const rut = document.querySelector('input[name="rut_persona"]').value;
+            const direccion = document.querySelector('textarea[name="direccion_persona"]').value;
+            const comuna = document.querySelector('input[name="comuna_persona"]').value;
+            
+            if (!rut || !direccion || !comuna) {
+                valido = false;
+                alert('Por favor, completa todos los campos obligatorios para Persona Natural.');
+            }
+        } else {
+            const rut = document.querySelector('input[name="rut_empresa"]').value;
+            const razonSocial = document.querySelector('input[name="razon_social"]').value;
+            const giro = document.querySelector('input[name="giro"]').value;
+            const direccion = document.querySelector('textarea[name="direccion_empresa"]').value;
+            const comuna = document.querySelector('input[name="comuna_empresa"]').value;
+            
+            if (!rut || !razonSocial || !giro || !direccion || !comuna) {
+                valido = false;
+                alert('Por favor, completa todos los campos obligatorios para Empresa.');
+            }
+        }
+        
+        if (!valido) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -12,7 +12,7 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.urls import reverse
 from .models import PerfilUsuario, EmailVerificationToken, PasswordResetToken
-from .forms import LoginForm, RegistroForm, UsuarioForm, PasswordResetRequestForm, PasswordResetForm, PerfilEditForm
+from .forms import LoginForm, RegistroForm, UsuarioForm, PasswordResetRequestForm, PasswordResetForm, PerfilEditForm, CrearCompradorForm
 
 
 def login_view(request):
@@ -803,4 +803,113 @@ def password_reset_confirm(request, token):
         )
         return redirect('password_reset_request')
 
+
+@login_required
+def api_buscar_clientes(request):
+    """API para buscar clientes dinámicamente"""
+    from django.db.models import Q
+    
+    # Verificar permisos
+    tiene_permiso = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
+    
+    if not tiene_permiso:
+        return JsonResponse({'error': 'No tienes permisos'}, status=403)
+    
+    query = request.GET.get('q', '').strip()
+    
+    if len(query) < 2:
+        return JsonResponse({'clientes': []})
+    
+    # Buscar clientes
+    clientes = User.objects.filter(
+        perfil__tipo_usuario='cliente',
+        is_active=True
+    ).filter(
+        Q(username__icontains=query) |
+        Q(first_name__icontains=query) |
+        Q(last_name__icontains=query) |
+        Q(email__icontains=query) |
+        Q(perfil__rut__icontains=query)
+    ).select_related('perfil')[:10]
+    
+    # Formatear resultados
+    resultados = []
+    for cliente in clientes:
+        nombre_completo = cliente.get_full_name() if cliente.get_full_name() else None
+        resultados.append({
+            'id': cliente.id,
+            'username': cliente.username,
+            'nombre_completo': nombre_completo,
+            'email': cliente.email,
+            'rut': cliente.perfil.rut if hasattr(cliente, 'perfil') else None,
+            'tipo_cliente': cliente.perfil.tipo_cliente if hasattr(cliente, 'perfil') else 'persona',
+        })
+    
+    return JsonResponse({'clientes': resultados})
+
+
+@login_required
+def crear_comprador_view(request):
+    """Vista para que trabajadores/admins creen nuevos clientes"""
+    # Verificar permisos
+    tiene_permiso = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
+    
+    if not tiene_permiso:
+        messages.error(request, 'No tienes permisos para crear compradores.')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        form = CrearCompradorForm(request.POST)
+        if form.is_valid():
+            # Crear usuario
+            user = User.objects.create_user(
+                username=form.cleaned_data['username'],
+                email=form.cleaned_data['email'],
+                password=form.cleaned_data['password'],
+                first_name=form.cleaned_data.get('first_name', ''),
+                last_name=form.cleaned_data.get('last_name', ''),
+            )
+            
+            # Actualizar perfil con datos de facturación
+            perfil = user.perfil
+            perfil.tipo_usuario = 'cliente'
+            perfil.telefono = form.cleaned_data.get('telefono', '')
+            perfil.email_verificado = True  # Los creados por staff están verificados
+            perfil.fecha_verificacion_email = timezone.now()
+            
+            # Guardar datos según tipo de cliente
+            tipo_cliente = form.cleaned_data.get('tipo_cliente')
+            perfil.tipo_cliente = tipo_cliente
+            
+            if tipo_cliente == 'persona':
+                # Datos de persona natural
+                perfil.rut = form.cleaned_data.get('rut_persona', '')
+                perfil.direccion = form.cleaned_data.get('direccion_persona', '')
+                perfil.comuna = form.cleaned_data.get('comuna_persona', '')
+            else:  # empresa
+                # Datos de empresa
+                perfil.rut = form.cleaned_data.get('rut_empresa', '')
+                perfil.razon_social = form.cleaned_data.get('razon_social', '')
+                perfil.giro = form.cleaned_data.get('giro', '')
+                perfil.direccion_comercial = form.cleaned_data.get('direccion_empresa', '')
+                perfil.comuna = form.cleaned_data.get('comuna_empresa', '')
+            
+            perfil.save()
+            
+            messages.success(
+                request, 
+                f'Comprador "{user.get_full_name() or user.username}" creado exitosamente. '
+                f'Usuario: {user.username} - Contraseña: (la que estableciste)'
+            )
+            return redirect('crear_comprador')
+    else:
+        form = CrearCompradorForm()
+    
+    return render(request, 'usuarios/crear_comprador.html', {'form': form})
 

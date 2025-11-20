@@ -425,8 +425,255 @@ class PasswordResetForm(forms.Form):
         return cleaned_data
 
 
+class CrearCompradorForm(forms.ModelForm):
+    """Formulario para que trabajadores/admins creen nuevos clientes"""
+    username = forms.CharField(
+        max_length=150,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Nombre de usuario'
+        }),
+        label='Usuario',
+        help_text='Nombre de usuario único para el cliente'
+    )
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'correo@ejemplo.com'
+        }),
+        label='Email',
+        help_text='Email para facturación y notificaciones'
+    )
+    first_name = forms.CharField(
+        max_length=30,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Nombre'
+        }),
+        label='Nombre'
+    )
+    last_name = forms.CharField(
+        max_length=30,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Apellido'
+        }),
+        label='Apellido'
+    )
+    
+    # Password temporal
+    password = forms.CharField(
+        max_length=128,
+        required=True,
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Contraseña temporal'
+        }),
+        label='Contraseña Temporal',
+        help_text='Contraseña inicial para el cliente (mínimo 8 caracteres)'
+    )
+    
+    # Selector de tipo de cliente
+    tipo_cliente = forms.ChoiceField(
+        choices=[('persona', 'Persona Natural'), ('empresa', 'Empresa')],
+        required=True,
+        widget=forms.RadioSelect(attrs={
+            'class': 'form-check-input'
+        }),
+        label='Tipo de Cliente',
+        initial='persona'
+    )
+    
+    # --- Campos para PERSONA NATURAL ---
+    rut_persona = forms.CharField(
+        max_length=12,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '12.345.678-9',
+            'data-tipo': 'persona'
+        }),
+        label='RUT',
+        help_text='RUT de persona natural (Ej: 12.345.678-9)'
+    )
+    direccion_persona = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 2,
+            'placeholder': 'Dirección completa',
+            'data-tipo': 'persona'
+        }),
+        label='Dirección Personal',
+        help_text='Dirección para facturación'
+    )
+    comuna_persona = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Comuna',
+            'data-tipo': 'persona'
+        }),
+        label='Comuna'
+    )
+    
+    # --- Campos para EMPRESA ---
+    rut_empresa = forms.CharField(
+        max_length=12,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '76.123.456-7',
+            'data-tipo': 'empresa'
+        }),
+        label='RUT Empresa',
+        help_text='RUT de la empresa (Ej: 76.123.456-7)'
+    )
+    razon_social = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Razón Social de la Empresa',
+            'data-tipo': 'empresa'
+        }),
+        label='Razón Social',
+        help_text='Nombre legal de la empresa'
+    )
+    giro = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ej: Comercio al por menor',
+            'data-tipo': 'empresa'
+        }),
+        label='Giro Comercial'
+    )
+    direccion_empresa = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 2,
+            'placeholder': 'Dirección comercial',
+            'data-tipo': 'empresa'
+        }),
+        label='Dirección Comercial'
+    )
+    comuna_empresa = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Comuna',
+            'data-tipo': 'empresa'
+        }),
+        label='Comuna'
+    )
+    
+    # Campo opcional telefono
+    telefono = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '+56 9 1234 5678'
+        }),
+        label='Teléfono (Opcional)'
+    )
+
+    class Meta:
+        model = PerfilUsuario
+        fields = ['tipo_cliente', 'telefono']
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError('Este nombre de usuario ya está en uso. Por favor elige otro.')
+        return username
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError('Este correo electrónico ya está registrado en el sistema.')
+        return email
+    
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        
+        if password:
+            # Validar longitud mínima
+            if len(password) < 8:
+                raise forms.ValidationError('La contraseña debe tener al menos 8 caracteres.')
+        
+        return password
+    
+    def clean_rut_persona(self):
+        rut = self.cleaned_data.get('rut_persona', '').strip()
+        if rut:
+            if not validar_rut_chileno(rut):
+                raise forms.ValidationError('El RUT ingresado no es válido. Por favor verifica el número y dígito verificador.')
+            # Formatear el RUT antes de guardarlo
+            rut_formateado = formatear_rut(rut)
+            
+            # Verificar si el RUT ya existe en otro usuario
+            if PerfilUsuario.objects.filter(rut=rut_formateado).exists():
+                raise forms.ValidationError('Este RUT ya está registrado en el sistema.')
+            
+            return rut_formateado
+        return rut
+    
+    def clean_rut_empresa(self):
+        rut = self.cleaned_data.get('rut_empresa', '').strip()
+        if rut:
+            if not validar_rut_chileno(rut):
+                raise forms.ValidationError('El RUT de empresa ingresado no es válido. Por favor verifica el número y dígito verificador.')
+            # Formatear el RUT antes de guardarlo
+            rut_formateado = formatear_rut(rut)
+            
+            # Verificar si el RUT ya existe en otro usuario
+            if PerfilUsuario.objects.filter(rut=rut_formateado).exists():
+                raise forms.ValidationError('Este RUT ya está registrado en el sistema.')
+            
+            return rut_formateado
+        return rut
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        tipo_cliente = cleaned_data.get('tipo_cliente')
+        
+        if tipo_cliente == 'persona':
+            # Validar campos obligatorios para persona natural
+            if not cleaned_data.get('rut_persona'):
+                self.add_error('rut_persona', 'El RUT es obligatorio para personas naturales.')
+            if not cleaned_data.get('direccion_persona'):
+                self.add_error('direccion_persona', 'La dirección es obligatoria para facturación.')
+            if not cleaned_data.get('comuna_persona'):
+                self.add_error('comuna_persona', 'La comuna es obligatoria.')
+        
+        elif tipo_cliente == 'empresa':
+            # Validar campos obligatorios para empresa
+            if not cleaned_data.get('rut_empresa'):
+                self.add_error('rut_empresa', 'El RUT de la empresa es obligatorio.')
+            if not cleaned_data.get('razon_social'):
+                self.add_error('razon_social', 'La razón social es obligatoria.')
+            if not cleaned_data.get('giro'):
+                self.add_error('giro', 'El giro comercial es obligatorio.')
+            if not cleaned_data.get('direccion_empresa'):
+                self.add_error('direccion_empresa', 'La dirección comercial es obligatoria.')
+            if not cleaned_data.get('comuna_empresa'):
+                self.add_error('comuna_empresa', 'La comuna es obligatoria.')
+        
+        return cleaned_data
+
+
 class PerfilEditForm(forms.ModelForm):
-    """Formulario para editar perfil de usuario"""
+    """Formulario para editar el perfil de usuario"""
     first_name = forms.CharField(
         max_length=30,
         required=True,

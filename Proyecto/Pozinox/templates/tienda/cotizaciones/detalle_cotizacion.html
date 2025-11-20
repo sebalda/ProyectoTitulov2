@@ -13,14 +13,43 @@
             <p class="text-muted mb-1">
                 Creada el {{ cotizacion.fecha_creacion|date:"d/m/Y H:i" }}
             </p>
-            {% if cotizacion.fecha_vencimiento and cotizacion.estado not in 'pagada,en_revision,cancelada' %}
-                <p class="mb-0">
-                    <small class="text-muted">
-                        <i class="fas fa-calendar-times me-1"></i>
-                        Vence el: {{ cotizacion.fecha_vencimiento|date:"d/m/Y H:i" }}
-                    </small>
-                </p>
-            {% endif %}
+            
+            <!-- Información compacta -->
+            <div class="mt-2">
+                <div class="mb-2">
+                    <small class="text-muted">Cliente:</small><br>
+                    <strong>{{ cotizacion.usuario.get_full_name|default:cotizacion.usuario.username }}</strong>
+                    {% if cotizacion.usuario.email %}
+                        <small class="text-muted">({{ cotizacion.usuario.email }})</small>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-2">
+                    <small class="text-muted">Creación de la cotización:</small><br>
+                    {% if cotizacion.creado_por %}
+                        <strong>{{ cotizacion.creado_por.get_full_name|default:cotizacion.creado_por.username }}</strong>
+                        {% if cotizacion.creado_por.is_superuser %}
+                            <span class="badge bg-danger ms-1" style="font-size: 0.7rem;">Superusuario</span>
+                        {% elif cotizacion.creado_por.perfil.tipo_usuario == 'administrador' %}
+                            <span class="badge bg-warning text-dark ms-1" style="font-size: 0.7rem;">Admin</span>
+                        {% elif cotizacion.creado_por.perfil.tipo_usuario == 'trabajador' %}
+                            <span class="badge bg-info ms-1" style="font-size: 0.7rem;">Trabajador</span>
+                        {% elif cotizacion.creado_por.perfil.tipo_usuario == 'cliente' %}
+                            <span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">Cliente</span>
+                        {% endif %}
+                    {% else %}
+                        <strong>{{ cotizacion.usuario.get_full_name|default:cotizacion.usuario.username }}</strong>
+                        <span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">Cliente</span>
+                    {% endif %}
+                </div>
+                
+                {% if cotizacion.fecha_vencimiento and cotizacion.estado not in 'pagada,en_revision,cancelada' %}
+                <div class="mb-2">
+                    <small class="text-muted">Vence:</small><br>
+                    <strong class="text-danger">{{ cotizacion.fecha_vencimiento|date:"d/m/Y" }}</strong>
+                </div>
+                {% endif %}
+            </div>
         </div>
         <div class="col-md-4 text-md-end">
             {% if cotizacion.estado == 'borrador' %}

@@ -23,9 +23,11 @@ urlpatterns = [
     # Gestión de estados para trabajadores
     path('trabajadores/estados-preparacion/', views.gestionar_estados_preparacion, name='gestionar_estados_preparacion'),
     path('trabajadores/estados-preparacion/<int:cotizacion_id>/cambiar/', views.cambiar_estado_preparacion, name='cambiar_estado_preparacion'),
+    path('trabajadores/crear-cotizacion-cliente/', views.crear_cotizacion_para_cliente, name='crear_cotizacion_para_cliente'),
     
     # Cotizaciones
     path('cotizaciones/', views.mis_cotizaciones, name='mis_cotizaciones'),
+    path('cotizaciones/todas/', views.todas_cotizaciones, name='todas_cotizaciones'),
     path('cotizaciones/crear/', views.crear_cotizacion, name='crear_cotizacion'),
     path('cotizaciones/<int:cotizacion_id>/', views.detalle_cotizacion, name='detalle_cotizacion'),
     path('cotizaciones/<int:cotizacion_id>/agregar-producto/', views.agregar_producto_cotizacion, name='agregar_producto_cotizacion'),
