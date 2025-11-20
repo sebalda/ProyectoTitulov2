@@ -7,7 +7,7 @@ from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.conf import settings
-from .models import Producto, CategoriaAcero, Cotizacion, DetalleCotizacion, TransferenciaBancaria
+from .models import Producto, CategoriaAcero, Cotizacion, DetalleCotizacion, TransferenciaBancaria, RecepcionCompra, DetalleRecepcionCompra
 from .forms import ProductoForm, CategoriaForm
 import mercadopago
 import os
@@ -2336,3 +2336,252 @@ def enviar_notificacion_facturacion(cotizacion, tipo_documento):
     
     # Enviar email
     email.send(fail_silently=False)
+
+
+# ==========================================
+# RECEPCIONES DE COMPRAS
+# ==========================================
+
+@login_required
+def gestionar_recepciones(request):
+    """Vista para gestionar recepciones de compras - Solo administradores"""
+    # Verificar que sea administrador o superusuario
+    es_admin = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario == 'administrador'
+    )
+    
+    if not es_admin:
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
+    
+    # Obtener todas las recepciones
+    recepciones = RecepcionCompra.objects.all().select_related('creado_por', 'confirmado_por').order_by('-fecha_creacion')
+    
+    # Filtros
+    estado_filtro = request.GET.get('estado')
+    busqueda = request.GET.get('busqueda')
+    
+    if estado_filtro:
+        recepciones = recepciones.filter(estado=estado_filtro)
+    
+    if busqueda:
+        recepciones = recepciones.filter(
+            Q(numero_recepcion__icontains=busqueda) |
+            Q(proveedor__icontains=busqueda) |
+            Q(numero_factura__icontains=busqueda)
+        )
+    
+    # Estadísticas
+    total_recepciones = RecepcionCompra.objects.count()
+    recepciones_confirmadas = RecepcionCompra.objects.filter(estado='confirmada').count()
+    recepciones_borrador = RecepcionCompra.objects.filter(estado='borrador').count()
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(recepciones, 15)
+    page = request.GET.get('page')
+    recepciones_paginadas = paginator.get_page(page)
+    
+    context = {
+        'recepciones': recepciones_paginadas,
+        'estado_filtro': estado_filtro,
+        'busqueda': busqueda,
+        'total_recepciones': total_recepciones,
+        'recepciones_confirmadas': recepciones_confirmadas,
+        'recepciones_borrador': recepciones_borrador,
+    }
+    
+    return render(request, 'tienda/admin/gestionar_recepciones.html', context)
+
+
+@login_required
+def crear_recepcion(request):
+    """Crear nueva recepción de compra"""
+    es_admin = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario == 'administrador'
+    )
+    
+    if not es_admin:
+        messages.error(request, 'No tienes permisos para realizar esta acción.')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        proveedor = request.POST.get('proveedor')
+        numero_factura = request.POST.get('numero_factura', '')
+        fecha_factura = request.POST.get('fecha_factura', None)
+        observaciones = request.POST.get('observaciones', '')
+        
+        if not proveedor:
+            messages.error(request, 'El nombre del proveedor es obligatorio.')
+            return redirect('crear_recepcion')
+        
+        # Crear recepción
+        recepcion = RecepcionCompra.objects.create(
+            proveedor=proveedor,
+            numero_factura=numero_factura,
+            fecha_factura=fecha_factura if fecha_factura else None,
+            observaciones=observaciones,
+            creado_por=request.user,
+            estado='borrador'
+        )
+        
+        messages.success(request, f'✅ Recepción {recepcion.numero_recepcion} creada exitosamente.')
+        return redirect('editar_recepcion', recepcion_id=recepcion.id)
+    
+    return render(request, 'tienda/admin/crear_recepcion.html')
+
+
+@login_required
+def editar_recepcion(request, recepcion_id):
+    """Editar recepción y agregar productos"""
+    es_admin = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario == 'administrador'
+    )
+    
+    if not es_admin:
+        messages.error(request, 'No tienes permisos para realizar esta acción.')
+        return redirect('home')
+    
+    recepcion = get_object_or_404(RecepcionCompra, id=recepcion_id)
+    
+    if recepcion.estado == 'confirmada':
+        messages.warning(request, 'Esta recepción ya está confirmada y no puede modificarse.')
+        return redirect('detalle_recepcion', recepcion_id=recepcion.id)
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'actualizar_datos':
+            recepcion.proveedor = request.POST.get('proveedor')
+            recepcion.numero_factura = request.POST.get('numero_factura', '')
+            fecha_factura = request.POST.get('fecha_factura')
+            recepcion.fecha_factura = fecha_factura if fecha_factura else None
+            recepcion.observaciones = request.POST.get('observaciones', '')
+            recepcion.save()
+            messages.success(request, 'Datos de la recepción actualizados.')
+        
+        elif action == 'agregar_producto':
+            producto_id = request.POST.get('producto_id')
+            cantidad = request.POST.get('cantidad')
+            precio_compra = request.POST.get('precio_compra', None)
+            lote = request.POST.get('lote', '')
+            observaciones_detalle = request.POST.get('observaciones_detalle', '')
+            
+            if producto_id and cantidad:
+                producto = get_object_or_404(Producto, id=producto_id)
+                DetalleRecepcionCompra.objects.create(
+                    recepcion=recepcion,
+                    producto=producto,
+                    cantidad=int(cantidad),
+                    precio_compra=precio_compra if precio_compra else None,
+                    lote=lote,
+                    observaciones=observaciones_detalle
+                )
+                messages.success(request, f'✅ Producto {producto.nombre} agregado.')
+            else:
+                messages.error(request, 'Debe seleccionar un producto y especificar la cantidad.')
+        
+        return redirect('editar_recepcion', recepcion_id=recepcion.id)
+    
+    # GET - Mostrar formulario
+    productos = Producto.objects.filter(activo=True).order_by('nombre')
+    detalles = recepcion.detalles.all().select_related('producto')
+    
+    context = {
+        'recepcion': recepcion,
+        'productos': productos,
+        'detalles': detalles,
+    }
+    
+    return render(request, 'tienda/admin/editar_recepcion.html', context)
+
+
+@login_required
+def eliminar_detalle_recepcion(request, detalle_id):
+    """Eliminar un producto de la recepción"""
+    es_admin = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario == 'administrador'
+    )
+    
+    if not es_admin:
+        messages.error(request, 'No tienes permisos para realizar esta acción.')
+        return redirect('home')
+    
+    detalle = get_object_or_404(DetalleRecepcionCompra, id=detalle_id)
+    recepcion = detalle.recepcion
+    
+    if recepcion.estado == 'confirmada':
+        messages.error(request, 'No se puede eliminar productos de una recepción confirmada.')
+        return redirect('editar_recepcion', recepcion_id=recepcion.id)
+    
+    producto_nombre = detalle.producto.nombre
+    detalle.delete()
+    messages.success(request, f'Producto {producto_nombre} eliminado de la recepción.')
+    
+    return redirect('editar_recepcion', recepcion_id=recepcion.id)
+
+
+@login_required
+def confirmar_recepcion(request, recepcion_id):
+    """Confirmar recepción y actualizar stock"""
+    es_admin = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario == 'administrador'
+    )
+    
+    if not es_admin:
+        messages.error(request, 'No tienes permisos para realizar esta acción.')
+        return redirect('home')
+    
+    recepcion = get_object_or_404(RecepcionCompra, id=recepcion_id)
+    
+    if recepcion.estado == 'confirmada':
+        messages.warning(request, 'Esta recepción ya está confirmada.')
+        return redirect('detalle_recepcion', recepcion_id=recepcion.id)
+    
+    if recepcion.detalles.count() == 0:
+        messages.error(request, 'No se puede confirmar una recepción sin productos.')
+        return redirect('editar_recepcion', recepcion_id=recepcion.id)
+    
+    if request.method == 'POST':
+        if recepcion.confirmar(request.user):
+            messages.success(request, f'✅ Recepción {recepcion.numero_recepcion} confirmada. Stock actualizado.')
+        else:
+            messages.error(request, 'Error al confirmar la recepción.')
+        
+        return redirect('detalle_recepcion', recepcion_id=recepcion.id)
+    
+    # GET - Mostrar confirmación
+    detalles = recepcion.detalles.all().select_related('producto')
+    context = {
+        'recepcion': recepcion,
+        'detalles': detalles,
+    }
+    return render(request, 'tienda/admin/confirmar_recepcion.html', context)
+
+
+@login_required
+def detalle_recepcion(request, recepcion_id):
+    """Ver detalle de una recepción"""
+    es_admin = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario == 'administrador'
+    )
+    
+    if not es_admin:
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
+    
+    recepcion = get_object_or_404(RecepcionCompra, id=recepcion_id)
+    detalles = recepcion.detalles.all().select_related('producto')
+    
+    context = {
+        'recepcion': recepcion,
+        'detalles': detalles,
+    }
+    
+    return render(request, 'tienda/admin/detalle_recepcion.html', context)

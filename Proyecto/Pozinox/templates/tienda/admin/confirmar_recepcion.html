@@ -1,0 +1,135 @@
+{% extends 'admin/base_admin.html' %}
+{% load static %}
+
+{% block admin_title %}Confirmar Recepción{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12 text-center">
+            <h2 class="mb-3">
+                <i class="fas fa-check-circle text-success me-2"></i>Confirmar Recepción
+            </h2>
+            <h4>{{ recepcion.numero_recepcion }}</h4>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="alert alert-warning border-start border-5 border-warning">
+                <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Importante</h5>
+                <p class="mb-0">
+                    Al confirmar esta recepción, el stock de todos los productos se actualizará automáticamente sumando las cantidades recibidas.
+                    <strong>Esta acción no se puede deshacer.</strong>
+                </p>
+            </div>
+
+            <!-- Resumen de la Recepción -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Datos de la Recepción</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="30%">Proveedor:</th>
+                            <td>{{ recepcion.proveedor }}</td>
+                        </tr>
+                        {% if recepcion.numero_factura %}
+                        <tr>
+                            <th>N° Factura:</th>
+                            <td>{{ recepcion.numero_factura }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if recepcion.fecha_factura %}
+                        <tr>
+                            <th>Fecha Factura:</th>
+                            <td>{{ recepcion.fecha_factura|date:"d/m/Y" }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <th>Fecha Creación:</th>
+                            <td>{{ recepcion.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Creado Por:</th>
+                            <td>{{ recepcion.creado_por.get_full_name|default:recepcion.creado_por.username }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Productos a Recibir -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Productos a Recibir ({{ detalles.count }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-center">Stock Actual</th>
+                                    <th class="text-center">Cantidad a Recibir</th>
+                                    <th class="text-center">Nuevo Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for detalle in detalles %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ detalle.producto.nombre }}</strong><br>
+                                        <small class="text-muted">{{ detalle.producto.codigo_producto }}</small>
+                                    </td>
+                                    <td class="text-center">{{ detalle.producto.stock_actual }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success">+{{ detalle.cantidad }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <strong>{{ detalle.producto.stock_actual|add:detalle.cantidad }}</strong>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="2" class="text-end"><strong>Total Unidades:</strong></td>
+                                    <td colspan="2" class="text-center">
+                                        <strong>{{ recepcion.total_unidades }}</strong>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de Confirmación -->
+            <div class="card shadow">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="confirmo" required>
+                            <label class="form-check-label" for="confirmo">
+                                <strong>Confirmo que he verificado los productos y las cantidades son correctas</strong>
+                            </label>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'editar_recepcion' recepcion.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Volver a Editar
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-check-circle me-2"></i>Confirmar y Actualizar Stock
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock admin_content %}

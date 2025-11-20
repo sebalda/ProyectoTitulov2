@@ -477,3 +477,97 @@ class TransferenciaBancaria(models.Model):
         self.fecha_verificacion = timezone.now()
         self.observaciones_verificador = observaciones
         self.save()
+
+
+class RecepcionCompra(models.Model):
+    """Recepciones de compras - Entrada de mercadería al inventario"""
+    ESTADOS = [
+        ('borrador', 'Borrador'),
+        ('confirmada', 'Confirmada'),
+        ('cancelada', 'Cancelada'),
+    ]
+    
+    numero_recepcion = models.CharField(max_length=20, unique=True, blank=True)
+    proveedor = models.CharField(max_length=200, help_text="Nombre del proveedor")
+    numero_factura = models.CharField(max_length=50, blank=True, help_text="Número de factura del proveedor")
+    fecha_factura = models.DateField(null=True, blank=True, help_text="Fecha de la factura del proveedor")
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='borrador')
+    
+    # Auditoría
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='recepciones_creadas')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_confirmacion = models.DateTimeField(null=True, blank=True)
+    confirmado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='recepciones_confirmadas')
+    
+    observaciones = models.TextField(blank=True, help_text="Observaciones generales de la recepción")
+    
+    class Meta:
+        verbose_name = 'Recepción de Compra'
+        verbose_name_plural = 'Recepciones de Compras'
+        ordering = ['-fecha_creacion']
+    
+    def __str__(self):
+        return f"{self.numero_recepcion} - {self.proveedor}"
+    
+    def save(self, *args, **kwargs):
+        if not self.numero_recepcion:
+            # Generar número de recepción automático
+            ultimo = RecepcionCompra.objects.order_by('-id').first()
+            if ultimo and ultimo.numero_recepcion:
+                try:
+                    ultimo_num = int(ultimo.numero_recepcion.replace('REC-', ''))
+                    nuevo_num = ultimo_num + 1
+                except:
+                    nuevo_num = 1
+            else:
+                nuevo_num = 1
+            self.numero_recepcion = f'REC-{nuevo_num:05d}'
+        super().save(*args, **kwargs)
+    
+    def confirmar(self, usuario):
+        """Confirmar la recepción y actualizar stock"""
+        if self.estado == 'confirmada':
+            return False
+        
+        # Actualizar stock de todos los productos
+        for detalle in self.detalles.all():
+            producto = detalle.producto
+            producto.stock_actual += detalle.cantidad
+            producto.save()
+        
+        self.estado = 'confirmada'
+        self.confirmado_por = usuario
+        self.fecha_confirmacion = timezone.now()
+        self.save()
+        return True
+    
+    @property
+    def total_items(self):
+        return self.detalles.count()
+    
+    @property
+    def total_unidades(self):
+        return sum(detalle.cantidad for detalle in self.detalles.all())
+
+
+class DetalleRecepcionCompra(models.Model):
+    """Detalle de productos recibidos en una recepción"""
+    recepcion = models.ForeignKey(RecepcionCompra, on_delete=models.CASCADE, related_name='detalles')
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField(help_text="Cantidad recibida")
+    precio_compra = models.DecimalField(max_digits=10, decimal_places=2, help_text="Precio de compra unitario", null=True, blank=True)
+    lote = models.CharField(max_length=50, blank=True, help_text="Número de lote del proveedor")
+    observaciones = models.TextField(blank=True, help_text="Observaciones sobre este producto")
+    
+    class Meta:
+        verbose_name = 'Detalle de Recepción'
+        verbose_name_plural = 'Detalles de Recepción'
+    
+    def __str__(self):
+        return f"{self.producto.nombre} - {self.cantidad} unidades"
+    
+    @property
+    def subtotal(self):
+        if self.precio_compra:
+            return self.cantidad * self.precio_compra
+        return 0

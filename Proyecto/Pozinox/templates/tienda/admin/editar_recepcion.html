@@ -1,0 +1,196 @@
+{% extends 'admin/base_admin.html' %}
+{% load static %}
+
+{% block admin_title %}Editar Recepción {{ recepcion.numero_recepcion }}{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-3">
+                <i class="fas fa-edit me-2"></i>Recepción {{ recepcion.numero_recepcion }}
+            </h2>
+            <span class="badge bg-warning">{{ recepcion.get_estado_display }}</span>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'gestionar_recepciones' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Datos de la Recepción -->
+        <div class="col-md-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>Datos de la Recepción</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="actualizar_datos">
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="proveedor" class="form-label">Proveedor <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="proveedor" name="proveedor" value="{{ recepcion.proveedor }}" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="numero_factura" class="form-label">N° Factura</label>
+                                <input type="text" class="form-control" id="numero_factura" name="numero_factura" value="{{ recepcion.numero_factura }}">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="fecha_factura" class="form-label">Fecha Factura</label>
+                                <input type="date" class="form-control" id="fecha_factura" name="fecha_factura" value="{{ recepcion.fecha_factura|date:'Y-m-d' }}">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="observaciones" class="form-label">Observaciones</label>
+                            <textarea class="form-control" id="observaciones" name="observaciones" rows="2">{{ recepcion.observaciones }}</textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Actualizar Datos
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agregar Productos -->
+        <div class="col-md-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Agregar Producto</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="form-agregar-producto">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="agregar_producto">
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="producto_id" class="form-label">Producto <span class="text-danger">*</span></label>
+                                <select class="form-select" id="producto_id" name="producto_id" required>
+                                    <option value="">Seleccione un producto...</option>
+                                    {% for producto in productos %}
+                                        <option value="{{ producto.id }}">
+                                            {{ producto.codigo_producto }} - {{ producto.nombre }} (Stock actual: {{ producto.stock_actual }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="cantidad" class="form-label">Cantidad <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" required>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="precio_compra" class="form-label">Precio Compra</label>
+                                <input type="number" class="form-control" id="precio_compra" name="precio_compra" step="0.01">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="lote" class="form-label">Lote</label>
+                                <input type="text" class="form-control" id="lote" name="lote">
+                            </div>
+                            <div class="col-md-2 mb-3 d-flex align-items-end">
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="fas fa-plus me-2"></i>Agregar
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="observaciones_detalle" class="form-label">Observaciones del producto</label>
+                            <textarea class="form-control" id="observaciones_detalle" name="observaciones_detalle" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Productos Agregados -->
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Productos en esta Recepción ({{ detalles.count }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if detalles %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Producto</th>
+                                        <th class="text-center">Cantidad</th>
+                                        <th class="text-end">Precio Compra</th>
+                                        <th class="text-end">Subtotal</th>
+                                        <th>Lote</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for detalle in detalles %}
+                                    <tr>
+                                        <td><code>{{ detalle.producto.codigo_producto }}</code></td>
+                                        <td>{{ detalle.producto.nombre }}</td>
+                                        <td class="text-center"><strong>{{ detalle.cantidad }}</strong></td>
+                                        <td class="text-end">
+                                            {% if detalle.precio_compra %}
+                                                ${{ detalle.precio_compra|floatformat:0 }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            {% if detalle.subtotal %}
+                                                <strong>${{ detalle.subtotal|floatformat:0 }}</strong>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ detalle.lote|default:"-" }}</td>
+                                        <td class="text-center">
+                                            <form method="post" action="{% url 'eliminar_detalle_recepcion' detalle.id %}" style="display:inline;" onsubmit="return confirm('¿Eliminar este producto?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% if detalle.observaciones %}
+                                    <tr>
+                                        <td colspan="7" class="bg-light">
+                                            <small><i class="fas fa-comment me-1"></i> {{ detalle.observaciones }}</small>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-4 text-end">
+                            <p class="mb-2">
+                                <strong>Total Productos:</strong> {{ detalles.count }}<br>
+                                <strong>Total Unidades:</strong> {{ recepcion.total_unidades }}
+                            </p>
+                            <a href="{% url 'confirmar_recepcion' recepcion.id %}" class="btn btn-lg btn-success">
+                                <i class="fas fa-check-circle me-2"></i>Confirmar Recepción y Actualizar Stock
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning text-center">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No hay productos agregados. Utiliza el formulario de arriba para agregar productos a esta recepción.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock admin_content %}

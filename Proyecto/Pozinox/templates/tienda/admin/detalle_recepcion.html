@@ -1,0 +1,190 @@
+{% extends 'admin/base_admin.html' %}
+{% load static %}
+
+{% block admin_title %}Detalle Recepción {{ recepcion.numero_recepcion }}{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-3">
+                <i class="fas fa-file-alt me-2"></i>Recepción {{ recepcion.numero_recepcion }}
+            </h2>
+            {% if recepcion.estado == 'confirmada' %}
+                <span class="badge bg-success fs-5">Confirmada</span>
+            {% elif recepcion.estado == 'borrador' %}
+                <span class="badge bg-warning fs-5">Borrador</span>
+            {% else %}
+                <span class="badge bg-danger fs-5">Cancelada</span>
+            {% endif %}
+        </div>
+        <div class="col-md-4 text-md-end">
+            {% if recepcion.estado == 'borrador' %}
+                <a href="{% url 'editar_recepcion' recepcion.id %}" class="btn btn-primary mb-2">
+                    <i class="fas fa-edit me-2"></i>Editar
+                </a>
+            {% endif %}
+            <a href="{% url 'gestionar_recepciones' %}" class="btn btn-outline-secondary mb-2">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Datos de la Recepción -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información General</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="40%">N° Recepción:</th>
+                            <td><strong>{{ recepcion.numero_recepcion }}</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Proveedor:</th>
+                            <td>{{ recepcion.proveedor }}</td>
+                        </tr>
+                        {% if recepcion.numero_factura %}
+                        <tr>
+                            <th>N° Factura:</th>
+                            <td>{{ recepcion.numero_factura }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if recepcion.fecha_factura %}
+                        <tr>
+                            <th>Fecha Factura:</th>
+                            <td>{{ recepcion.fecha_factura|date:"d/m/Y" }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <th>Estado:</th>
+                            <td>
+                                {% if recepcion.estado == 'confirmada' %}
+                                    <span class="badge bg-success">{{ recepcion.get_estado_display }}</span>
+                                {% elif recepcion.estado == 'borrador' %}
+                                    <span class="badge bg-warning">{{ recepcion.get_estado_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-danger">{{ recepcion.get_estado_display }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% if recepcion.observaciones %}
+                        <tr>
+                            <th>Observaciones:</th>
+                            <td>{{ recepcion.observaciones }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auditoría -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Auditoría</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="40%">Creada Por:</th>
+                            <td>{{ recepcion.creado_por.get_full_name|default:recepcion.creado_por.username }}</td>
+                        </tr>
+                        <tr>
+                            <th>Fecha Creación:</th>
+                            <td>{{ recepcion.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        {% if recepcion.estado == 'confirmada' %}
+                        <tr>
+                            <th>Confirmada Por:</th>
+                            <td>{{ recepcion.confirmado_por.get_full_name|default:recepcion.confirmado_por.username }}</td>
+                        </tr>
+                        <tr>
+                            <th>Fecha Confirmación:</th>
+                            <td>{{ recepcion.fecha_confirmacion|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Productos -->
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-boxes me-2"></i>Productos Recibidos ({{ detalles.count }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if detalles %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Producto</th>
+                                        <th class="text-center">Cantidad</th>
+                                        <th class="text-end">Precio Compra</th>
+                                        <th class="text-end">Subtotal</th>
+                                        <th>Lote</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for detalle in detalles %}
+                                    <tr>
+                                        <td><code>{{ detalle.producto.codigo_producto }}</code></td>
+                                        <td>
+                                            <strong>{{ detalle.producto.nombre }}</strong><br>
+                                            <small class="text-muted">Stock actual: {{ detalle.producto.stock_actual }}</small>
+                                        </td>
+                                        <td class="text-center"><strong>{{ detalle.cantidad }}</strong></td>
+                                        <td class="text-end">
+                                            {% if detalle.precio_compra %}
+                                                ${{ detalle.precio_compra|floatformat:0 }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            {% if detalle.subtotal %}
+                                                <strong>${{ detalle.subtotal|floatformat:0 }}</strong>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ detalle.lote|default:"-" }}</td>
+                                    </tr>
+                                    {% if detalle.observaciones %}
+                                    <tr>
+                                        <td colspan="6" class="bg-light">
+                                            <small><i class="fas fa-comment me-1"></i> {{ detalle.observaciones }}</small>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="2" class="text-end"><strong>Total Unidades Recibidas:</strong></td>
+                                        <td class="text-center"><strong>{{ recepcion.total_unidades }}</strong></td>
+                                        <td colspan="3"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No hay productos en esta recepción.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock admin_content %}

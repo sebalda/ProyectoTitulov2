@@ -20,6 +20,14 @@ urlpatterns = [
     path('panel-admin/transferencias/', views.panel_verificacion_transferencias, name='panel_verificacion_transferencias'),
     path('panel-admin/transferencias/<int:transferencia_id>/verificar/', views.verificar_transferencia, name='verificar_transferencia'),
     
+    # Recepciones de Compras (Solo Administradores)
+    path('panel-admin/recepciones/', views.gestionar_recepciones, name='gestionar_recepciones'),
+    path('panel-admin/recepciones/crear/', views.crear_recepcion, name='crear_recepcion'),
+    path('panel-admin/recepciones/<int:recepcion_id>/editar/', views.editar_recepcion, name='editar_recepcion'),
+    path('panel-admin/recepciones/<int:recepcion_id>/confirmar/', views.confirmar_recepcion, name='confirmar_recepcion'),
+    path('panel-admin/recepciones/<int:recepcion_id>/detalle/', views.detalle_recepcion, name='detalle_recepcion'),
+    path('panel-admin/recepciones/detalle/<int:detalle_id>/eliminar/', views.eliminar_detalle_recepcion, name='eliminar_detalle_recepcion'),
+    
     # Gestión de estados para trabajadores
     path('trabajadores/estados-preparacion/', views.gestionar_estados_preparacion, name='gestionar_estados_preparacion'),
     path('trabajadores/estados-preparacion/<int:cotizacion_id>/cambiar/', views.cambiar_estado_preparacion, name='cambiar_estado_preparacion'),

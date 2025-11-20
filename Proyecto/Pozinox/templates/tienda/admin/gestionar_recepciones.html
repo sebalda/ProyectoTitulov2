@@ -1,0 +1,178 @@
+{% extends 'admin/base_admin.html' %}
+{% load static %}
+
+{% block admin_title %}Recepciones de Compras{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-3">
+                <i class="fas fa-truck-loading me-2"></i>Recepciones de Compras
+            </h2>
+            <p class="text-muted">Gestiona las entradas de mercadería al inventario</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'crear_recepcion' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Nueva Recepción
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-primary">{{ total_recepciones }}</h3>
+                    <p class="text-muted mb-0">Total Recepciones</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-success">{{ recepciones_confirmadas }}</h3>
+                    <p class="text-muted mb-0">Confirmadas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-warning">{{ recepciones_borrador }}</h3>
+                    <p class="text-muted mb-0">En Borrador</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Estado</label>
+                    <select name="estado" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="borrador" {% if estado_filtro == 'borrador' %}selected{% endif %}>Borrador</option>
+                        <option value="confirmada" {% if estado_filtro == 'confirmada' %}selected{% endif %}>Confirmada</option>
+                        <option value="cancelada" {% if estado_filtro == 'cancelada' %}selected{% endif %}>Cancelada</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Buscar</label>
+                    <input type="text" name="busqueda" class="form-control" placeholder="N° recepción, proveedor, factura..." value="{{ busqueda }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-secondary me-2">
+                        <i class="fas fa-search me-2"></i>Buscar
+                    </button>
+                    <a href="{% url 'gestionar_recepciones' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Recepciones -->
+    {% if recepciones %}
+        <div class="row">
+            {% for recepcion in recepciones %}
+            <div class="col-md-12 mb-3">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-2">
+                                <h5 class="mb-1">{{ recepcion.numero_recepcion }}</h5>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    {{ recepcion.fecha_creacion|date:"d/m/Y" }}
+                                </small>
+                            </div>
+                            <div class="col-md-3">
+                                <strong>{{ recepcion.proveedor }}</strong><br>
+                                {% if recepcion.numero_factura %}
+                                    <small class="text-muted">Fact: {{ recepcion.numero_factura }}</small>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2 text-center">
+                                {% if recepcion.estado == 'borrador' %}
+                                    <span class="badge bg-warning">Borrador</span>
+                                {% elif recepcion.estado == 'confirmada' %}
+                                    <span class="badge bg-success">Confirmada</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Cancelada</span>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <strong>{{ recepcion.total_items }}</strong> producto(s)<br>
+                                <small class="text-muted">{{ recepcion.total_unidades }} unidades</small>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'detalle_recepcion' recepcion.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye me-1"></i>Ver
+                                    </a>
+                                    {% if recepcion.estado == 'borrador' %}
+                                    <a href="{% url 'editar_recepcion' recepcion.id %}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-edit me-1"></i>Editar
+                                    </a>
+                                    <a href="{% url 'confirmar_recepcion' recepcion.id %}" class="btn btn-sm btn-success">
+                                        <i class="fas fa-check me-1"></i>Confirmar
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginación -->
+        {% if recepciones.has_other_pages %}
+        <nav aria-label="Paginación">
+            <ul class="pagination justify-content-center">
+                {% if recepciones.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ recepciones.previous_page_number }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
+                            Anterior
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for num in recepciones.paginator.page_range %}
+                    {% if recepciones.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > recepciones.number|add:'-3' and num < recepciones.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if recepciones.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ recepciones.next_page_number }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
+                            Siguiente
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info text-center">
+            <i class="fas fa-info-circle me-2"></i>
+            No hay recepciones de compras registradas.
+        </div>
+    {% endif %}
+</div>
+{% endblock admin_content %}

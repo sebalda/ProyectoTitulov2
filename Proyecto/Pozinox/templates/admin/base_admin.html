@@ -140,6 +140,14 @@
                 </div>
             </a>
             
+            <a href="{% url 'gestionar_recepciones' %}" class="menu-item {% if 'recepciones' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-truck-loading menu-icon"></i>
+                <div class="menu-text">
+                    <div class="menu-title">Recepciones de Compras</div>
+                    <div class="menu-description">Registro de inventario</div>
+                </div>
+            </a>
+            
             <a href="{% url 'admin:index' %}" class="menu-item">
                 <i class="fas fa-cog menu-icon"></i>
                 <div class="menu-text">
