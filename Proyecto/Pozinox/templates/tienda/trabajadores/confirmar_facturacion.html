@@ -1,0 +1,412 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Generar Documento Tributario - Pozinox{% endblock %}
+
+{% block extra_css %}
+<style>
+    .confirmar-container {
+        padding: 2rem 0;
+        margin-top: 4rem;
+        min-height: calc(100vh - 200px);
+    }
+    
+    .confirmar-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .card-header-custom {
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+    }
+    
+    .card-body-custom {
+        padding: 2rem;
+    }
+    
+    .info-section {
+        background: #f9fafb;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        color: #6b7280;
+        font-weight: 500;
+    }
+    
+    .info-value {
+        color: #111827;
+        font-weight: 600;
+        text-align: right;
+    }
+    
+    .warning-box {
+        background: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .warning-box i {
+        color: #f59e0b;
+    }
+    
+    .success-box {
+        background: #d1fae5;
+        border-left: 4px solid #10b981;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .success-box i {
+        color: #10b981;
+    }
+    
+    .tipo-documento-selector {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .tipo-documento-option {
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .tipo-documento-option:hover {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+    
+    .tipo-documento-option input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+    }
+    
+    .tipo-documento-option input[type="radio"]:checked + .tipo-content {
+        color: #1e40af;
+    }
+    
+    .tipo-documento-option input[type="radio"]:checked ~ .check-mark {
+        display: block;
+    }
+    
+    .tipo-documento-option.selected {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+    
+    .tipo-content {
+        pointer-events: none;
+    }
+    
+    .tipo-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        display: block;
+    }
+    
+    .tipo-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .tipo-description {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+    
+    .check-mark {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: none;
+        color: #10b981;
+        font-size: 1.5rem;
+    }
+    
+    .btn-generar {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border: none;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-generar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+        color: white;
+    }
+    
+    .btn-generar:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    .productos-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .producto-item {
+        padding: 0.75rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .producto-item:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="confirmar-container">
+    <div class="container">
+        <div class="confirmar-card">
+            <div class="card-header-custom">
+                <h2><i class="fas fa-file-invoice me-3"></i>Generar Documento Tributario</h2>
+                <p class="mb-0">Cotización #{{ cotizacion.numero_cotizacion }}</p>
+            </div>
+
+            <div class="card-body-custom">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <!-- Advertencias de datos incompletos -->
+                {% if warnings %}
+                    <div class="warning-box">
+                        <h5><i class="fas fa-exclamation-triangle me-2"></i>Datos Incompletos del Cliente</h5>
+                        <p class="mb-2">Para poder facturar, el cliente debe tener los siguientes datos completos:</p>
+                        <ul class="mb-0">
+                            {% for warning in warnings %}
+                                <li>{{ warning }}</li>
+                            {% endfor %}
+                        </ul>
+                        <hr>
+                        <p class="mb-0">
+                            <strong>Acción requerida:</strong> Por favor, completa los datos del cliente antes de continuar.
+                        </p>
+                    </div>
+                {% else %}
+                    <div class="success-box">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Datos del cliente completos y válidos</strong>
+                    </div>
+                {% endif %}
+
+                <!-- Información del Cliente -->
+                <div class="info-section">
+                    <h5 class="mb-3"><i class="fas fa-user me-2"></i>Datos del Cliente</h5>
+                    <div class="info-row">
+                        <span class="info-label">Nombre:</span>
+                        <span class="info-value">{{ cotizacion.usuario.get_full_name|default:cotizacion.usuario.username }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">RUT:</span>
+                        <span class="info-value">{{ perfil.rut|default:"<span class='text-danger'>No registrado</span>"|safe }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value">{{ cotizacion.usuario.email }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Tipo de Cliente:</span>
+                        <span class="info-value">
+                            {% if perfil.tipo_cliente == 'empresa' %}
+                                <i class="fas fa-building me-1"></i>Empresa
+                            {% else %}
+                                <i class="fas fa-user me-1"></i>Persona Natural
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% if perfil.tipo_cliente == 'empresa' %}
+                        <div class="info-row">
+                            <span class="info-label">Razón Social:</span>
+                            <span class="info-value">{{ perfil.razon_social|default:"<span class='text-danger'>No registrado</span>"|safe }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Giro:</span>
+                            <span class="info-value">{{ perfil.giro|default:"<span class='text-danger'>No registrado</span>"|safe }}</span>
+                        </div>
+                    {% endif %}
+                    <div class="info-row">
+                        <span class="info-label">Dirección:</span>
+                        <span class="info-value">
+                            {% if perfil.tipo_cliente == 'empresa' %}
+                                {{ perfil.direccion_comercial|default:"<span class='text-danger'>No registrado</span>"|safe }}
+                            {% else %}
+                                {{ perfil.direccion|default:"<span class='text-danger'>No registrado</span>"|safe }}
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Información de la Cotización -->
+                <div class="info-section">
+                    <h5 class="mb-3"><i class="fas fa-file-invoice-dollar me-2"></i>Detalles de la Cotización</h5>
+                    <div class="info-row">
+                        <span class="info-label">N° Cotización:</span>
+                        <span class="info-value">{{ cotizacion.numero_cotizacion }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Fecha:</span>
+                        <span class="info-value">{{ cotizacion.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Método de Pago:</span>
+                        <span class="info-value">{{ cotizacion.get_metodo_pago_display }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Cantidad de Productos:</span>
+                        <span class="info-value">{{ cotizacion.detalles.count }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Subtotal:</span>
+                        <span class="info-value">${{ cotizacion.subtotal|floatformat:0 }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">IVA (19%):</span>
+                        <span class="info-value">${{ cotizacion.iva|floatformat:0 }}</span>
+                    </div>
+                    <div class="info-row" style="border-top: 2px solid #3b82f6; padding-top: 1rem; margin-top: 0.5rem;">
+                        <span class="info-label" style="font-size: 1.1rem;"><strong>TOTAL:</strong></span>
+                        <span class="info-value" style="font-size: 1.3rem; color: #3b82f6;"><strong>${{ cotizacion.total|floatformat:0 }}</strong></span>
+                    </div>
+                </div>
+
+                <!-- Selector de Tipo de Documento -->
+                <form method="post" id="formGenerar">
+                    {% csrf_token %}
+                    <h5 class="mb-3"><i class="fas fa-check-square me-2"></i>Seleccione el Tipo de Documento</h5>
+                    
+                    <div class="tipo-documento-selector">
+                        <label class="tipo-documento-option" data-tipo="boleta">
+                            <input type="radio" name="tipo_documento" value="boleta" required>
+                            <div class="tipo-content">
+                                <i class="fas fa-receipt tipo-icon"></i>
+                                <div class="tipo-title">Boleta Electrónica</div>
+                                <div class="tipo-description">Para ventas a consumidor final</div>
+                            </div>
+                            <i class="fas fa-check-circle check-mark"></i>
+                        </label>
+
+                        <label class="tipo-documento-option" data-tipo="factura">
+                            <input type="radio" name="tipo_documento" value="factura" required>
+                            <div class="tipo-content">
+                                <i class="fas fa-file-invoice tipo-icon"></i>
+                                <div class="tipo-title">Factura Electrónica</div>
+                                <div class="tipo-description">Para empresas y contribuyentes</div>
+                            </div>
+                            <i class="fas fa-check-circle check-mark"></i>
+                        </label>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <a href="{% url 'gestionar_facturacion' %}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <button type="submit" class="btn btn-generar" {% if not datos_completos %}disabled{% endif %}>
+                                <i class="fas fa-file-invoice me-2"></i>Generar Documento
+                            </button>
+                        </div>
+                    </div>
+
+                    {% if not datos_completos %}
+                        <p class="text-center text-danger mt-3 mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Complete los datos del cliente para habilitar la facturación
+                        </p>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const options = document.querySelectorAll('.tipo-documento-option');
+    const form = document.getElementById('formGenerar');
+    
+    options.forEach(option => {
+        option.addEventListener('click', function() {
+            // Remover selección anterior
+            options.forEach(opt => opt.classList.remove('selected'));
+            
+            // Agregar selección actual
+            this.classList.add('selected');
+            
+            // Marcar el radio button
+            const radio = this.querySelector('input[type="radio"]');
+            radio.checked = true;
+        });
+    });
+    
+    form.addEventListener('submit', function(e) {
+        const tipoSeleccionado = document.querySelector('input[name="tipo_documento"]:checked');
+        
+        if (!tipoSeleccionado) {
+            e.preventDefault();
+            alert('Por favor selecciona el tipo de documento a generar.');
+            return false;
+        }
+        
+        const tipoTexto = tipoSeleccionado.value === 'boleta' ? 'Boleta Electrónica' : 'Factura Electrónica';
+        const total = '{{ cotizacion.total|floatformat:0 }}';
+        if (!confirm('¿Confirmas la generación de ' + tipoTexto + ' por $' + total + '?')) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Deshabilitar botón para evitar doble envío
+        const btnSubmit = form.querySelector('button[type="submit"]');
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generando...';
+    });
+});
+</script>
+{% endblock %}

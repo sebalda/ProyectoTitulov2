@@ -1,0 +1,400 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Facturación - Pozinox{% endblock %}
+
+{% block extra_css %}
+<style>
+    .facturacion-container {
+        padding: 2rem 0;
+        margin-top: 4rem;
+    }
+    
+    .facturacion-header {
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .stats-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        transition: transform 0.3s ease;
+        border-left: 4px solid #3b82f6;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    .stats-card.warning {
+        border-left-color: #f59e0b;
+    }
+    
+    .stats-card.success {
+        border-left-color: #10b981;
+    }
+    
+    .stats-card.info {
+        border-left-color: #6366f1;
+    }
+    
+    .stats-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stats-label {
+        color: #6b7280;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .filter-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .cotizacion-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    
+    .cotizacion-card:hover {
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        transform: translateX(5px);
+    }
+    
+    .cotizacion-card.pendiente {
+        border-left-color: #f59e0b;
+    }
+    
+    .cotizacion-card.facturada {
+        border-left-color: #10b981;
+    }
+    
+    .badge-facturada {
+        background: #10b981;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+    
+    .badge-pendiente {
+        background: #f59e0b;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+    
+    .cliente-info {
+        background: #f9fafb;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    
+    .btn-facturar {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border: none;
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-facturar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        color: white;
+    }
+    
+    .tipo-cliente-badge {
+        background: #eff6ff;
+        color: #1e40af;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: #d1d5db;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="facturacion-container">
+    <div class="container">
+        <!-- Header -->
+        <div class="facturacion-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-2">
+                        <i class="fas fa-file-invoice me-3"></i>Gestión de Facturación
+                    </h1>
+                    <p class="mb-0">Sistema de emisión de documentos tributarios electrónicos</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <span class="badge bg-light text-dark" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                        <i class="fas fa-calendar-alt me-2"></i>{{ "now"|date:"d/m/Y" }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="stats-card warning">
+                    <div class="stats-number text-warning">{{ total_pendientes }}</div>
+                    <div class="stats-label">Pendientes de Facturar</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card success">
+                    <div class="stats-number text-success">{{ total_facturadas }}</div>
+                    <div class="stats-label">Total Facturadas</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card info">
+                    <div class="stats-number text-primary">{{ total_boletas }}</div>
+                    <div class="stats-label">Boletas Electrónicas</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number text-info">{{ total_facturas }}</div>
+                    <div class="stats-label">Facturas Electrónicas</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mensajes -->
+        {% if messages %}
+            <div class="row mb-3">
+                <div class="col-12">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Filtros -->
+        <div class="filter-card">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label"><i class="fas fa-filter me-2"></i>Estado Facturación</label>
+                    <select name="estado_facturacion" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="pendiente" {% if estado_facturacion_filtro == 'pendiente' %}selected{% endif %}>Pendientes</option>
+                        <option value="facturada" {% if estado_facturacion_filtro == 'facturada' %}selected{% endif %}>Facturadas</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label"><i class="fas fa-file me-2"></i>Tipo Documento</label>
+                    <select name="tipo_documento" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="boleta" {% if tipo_documento_filtro == 'boleta' %}selected{% endif %}>Boleta</option>
+                        <option value="factura" {% if tipo_documento_filtro == 'factura' %}selected{% endif %}>Factura</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label"><i class="fas fa-users me-2"></i>Tipo Cliente</label>
+                    <select name="tipo_cliente" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="persona" {% if tipo_cliente_filtro == 'persona' %}selected{% endif %}>Persona Natural</option>
+                        <option value="empresa" {% if tipo_cliente_filtro == 'empresa' %}selected{% endif %}>Empresa</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label"><i class="fas fa-search me-2"></i>Buscar</label>
+                    <input type="text" name="q" class="form-control" placeholder="N° Cotización, RUT, Cliente..." value="{{ busqueda|default:'' }}">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i>Filtrar
+                    </button>
+                    <a href="{% url 'gestionar_facturacion' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-2"></i>Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Lista de Cotizaciones -->
+        {% if cotizaciones %}
+            {% for cotizacion in cotizaciones %}
+                <div class="cotizacion-card {% if cotizacion.facturada %}facturada{% else %}pendiente{% endif %}">
+                    <div class="row align-items-center">
+                        <!-- Información de la Cotización -->
+                        <div class="col-md-3">
+                            <h5 class="mb-2">
+                                <i class="fas fa-hashtag me-2"></i>{{ cotizacion.numero_cotizacion }}
+                            </h5>
+                            {% if cotizacion.facturada %}
+                                <span class="badge-facturada">
+                                    <i class="fas fa-check-circle me-1"></i>Facturada
+                                </span>
+                                {% if cotizacion.tipo_documento == 'boleta' %}
+                                    <span class="badge bg-info ms-1">Boleta</span>
+                                {% else %}
+                                    <span class="badge bg-primary ms-1">Factura</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge-pendiente">
+                                    <i class="fas fa-clock me-1"></i>Pendiente
+                                </span>
+                            {% endif %}
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>{{ cotizacion.fecha_creacion|date:"d/m/Y H:i" }}
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Cliente -->
+                        <div class="col-md-4">
+                            <div class="cliente-info">
+                                <strong class="d-block">
+                                    <i class="fas fa-user me-2"></i>{{ cotizacion.usuario.get_full_name|default:cotizacion.usuario.username }}
+                                </strong>
+                                <small class="d-block text-muted">
+                                    <i class="fas fa-id-card me-1"></i>RUT: {{ cotizacion.usuario.perfil.rut|default:"No registrado" }}
+                                </small>
+                                <small class="d-block text-muted">
+                                    <i class="fas fa-envelope me-1"></i>{{ cotizacion.usuario.email }}
+                                </small>
+                                <span class="tipo-cliente-badge mt-2 d-inline-block">
+                                    {% if cotizacion.usuario.perfil.tipo_cliente == 'empresa' %}
+                                        <i class="fas fa-building me-1"></i>Empresa
+                                    {% else %}
+                                        <i class="fas fa-user me-1"></i>Persona Natural
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Total y Detalles -->
+                        <div class="col-md-3">
+                            <div class="mb-2">
+                                <small class="text-muted d-block">Total:</small>
+                                <h4 class="text-primary mb-0">${{ cotizacion.total|floatformat:0 }}</h4>
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-box me-1"></i>{{ cotizacion.detalles.count }} producto{{ cotizacion.detalles.count|pluralize }}
+                            </small>
+                            {% if cotizacion.facturada %}
+                                <div class="mt-2">
+                                    <small class="text-success">
+                                        <i class="fas fa-check me-1"></i>Facturado: {{ cotizacion.fecha_facturacion|date:"d/m/Y H:i" }}
+                                    </small>
+                                    <br>
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>Por: {{ cotizacion.facturado_por.get_full_name|default:cotizacion.facturado_por.username }}
+                                    </small>
+                                    {% if cotizacion.numero_documento %}
+                                        <br>
+                                        <small class="text-muted">
+                                            <i class="fas fa-file-invoice me-1"></i>Doc N°: {{ cotizacion.numero_documento }}
+                                        </small>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Acciones -->
+                        <div class="col-md-2 text-end">
+                            {% if not cotizacion.facturada %}
+                                <a href="{% url 'generar_documento_electronico' cotizacion.id %}" class="btn btn-facturar w-100 mb-2">
+                                    <i class="fas fa-file-invoice me-2"></i>Facturar
+                                </a>
+                            {% else %}
+                                <button class="btn btn-outline-success w-100 mb-2" disabled>
+                                    <i class="fas fa-check-circle me-2"></i>Facturado
+                                </button>
+                            {% endif %}
+                            <a href="{% url 'detalle_cotizacion' cotizacion.id %}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-eye me-2"></i>Ver Detalle
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+
+            <!-- Paginación -->
+            {% if cotizaciones.has_other_pages %}
+                <nav aria-label="Paginación" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if cotizaciones.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if busqueda %}&q={{ busqueda }}{% endif %}{% if estado_facturacion_filtro %}&estado_facturacion={{ estado_facturacion_filtro }}{% endif %}{% if tipo_documento_filtro %}&tipo_documento={{ tipo_documento_filtro }}{% endif %}{% if tipo_cliente_filtro %}&tipo_cliente={{ tipo_cliente_filtro }}{% endif %}">Primera</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ cotizaciones.previous_page_number }}{% if busqueda %}&q={{ busqueda }}{% endif %}{% if estado_facturacion_filtro %}&estado_facturacion={{ estado_facturacion_filtro }}{% endif %}{% if tipo_documento_filtro %}&tipo_documento={{ tipo_documento_filtro }}{% endif %}{% if tipo_cliente_filtro %}&tipo_cliente={{ tipo_cliente_filtro }}{% endif %}">Anterior</a>
+                            </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">{{ cotizaciones.number }} de {{ cotizaciones.paginator.num_pages }}</span>
+                        </li>
+
+                        {% if cotizaciones.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ cotizaciones.next_page_number }}{% if busqueda %}&q={{ busqueda }}{% endif %}{% if estado_facturacion_filtro %}&estado_facturacion={{ estado_facturacion_filtro }}{% endif %}{% if tipo_documento_filtro %}&tipo_documento={{ tipo_documento_filtro }}{% endif %}{% if tipo_cliente_filtro %}&tipo_cliente={{ tipo_cliente_filtro }}{% endif %}">Siguiente</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ cotizaciones.paginator.num_pages }}{% if busqueda %}&q={{ busqueda }}{% endif %}{% if estado_facturacion_filtro %}&estado_facturacion={{ estado_facturacion_filtro }}{% endif %}{% if tipo_documento_filtro %}&tipo_documento={{ tipo_documento_filtro }}{% endif %}{% if tipo_cliente_filtro %}&tipo_cliente={{ tipo_cliente_filtro }}{% endif %}">Última</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-file-invoice"></i>
+                <h3 class="text-muted">No hay cotizaciones para facturar</h3>
+                <p class="text-muted">Las cotizaciones pagadas aparecerán aquí para su facturación</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

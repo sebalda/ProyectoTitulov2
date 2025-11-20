@@ -1079,7 +1079,17 @@ def pago_pendiente(request, cotizacion_id):
 @login_required
 def descargar_cotizacion_pdf(request, cotizacion_id):
     """Generar y descargar PDF de la cotización"""
-    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
+    # Verificar permisos: staff puede descargar cualquier cotización, usuarios solo las suyas
+    es_staff = request.user.is_superuser or request.user.is_staff or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
+    
+    if es_staff:
+        cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id)
+    else:
+        cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
+    
     detalles = cotizacion.detalles.all().select_related('producto')
     
     # Crear el buffer
@@ -1132,10 +1142,11 @@ def descargar_cotizacion_pdf(request, cotizacion_id):
     # Información de la cotización
     elements.append(Paragraph(f'COTIZACIÓN N° {cotizacion.numero_cotizacion}', heading_style))
     
-    # Datos del cliente y cotización
+    # Datos del cliente y cotización (usar el cliente de la cotización, no request.user)
+    cliente = cotizacion.usuario
     info_data = [
-        ['Cliente:', f'{request.user.get_full_name() or request.user.username}'],
-        ['Email:', request.user.email],
+        ['Cliente:', f'{cliente.get_full_name() or cliente.username}'],
+        ['Email:', cliente.email],
         ['Fecha:', cotizacion.fecha_creacion.strftime('%d/%m/%Y %H:%M')],
         ['Estado:', cotizacion.get_estado_display()],
     ]
@@ -1767,3 +1778,561 @@ def enviar_confirmacion_compra(cotizacion):
         html_message=html_message,
         fail_silently=False,
     )
+
+
+# ============================================
+# GESTIÓN DE FACTURACIÓN
+# ============================================
+
+@login_required
+def gestionar_facturacion(request):
+    """Vista para que trabajadores/admins gestionen la facturación de cotizaciones pagadas"""
+    # Verificar permisos
+    tiene_permiso = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
+    
+    if not tiene_permiso:
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
+    
+    # Obtener cotizaciones pagadas
+    cotizaciones = Cotizacion.objects.filter(
+        estado='pagada'
+    ).select_related(
+        'usuario',
+        'usuario__perfil',
+        'facturado_por',
+        'creado_por'
+    ).prefetch_related('detalles__producto').order_by('-fecha_creacion')
+    
+    # Aplicar filtros
+    tipo_documento_filtro = request.GET.get('tipo_documento')
+    estado_facturacion_filtro = request.GET.get('estado_facturacion')
+    tipo_cliente_filtro = request.GET.get('tipo_cliente')
+    busqueda = request.GET.get('q')
+    
+    if tipo_documento_filtro:
+        cotizaciones = cotizaciones.filter(tipo_documento=tipo_documento_filtro)
+    
+    if estado_facturacion_filtro == 'pendiente':
+        cotizaciones = cotizaciones.filter(facturada=False)
+    elif estado_facturacion_filtro == 'facturada':
+        cotizaciones = cotizaciones.filter(facturada=True)
+    
+    if tipo_cliente_filtro:
+        cotizaciones = cotizaciones.filter(usuario__perfil__tipo_cliente=tipo_cliente_filtro)
+    
+    if busqueda:
+        cotizaciones = cotizaciones.filter(
+            Q(numero_cotizacion__icontains=busqueda) |
+            Q(usuario__username__icontains=busqueda) |
+            Q(usuario__first_name__icontains=busqueda) |
+            Q(usuario__last_name__icontains=busqueda) |
+            Q(usuario__email__icontains=busqueda) |
+            Q(usuario__perfil__rut__icontains=busqueda) |
+            Q(numero_documento__icontains=busqueda)
+        )
+    
+    # Paginación
+    paginator = Paginator(cotizaciones, 20)
+    page_number = request.GET.get('page')
+    cotizaciones_paginadas = paginator.get_page(page_number)
+    
+    # Estadísticas
+    total_pendientes = Cotizacion.objects.filter(estado='pagada', facturada=False).count()
+    total_facturadas = Cotizacion.objects.filter(estado='pagada', facturada=True).count()
+    total_boletas = Cotizacion.objects.filter(estado='pagada', facturada=True, tipo_documento='boleta').count()
+    total_facturas = Cotizacion.objects.filter(estado='pagada', facturada=True, tipo_documento='factura').count()
+    
+    context = {
+        'cotizaciones': cotizaciones_paginadas,
+        'tipo_documento_filtro': tipo_documento_filtro,
+        'estado_facturacion_filtro': estado_facturacion_filtro,
+        'tipo_cliente_filtro': tipo_cliente_filtro,
+        'busqueda': busqueda,
+        'total_pendientes': total_pendientes,
+        'total_facturadas': total_facturadas,
+        'total_boletas': total_boletas,
+        'total_facturas': total_facturas,
+    }
+    
+    return render(request, 'tienda/trabajadores/gestionar_facturacion.html', context)
+
+
+@login_required
+def generar_documento_electronico(request, cotizacion_id):
+    """Vista para generar boleta o factura electrónica"""
+    # Verificar permisos
+    tiene_permiso = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
+    
+    if not tiene_permiso:
+        messages.error(request, 'No tienes permisos para realizar esta acción.')
+        return redirect('home')
+    
+    cotizacion = get_object_or_404(
+        Cotizacion.objects.select_related('usuario', 'usuario__perfil'),
+        id=cotizacion_id,
+        estado='pagada'
+    )
+    
+    if request.method == 'POST':
+        tipo_documento = request.POST.get('tipo_documento')
+        
+        # Validar tipo de documento
+        if tipo_documento not in ['boleta', 'factura']:
+            messages.error(request, 'Tipo de documento inválido.')
+            return redirect('gestionar_facturacion')
+        
+        # Validar que no esté ya facturada
+        if cotizacion.facturada:
+            messages.warning(request, f'Esta cotización ya fue facturada el {cotizacion.fecha_facturacion.strftime("%d/%m/%Y %H:%M")} por {cotizacion.facturado_por.get_full_name()}')
+            return redirect('gestionar_facturacion')
+        
+        # Validar datos del cliente para facturación
+        perfil = cotizacion.usuario.perfil
+        errores = []
+        
+        if not perfil.rut:
+            errores.append('El cliente no tiene RUT registrado.')
+        
+        if tipo_documento == 'factura':
+            # Para factura se requieren más datos
+            if perfil.tipo_cliente == 'empresa':
+                if not perfil.razon_social:
+                    errores.append('La empresa no tiene razón social registrada.')
+                if not perfil.giro:
+                    errores.append('La empresa no tiene giro comercial registrado.')
+                if not perfil.direccion_comercial:
+                    errores.append('La empresa no tiene dirección comercial registrada.')
+            else:
+                if not perfil.direccion:
+                    errores.append('El cliente no tiene dirección registrada.')
+        
+        if errores:
+            for error in errores:
+                messages.error(request, error)
+            messages.warning(request, 'Completa los datos del cliente antes de facturar.')
+            return redirect('gestionar_facturacion')
+        
+        try:
+            # Actualizar información de facturación
+            cotizacion.tipo_documento = tipo_documento
+            cotizacion.facturada = True
+            cotizacion.fecha_facturacion = timezone.now()
+            cotizacion.facturado_por = request.user
+            
+            # TODO: Aquí se integrará con la API del SII
+            # Por ahora generamos un número de folio temporal
+            # En producción, este folio vendrá del SII
+            import random
+            cotizacion.numero_documento = f"{tipo_documento.upper()[0]}{timezone.now().year}{random.randint(10000, 99999)}"
+            cotizacion.folio_sii = cotizacion.numero_documento
+            cotizacion.estado_sii = 'PENDIENTE_ENVIO'
+            
+            # Descontar stock de productos
+            detalles = cotizacion.detalles.all().select_related('producto')
+            productos_sin_stock = []
+            
+            for detalle in detalles:
+                producto = detalle.producto
+                if producto.stock_actual >= detalle.cantidad:
+                    producto.stock_actual -= detalle.cantidad
+                    producto.save()
+                else:
+                    productos_sin_stock.append(f'{producto.nombre} (disponible: {producto.stock_actual}, necesario: {detalle.cantidad})')
+            
+            if productos_sin_stock:
+                messages.warning(
+                    request, 
+                    f'⚠️ Algunos productos no tenían stock suficiente: {", ".join(productos_sin_stock)}'
+                )
+            
+            # Generar PDF y guardarlo en la base de datos
+            from django.core.files.base import ContentFile
+            pdf_content = generar_pdf_documento_tributario(cotizacion)
+            tipo_doc_filename = 'boleta' if tipo_documento == 'boleta' else 'factura'
+            filename = f'{tipo_doc_filename}_{cotizacion.numero_documento}.pdf'
+            
+            # Guardar el PDF en el campo pdf_documento
+            cotizacion.pdf_documento.save(filename, ContentFile(pdf_content), save=False)
+            
+            cotizacion.save()
+            
+            tipo_doc_texto = 'Boleta Electrónica' if tipo_documento == 'boleta' else 'Factura Electrónica'
+            messages.success(
+                request, 
+                f'✅ {tipo_doc_texto} N° {cotizacion.numero_documento} generada exitosamente para la cotización #{cotizacion.numero_cotizacion}'
+            )
+            
+            # Enviar notificación al cliente
+            try:
+                enviar_notificacion_facturacion(cotizacion, tipo_documento)
+                messages.info(request, f'📧 Notificación enviada al cliente: {cotizacion.usuario.email}')
+            except Exception as e:
+                logger.exception(f'Error al enviar notificación de facturación: {e}')
+                messages.warning(request, 'Documento generado pero hubo un error al enviar la notificación al cliente.')
+            
+            # Redirigir a la descarga del documento tributario
+            return redirect('descargar_documento_tributario', cotizacion_id=cotizacion.id)
+            
+        except Exception as e:
+            logger.exception(f'Error al generar documento electrónico: {e}')
+            messages.error(request, f'❌ Error al generar el documento: {str(e)}')
+            return redirect('gestionar_facturacion')
+    
+    # GET - Mostrar formulario de confirmación
+    # Validar datos del cliente
+    perfil = cotizacion.usuario.perfil
+    datos_completos = bool(perfil.rut)
+    
+    warnings = []
+    if not perfil.rut:
+        warnings.append('⚠️ Falta RUT del cliente')
+    if perfil.tipo_cliente == 'empresa' and not perfil.razon_social:
+        warnings.append('⚠️ Falta razón social de la empresa')
+    if perfil.tipo_cliente == 'empresa' and not perfil.giro:
+        warnings.append('⚠️ Falta giro comercial')
+    if not (perfil.direccion or perfil.direccion_comercial):
+        warnings.append('⚠️ Falta dirección del cliente')
+    
+    context = {
+        'cotizacion': cotizacion,
+        'perfil': perfil,
+        'datos_completos': datos_completos and len(warnings) == 0,
+        'warnings': warnings,
+    }
+    return render(request, 'tienda/trabajadores/confirmar_facturacion.html', context)
+
+
+def generar_pdf_documento_tributario(cotizacion):
+    """Generar PDF del documento tributario (Boleta o Factura) - Función reutilizable"""
+    detalles = cotizacion.detalles.all().select_related('producto')
+    cliente = cotizacion.usuario
+    
+    # Obtener perfil del cliente para datos adicionales
+    perfil = getattr(cliente, 'perfil', None)
+    
+    # Crear el buffer
+    buffer = BytesIO()
+    
+    # Crear el documento PDF
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=50, leftMargin=50,
+                           topMargin=50, bottomMargin=30)
+    
+    # Contenedor para los elementos del PDF
+    elements = []
+    
+    # Estilos
+    styles = getSampleStyleSheet()
+    
+    # Estilo para el título del documento
+    doc_title_style = ParagraphStyle(
+        'DocTitle',
+        parent=styles['Heading1'],
+        fontSize=28,
+        textColor=colors.HexColor('#dc2626'),
+        spaceAfter=10,
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold'
+    )
+    
+    # Estilo para subtítulos
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontSize=16,
+        textColor=colors.HexColor('#1e3a8a'),
+        spaceAfter=20,
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold'
+    )
+    
+    # Estilo para encabezados
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=12,
+        textColor=colors.HexColor('#1e3a8a'),
+        spaceAfter=10,
+        fontName='Helvetica-Bold'
+    )
+    
+    # Estilo normal
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontSize=9,
+        spaceAfter=6,
+    )
+    
+    # Estilo pequeño
+    small_style = ParagraphStyle(
+        'SmallText',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.grey,
+    )
+    
+    # ===== ENCABEZADO DEL DOCUMENTO =====
+    
+    # Logo y datos de la empresa (izquierda) + Tipo de documento (derecha)
+    tipo_doc_texto = 'BOLETA ELECTRÓNICA' if cotizacion.tipo_documento == 'boleta' else 'FACTURA ELECTRÓNICA'
+    
+    header_data = [
+        [
+            Paragraph('<b>POZINOX</b><br/>Especialistas en Aceros Inoxidables<br/><br/>RUT: 76.XXX.XXX-X<br/>Dirección de la Empresa<br/>Teléfono: +56 9 XXXX XXXX<br/>info@pozinox.cl', normal_style),
+            Paragraph(f'<b>R.U.T: 76.XXX.XXX-X</b><br/><br/><font size=18><b>{tipo_doc_texto}</b></font><br/><br/><b>N° {cotizacion.numero_documento or "SIN FOLIO"}</b><br/><br/>SII - {cotizacion.estado_sii or "PENDIENTE"}', subtitle_style)
+        ]
+    ]
+    
+    header_table = Table(header_data, colWidths=[3.5*inch, 3*inch])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('BOX', (1, 0), (1, 0), 2, colors.HexColor('#dc2626')),
+        ('BACKGROUND', (1, 0), (1, 0), colors.HexColor('#fef2f2')),
+        ('PADDING', (0, 0), (-1, -1), 10),
+    ]))
+    
+    elements.append(header_table)
+    elements.append(Spacer(1, 20))
+    
+    # ===== DATOS DEL CLIENTE =====
+    elements.append(Paragraph('DATOS DEL CLIENTE', heading_style))
+    
+    # Preparar datos del cliente según tipo
+    cliente_info = []
+    
+    if cotizacion.tipo_documento == 'factura':
+        # Para factura: mostrar datos de empresa
+        cliente_info = [
+            ['Razón Social:', getattr(perfil, 'razon_social', 'N/A') if perfil else 'N/A'],
+            ['RUT:', getattr(perfil, 'rut', 'N/A') if perfil else 'N/A'],
+            ['Giro:', getattr(perfil, 'giro', 'N/A') if perfil else 'N/A'],
+            ['Dirección:', getattr(perfil, 'direccion_comercial', 'N/A') if perfil else 'N/A'],
+        ]
+    else:
+        # Para boleta: mostrar datos personales
+        nombre_completo = cliente.get_full_name() or cliente.username
+        cliente_info = [
+            ['Nombre:', nombre_completo],
+            ['RUT:', getattr(perfil, 'rut', 'N/A') if perfil else 'N/A'],
+            ['Email:', cliente.email],
+            ['Dirección:', getattr(perfil, 'direccion', 'N/A') if perfil else 'N/A'],
+        ]
+    
+    cliente_info.append(['Fecha Emisión:', cotizacion.fecha_facturacion.strftime('%d/%m/%Y %H:%M') if cotizacion.fecha_facturacion else 'N/A'])
+    
+    cliente_table = Table(cliente_info, colWidths=[1.5*inch, 5*inch])
+    cliente_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#1e3a8a')),
+        ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+        ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f9fafb')),
+        ('PADDING', (0, 0), (-1, -1), 6),
+    ]))
+    
+    elements.append(cliente_table)
+    elements.append(Spacer(1, 20))
+    
+    # ===== DETALLE DE PRODUCTOS =====
+    elements.append(Paragraph('DETALLE DE PRODUCTOS Y SERVICIOS', heading_style))
+    
+    # Encabezados de tabla
+    table_data = [['Item', 'Descripción', 'Código', 'Cant.', 'Precio Unit.', 'Subtotal']]
+    
+    # Datos de productos
+    for idx, detalle in enumerate(detalles, 1):
+        table_data.append([
+            str(idx),
+            Paragraph(detalle.producto.nombre, normal_style),
+            detalle.producto.codigo_producto,
+            str(detalle.cantidad),
+            f'${detalle.precio_unitario:,.0f}',
+            f'${detalle.subtotal:,.0f}'
+        ])
+    
+    # Crear tabla
+    product_table = Table(table_data, colWidths=[0.4*inch, 2.3*inch, 1*inch, 0.6*inch, 1*inch, 1.2*inch])
+    product_table.setStyle(TableStyle([
+        # Encabezado
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e3a8a')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+        
+        # Contenido
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('ALIGN', (0, 1), (0, -1), 'CENTER'),
+        ('ALIGN', (3, 1), (3, -1), 'CENTER'),
+        ('ALIGN', (4, 1), (-1, -1), 'RIGHT'),
+        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8fafc')]),
+        ('TOPPADDING', (0, 1), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+    ]))
+    
+    elements.append(product_table)
+    elements.append(Spacer(1, 15))
+    
+    # ===== TOTALES =====
+    totales_data = [
+        ['', '', 'Subtotal Neto:', f'${cotizacion.subtotal:,.0f}'],
+        ['', '', 'IVA (19%):', f'${cotizacion.iva:,.0f}'],
+        ['', '', '', ''],
+        ['', '', 'TOTAL A PAGAR:', f'${cotizacion.total:,.0f}'],
+    ]
+    
+    totales_table = Table(totales_data, colWidths=[2*inch, 1.5*inch, 1.5*inch, 1.5*inch])
+    totales_table.setStyle(TableStyle([
+        ('FONTNAME', (2, 0), (2, 1), 'Helvetica-Bold'),
+        ('FONTNAME', (3, 0), (3, 1), 'Helvetica'),
+        ('FONTNAME', (2, 3), (3, 3), 'Helvetica-Bold'),
+        ('FONTSIZE', (2, 0), (-1, 1), 10),
+        ('FONTSIZE', (2, 3), (-1, 3), 14),
+        ('ALIGN', (2, 0), (2, -1), 'RIGHT'),
+        ('ALIGN', (3, 0), (3, -1), 'RIGHT'),
+        ('TEXTCOLOR', (2, 3), (3, 3), colors.HexColor('#dc2626')),
+        ('BACKGROUND', (2, 3), (3, 3), colors.HexColor('#fef2f2')),
+        ('BOX', (2, 3), (3, 3), 2, colors.HexColor('#dc2626')),
+        ('TOPPADDING', (2, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (2, 0), (-1, -1), 4),
+        ('PADDING', (2, 3), (3, 3), 8),
+    ]))
+    
+    elements.append(totales_table)
+    elements.append(Spacer(1, 20))
+    
+    # ===== INFORMACIÓN ADICIONAL =====
+    if cotizacion.folio_sii:
+        elements.append(Paragraph(f'<b>Folio SII:</b> {cotizacion.folio_sii}', small_style))
+    
+    if cotizacion.track_id_sii:
+        elements.append(Paragraph(f'<b>Track ID SII:</b> {cotizacion.track_id_sii}', small_style))
+    
+    elements.append(Spacer(1, 15))
+    
+    # ===== PIE DE PÁGINA =====
+    footer_text = f"""
+    <para align=center>
+    <b>DOCUMENTO TRIBUTARIO ELECTRÓNICO</b><br/>
+    Timbre Electrónico SII<br/>
+    Resolución: EX. N° XXXX de YYYY<br/>
+    Verifique documento en www.sii.cl<br/><br/>
+    <font size=7>
+    Este documento tributario electrónico ha sido generado conforme a las disposiciones<br/>
+    del Servicio de Impuestos Internos de Chile. Para verificar su autenticidad,<br/>
+    ingrese a www.sii.cl con el código de verificación.<br/><br/>
+    Documento generado por: {cotizacion.facturado_por.get_full_name() if cotizacion.facturado_por else 'Sistema'}<br/>
+    Fecha de generación: {cotizacion.fecha_facturacion.strftime('%d/%m/%Y %H:%M') if cotizacion.fecha_facturacion else 'N/A'}
+    </font>
+    </para>
+    """
+    
+    elements.append(Paragraph(footer_text, small_style))
+    
+    # ===== CONSTRUIR PDF =====
+    doc.build(elements)
+    
+    # Obtener el valor del buffer y retornarlo
+    pdf = buffer.getvalue()
+    buffer.close()
+    
+    return pdf
+
+@login_required
+def descargar_documento_tributario(request, cotizacion_id):
+    """Descargar PDF del documento tributario (Boleta o Factura)"""
+    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, facturada=True)
+    
+    # Verificar permisos: staff puede descargar cualquier documento, usuarios solo los suyos
+    es_staff = request.user.is_superuser or request.user.is_staff or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
+    
+    if not es_staff and cotizacion.usuario != request.user:
+        messages.error(request, 'No tienes permisos para descargar este documento.')
+        return redirect('home')
+    
+    if not cotizacion.tipo_documento:
+        messages.error(request, 'Esta cotización no tiene un documento tributario asociado.')
+        if es_staff:
+            return redirect('gestionar_facturacion')
+        return redirect('mis_cotizaciones')
+    
+    # Si el PDF ya está guardado en la BD, descargarlo directamente
+    if cotizacion.pdf_documento:
+        from django.http import FileResponse
+        return FileResponse(
+            cotizacion.pdf_documento.open('rb'),
+            as_attachment=True,
+            filename=f'{cotizacion.tipo_documento}_{cotizacion.numero_documento}.pdf'
+        )
+    
+    # Si no existe el PDF guardado, generarlo on-the-fly
+    pdf = generar_pdf_documento_tributario(cotizacion)
+    
+    # Crear respuesta HTTP
+    response = HttpResponse(content_type='application/pdf')
+    tipo_doc_filename = 'boleta' if cotizacion.tipo_documento == 'boleta' else 'factura'
+    response['Content-Disposition'] = f'attachment; filename="{tipo_doc_filename}_{cotizacion.numero_documento or cotizacion.numero_cotizacion}.pdf"'
+    response.write(pdf)
+    
+    return response
+
+
+def enviar_notificacion_facturacion(cotizacion, tipo_documento):
+    """Enviar email al cliente notificando la generación del documento con PDF adjunto"""
+    from django.core.mail import EmailMultiAlternatives
+    from django.template.loader import render_to_string
+    from django.utils.html import strip_tags
+    
+    tipo_doc_texto = 'Boleta Electrónica' if tipo_documento == 'boleta' else 'Factura Electrónica'
+    
+    context = {
+        'cotizacion': cotizacion,
+        'cliente_nombre': cotizacion.usuario.get_full_name() or cotizacion.usuario.username,
+        'tipo_documento': tipo_doc_texto,
+        'numero_documento': cotizacion.numero_documento,
+        'fecha_emision': cotizacion.fecha_facturacion.strftime('%d de %B de %Y'),
+    }
+    
+    html_message = render_to_string('tienda/emails/notificacion_facturacion.html', context)
+    plain_message = strip_tags(html_message)
+    
+    # Crear email con EmailMultiAlternatives para poder adjuntar archivos
+    email = EmailMultiAlternatives(
+        subject=f'📄 {tipo_doc_texto} N° {cotizacion.numero_documento} - Pozinox',
+        body=plain_message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[cotizacion.usuario.email],
+    )
+    
+    # Adjuntar HTML
+    email.attach_alternative(html_message, "text/html")
+    
+    # Generar y adjuntar PDF del documento tributario
+    try:
+        pdf_content = generar_pdf_documento_tributario(cotizacion)
+        tipo_doc_filename = 'boleta' if cotizacion.tipo_documento == 'boleta' else 'factura'
+        filename = f'{tipo_doc_filename}_{cotizacion.numero_documento or cotizacion.numero_cotizacion}.pdf'
+        
+        email.attach(filename, pdf_content, 'application/pdf')
+    except Exception as e:
+        logger.exception(f'Error al adjuntar PDF al email: {e}')
+        # Continuar enviando el email sin adjunto si hay error
+    
+    # Enviar email
+    email.send(fail_silently=False)

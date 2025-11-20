@@ -256,6 +256,25 @@ class Cotizacion(models.Model):
     comprobante_pago = models.FileField(upload_to='comprobantes/', null=True, blank=True, storage=S3Boto3Storage(), help_text="Comprobante de transferencia bancaria")
     comentarios_pago = models.TextField(blank=True, help_text="Comentarios adicionales sobre el pago")
     
+    # Facturación Electrónica
+    TIPOS_DOCUMENTO = [
+        ('boleta', 'Boleta Electrónica'),
+        ('factura', 'Factura Electrónica'),
+    ]
+    
+    facturada = models.BooleanField(default=False, help_text="Indica si se ha emitido el documento tributario")
+    tipo_documento = models.CharField(max_length=20, choices=TIPOS_DOCUMENTO, null=True, blank=True, help_text="Tipo de documento tributario emitido")
+    numero_documento = models.CharField(max_length=50, null=True, blank=True, help_text="Número de folio del documento tributario")
+    fecha_facturacion = models.DateTimeField(null=True, blank=True, help_text="Fecha de emisión del documento tributario")
+    facturado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='cotizaciones_facturadas', help_text="Usuario que emitió el documento")
+    
+    # SII - Información del documento tributario
+    folio_sii = models.CharField(max_length=50, null=True, blank=True, help_text="Folio asignado por el SII")
+    track_id_sii = models.CharField(max_length=100, null=True, blank=True, help_text="Track ID del envío al SII")
+    estado_sii = models.CharField(max_length=50, null=True, blank=True, help_text="Estado del documento en el SII")
+    xml_dte = models.TextField(null=True, blank=True, help_text="XML del DTE generado")
+    pdf_documento = models.FileField(upload_to='documentos_tributarios/', null=True, blank=True, storage=S3Boto3Storage(), help_text="PDF del documento tributario")
+    
     # Observaciones
     observaciones = models.TextField(blank=True)
     

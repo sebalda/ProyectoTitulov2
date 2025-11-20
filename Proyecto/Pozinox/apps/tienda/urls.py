@@ -25,9 +25,15 @@ urlpatterns = [
     path('trabajadores/estados-preparacion/<int:cotizacion_id>/cambiar/', views.cambiar_estado_preparacion, name='cambiar_estado_preparacion'),
     path('trabajadores/crear-cotizacion-cliente/', views.crear_cotizacion_para_cliente, name='crear_cotizacion_para_cliente'),
     
+    # Gestión de Facturación
+    path('trabajadores/facturacion/', views.gestionar_facturacion, name='gestionar_facturacion'),
+    path('trabajadores/facturacion/<int:cotizacion_id>/generar/', views.generar_documento_electronico, name='generar_documento_electronico'),
+    path('trabajadores/facturacion/<int:cotizacion_id>/descargar-pdf/', views.descargar_documento_tributario, name='descargar_documento_tributario'),
+    
     # Cotizaciones
     path('cotizaciones/', views.mis_cotizaciones, name='mis_cotizaciones'),
     path('cotizaciones/todas/', views.todas_cotizaciones, name='todas_cotizaciones'),
+    path('cotizaciones/<int:cotizacion_id>/documento-tributario/', views.descargar_documento_tributario, name='descargar_documento_cliente'),
     path('cotizaciones/crear/', views.crear_cotizacion, name='crear_cotizacion'),
     path('cotizaciones/<int:cotizacion_id>/', views.detalle_cotizacion, name='detalle_cotizacion'),
     path('cotizaciones/<int:cotizacion_id>/agregar-producto/', views.agregar_producto_cotizacion, name='agregar_producto_cotizacion'),

@@ -78,6 +78,13 @@
                                 {% else %}
                                     <span class="badge bg-danger">Cancelada</span>
                                 {% endif %}
+                                {% if cotizacion.facturada %}
+                                    <br>
+                                    <span class="badge bg-success mt-1">
+                                        <i class="fas fa-file-invoice me-1"></i>
+                                        {{ cotizacion.get_tipo_documento_display|default:"Facturada" }}
+                                    </span>
+                                {% endif %}
                             </div>
                             <div class="col-md-2">
                                 <strong>{{ cotizacion.detalles.count }}</strong>
@@ -90,13 +97,18 @@
                                 <small class="text-muted">Total</small>
                             </div>
                             <div class="col-md-3 text-end">
-                                <div class="btn-group" role="group">
-                                    <a href="{% url 'detalle_cotizacion' cotizacion.id %}" class="btn btn-sm btn-outline-primary">
+                                <div class="btn-group-vertical" role="group" style="width: 100%;">
+                                    <a href="{% url 'detalle_cotizacion' cotizacion.id %}" class="btn btn-sm btn-outline-primary mb-1">
                                         <i class="fas fa-eye me-1"></i>Ver Detalle
                                     </a>
-                                    <a href="{% url 'descargar_cotizacion_pdf' cotizacion.id %}" class="btn btn-sm btn-outline-success" target="_blank">
-                                        <i class="fas fa-file-pdf me-1"></i>Descargar PDF
+                                    <a href="{% url 'descargar_cotizacion_pdf' cotizacion.id %}" class="btn btn-sm btn-outline-secondary mb-1" target="_blank">
+                                        <i class="fas fa-file-pdf me-1"></i>PDF Cotización
                                     </a>
+                                    {% if cotizacion.facturada %}
+                                    <a href="{% url 'descargar_documento_cliente' cotizacion.id %}" class="btn btn-sm btn-success" target="_blank">
+                                        <i class="fas fa-receipt me-1"></i>Descargar {{ cotizacion.tipo_documento|title }}
+                                    </a>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>

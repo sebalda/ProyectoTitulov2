@@ -61,6 +61,16 @@
             {% else %}
                 <span class="badge bg-danger fs-5">Cancelada</span>
             {% endif %}
+            
+            {% if cotizacion.facturada %}
+                <br><br>
+                <div class="alert alert-success mb-0 mt-2">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>{{ cotizacion.get_tipo_documento_display|default:"Documento" }} Emitida</strong><br>
+                    <small>N° {{ cotizacion.numero_documento }}</small><br>
+                    <small class="text-muted">{{ cotizacion.fecha_facturacion|date:"d/m/Y H:i" }}</small>
+                </div>
+            {% endif %}
         </div>
     </div>
 
@@ -369,8 +379,15 @@
                     {% endif %}
 
                     <a href="{% url 'descargar_cotizacion_pdf' cotizacion.id %}" class="btn btn-outline-success w-100 mb-2" target="_blank">
-                        <i class="fas fa-file-pdf me-2"></i>Descargar PDF
+                        <i class="fas fa-file-pdf me-2"></i>Descargar PDF Cotización
                     </a>
+                    
+                    {% if cotizacion.facturada %}
+                    <a href="{% url 'descargar_documento_cliente' cotizacion.id %}" class="btn btn-success w-100 mb-2" target="_blank">
+                        <i class="fas fa-receipt me-2"></i>
+                        Descargar {{ cotizacion.tipo_documento|title }} Electrónica
+                    </a>
+                    {% endif %}
                     
                     <a href="{% url 'mis_cotizaciones' %}" class="btn btn-outline-secondary w-100">
                         <i class="fas fa-arrow-left me-2"></i>Volver
