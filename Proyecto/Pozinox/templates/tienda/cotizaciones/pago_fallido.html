@@ -64,6 +64,12 @@
                         </ul>
                     </div>
                     
+                    <!-- Mensaje de redirección automática -->
+                    <div class="alert alert-warning text-center mb-3">
+                        <i class="fas fa-clock me-2"></i>
+                        Esta página se redirigirá automáticamente en <strong><span id="countdown">10</span> segundos</strong>...
+                    </div>
+                    
                     <!-- Botones de acción -->
                     <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
                         <a href="{% url 'seleccionar_pago' cotizacion.id %}" class="btn btn-primary btn-lg">
@@ -91,5 +97,21 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Redirección automática después de 10 segundos
+    let seconds = 10;
+    const countdownElement = document.getElementById('countdown');
+    
+    const interval = setInterval(() => {
+        seconds--;
+        countdownElement.textContent = seconds;
+        
+        if (seconds <= 0) {
+            clearInterval(interval);
+            window.location.href = "{% url 'seleccionar_pago' cotizacion.id %}";
+        }
+    }, 1000);
+</script>
 {% endblock %}
 

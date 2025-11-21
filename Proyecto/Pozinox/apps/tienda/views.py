@@ -1186,18 +1186,57 @@ def seleccionar_pago(request, cotizacion_id):
 
 
 @login_required
+def simular_pago_exitoso(request, cotizacion_id):
+    """
+    ⚠️ SOLO PARA PRUEBAS LOCALES - Simula un pago exitoso de MercadoPago
+    Esta vista NO debe usarse en producción
+    """
+    if not settings.DEBUG:
+        messages.error(request, 'Esta función solo está disponible en modo DEBUG.')
+        return redirect('home')
+    
+    cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id)
+    
+    # Verificar permisos
+    es_propietario = cotizacion.usuario == request.user
+    es_creador = cotizacion.creado_por == request.user if cotizacion.creado_por else False
+    es_staff = request.user.is_superuser or (
+        hasattr(request.user, 'perfil') and 
+        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+    )
+    
+    if not (es_propietario or es_creador or es_staff):
+        messages.error(request, 'No tienes permisos para realizar esta acción.')
+        return redirect('home')
+    
+    # Simular pago exitoso
+    import uuid
+    fake_payment_id = f"TEST-{uuid.uuid4().hex[:8]}"
+    
+    return redirect(
+        f"/cotizaciones/{cotizacion_id}/pago-exitoso/?payment_id={fake_payment_id}&status=approved&collection_status=approved"
+    )
+
+
+@login_required
 def procesar_pago_mercadopago(request, cotizacion_id):
     """Crear preferencia de pago en MercadoPago y redirigir"""
+    logger.error(f"=== PROCESAR PAGO MERCADOPAGO EJECUTADO === Cotización ID: {cotizacion_id}, Usuario: {request.user.username}")
+    
     # Verificar permisos: staff puede ver cualquier cotización, usuarios solo las suyas
     es_staff = request.user.is_superuser or (
         hasattr(request.user, 'perfil') and 
         request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
     )
     
+    logger.error(f"Es staff: {es_staff}")
+    
     if es_staff:
         cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id)
     else:
         cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id, usuario=request.user)
+    
+    logger.error(f"Cotización encontrada: {cotizacion.numero_cotizacion}, Estado: {cotizacion.estado}")
     
     # Verificar que esté finalizada
     if cotizacion.estado not in ['finalizada', 'pagada', 'en_revision']:
@@ -1256,18 +1295,31 @@ def procesar_pago_mercadopago(request, cotizacion_id):
             })
         
         # Construir URLs absolutas
-        scheme = request.scheme  # http o https
-        host = request.get_host()  # Incluye el dominio y puerto si existe
+        # 1. Primero revisar si hay un MERCADOPAGO_BASE_URL configurado (para producción)
+        base_url = os.getenv('MERCADOPAGO_BASE_URL') or getattr(settings, 'MERCADOPAGO_BASE_URL', None)
         
-        # Para desarrollo local, usar http://localhost:8000
-        if host in ['localhost', '127.0.0.1'] or host.startswith('localhost:') or host.startswith('127.0.0.1:'):
-            scheme = 'http'
-            # Asegurar que tenga el puerto
-            if ':' not in host:
-                host = f"{host}:8000"
-        
-        # Construir URLs manualmente para asegurar que sean correctas
-        base_url = f"{scheme}://{host}"
+        if not base_url:
+            # 2. Detectar si se está usando un túnel (ngrok, localtunnel, etc.)
+            # Estos túneles envían el header X-Forwarded-Host o el Host original
+            forwarded_host = request.META.get('HTTP_X_FORWARDED_HOST')
+            
+            if forwarded_host and 'ngrok' in forwarded_host:
+                # Estamos detrás de ngrok, usar la URL pública
+                base_url = f"https://{forwarded_host}"
+                logger.info(f"✅ Detectado túnel ngrok: {base_url}")
+            else:
+                # 3. Usar la URL del request como último recurso
+                scheme = request.scheme
+                host = request.get_host()
+                
+                # Para desarrollo local sin túnel, advertir que no funcionará
+                if host in ['localhost', '127.0.0.1'] or host.startswith('localhost:') or host.startswith('127.0.0.1:'):
+                    scheme = 'http'
+                    if ':' not in host:
+                        host = f"{host}:8000"
+                    logger.warning(f"⚠️ Usando localhost - MercadoPago NO podrá redirigir. Usa ngrok: ngrok http 8000")
+                
+                base_url = f"{scheme}://{host}"
         
         # URLs de retorno (callbacks)
         success_url = f"{base_url}/cotizaciones/{cotizacion.id}/pago-exitoso/"
@@ -1288,8 +1340,10 @@ def procesar_pago_mercadopago(request, cotizacion_id):
                 "failure": failure_url,
                 "pending": pending_url,
             },
+            "auto_return": "approved",  # Redirección automática cuando el pago es aprobado
             "external_reference": cotizacion.numero_cotizacion,
             "statement_descriptor": "Pozinox",
+            "notification_url": f"{base_url}/webhooks/mercadopago/",  # Webhook para notificaciones
             "payer": {
                 "name": request.user.first_name or request.user.username,
                 "surname": request.user.last_name or "",
@@ -1298,12 +1352,16 @@ def procesar_pago_mercadopago(request, cotizacion_id):
             "metadata": {
                 "cotizacion_id": str(cotizacion.id),
                 "numero_cotizacion": cotizacion.numero_cotizacion,
-            }
+            },
+            "binary_mode": True,  # Forzar estados approved/rejected (sin pending)
         }
         
         # Log de los datos que se envían (sin información sensible)
-        logger.info(f'Creando preferencia de MercadoPago para cotización {cotizacion.numero_cotizacion}')
-        logger.info(f'Items: {len(items)} productos, Total: ${cotizacion.total}')
+        logger.error(f'Creando preferencia de MercadoPago para cotización {cotizacion.numero_cotizacion}')
+        logger.error(f'SUCCESS URL: {success_url}')
+        logger.error(f'FAILURE URL: {failure_url}')
+        logger.error(f'PENDING URL: {pending_url}')
+        logger.error(f'Items: {len(items)} productos, Total: ${cotizacion.total}')
         
         preference_response = sdk.preference().create(preference_data)
         
@@ -1362,6 +1420,14 @@ def procesar_pago_mercadopago(request, cotizacion_id):
             return redirect('seleccionar_pago', cotizacion_id=cotizacion.id)
         
         logger.info(f'Redirigiendo a MercadoPago: {init_point}')
+        
+        # ⚠️ MODO DE PRUEBA LOCAL: Si estamos en localhost, agregar parámetro para simular pago
+        if 'localhost' in base_url or '127.0.0.1' in base_url:
+            logger.warning('⚠️ MODO PRUEBA LOCAL: MercadoPago no podrá redirigir desde localhost.')
+            logger.warning('💡 OPCIÓN 1: Después de pagar, copia manualmente esta URL en tu navegador:')
+            logger.warning(f'   {success_url}?payment_id=TEST123&status=approved&collection_status=approved')
+            logger.warning('💡 OPCIÓN 2: Usa ngrok para pruebas reales: ngrok http 8000')
+        
         return redirect(init_point)
         
     except Exception as e:
@@ -1370,22 +1436,31 @@ def procesar_pago_mercadopago(request, cotizacion_id):
         return redirect('seleccionar_pago', cotizacion_id=cotizacion.id)
 
 
-@login_required
 def pago_exitoso(request, cotizacion_id):
     """Página de confirmación de pago exitoso"""
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id)
     
-    # Verificar permisos
-    es_propietario = cotizacion.usuario == request.user
-    es_creador = cotizacion.creado_por == request.user if cotizacion.creado_por else False
-    es_staff = request.user.is_superuser or (
-        hasattr(request.user, 'perfil') and 
-        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
-    )
+    # Verificar si viene de MercadoPago (tiene payment_id en la URL)
+    viene_de_mercadopago = request.GET.get('payment_id') or request.GET.get('collection_id')
     
-    if not (es_propietario or es_creador or es_staff):
-        messages.error(request, 'No tienes permisos para ver esta página.')
-        return redirect('home')
+    # PERMITIR ACCESO SIN AUTENTICACIÓN si viene de MercadoPago
+    # (Las cookies de sesión se pierden en la redirección externa)
+    if not viene_de_mercadopago and not request.user.is_authenticated:
+        messages.error(request, 'Debes iniciar sesión para ver esta página.')
+        return redirect('login')
+    
+    # Verificar permisos solo si está autenticado
+    if request.user.is_authenticated:
+        es_propietario = cotizacion.usuario == request.user
+        es_creador = cotizacion.creado_por == request.user if cotizacion.creado_por else False
+        es_staff = request.user.is_superuser or (
+            hasattr(request.user, 'perfil') and 
+            request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+        )
+        
+        if not (es_propietario or es_creador or es_staff):
+            messages.error(request, 'No tienes permisos para ver esta página.')
+            return redirect('home')
     
     # Obtener payment_id de MercadoPago si está disponible
     # MercadoPago puede enviar payment_id, collection_id, o preference_id
@@ -1477,22 +1552,30 @@ def pago_exitoso(request, cotizacion_id):
     return redirect('detalle_cotizacion', cotizacion_id=cotizacion.id)
 
 
-@login_required
 def pago_fallido(request, cotizacion_id):
     """Página de pago fallido"""
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id)
     
-    # Verificar permisos
-    es_propietario = cotizacion.usuario == request.user
-    es_creador = cotizacion.creado_por == request.user if cotizacion.creado_por else False
-    es_staff = request.user.is_superuser or (
-        hasattr(request.user, 'perfil') and 
-        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
-    )
+    # Verificar si viene de MercadoPago
+    viene_de_mercadopago = request.GET.get('payment_id') or request.GET.get('collection_id') or request.GET.get('preference_id')
     
-    if not (es_propietario or es_creador or es_staff):
-        messages.error(request, 'No tienes permisos para ver esta página.')
-        return redirect('home')
+    # PERMITIR ACCESO SIN AUTENTICACIÓN si viene de MercadoPago
+    if not viene_de_mercadopago and not request.user.is_authenticated:
+        messages.error(request, 'Debes iniciar sesión para ver esta página.')
+        return redirect('login')
+    
+    # Verificar permisos solo si está autenticado
+    if request.user.is_authenticated:
+        es_propietario = cotizacion.usuario == request.user
+        es_creador = cotizacion.creado_por == request.user if cotizacion.creado_por else False
+        es_staff = request.user.is_superuser or (
+            hasattr(request.user, 'perfil') and 
+            request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+        )
+        
+        if not (es_propietario or es_creador or es_staff):
+            messages.error(request, 'No tienes permisos para ver esta página.')
+            return redirect('home')
     
     context = {
         'cotizacion': cotizacion,
@@ -1500,18 +1583,26 @@ def pago_fallido(request, cotizacion_id):
     return render(request, 'tienda/cotizaciones/pago_fallido.html', context)
 
 
-@login_required
 def pago_pendiente(request, cotizacion_id):
     """Página de pago pendiente"""
     cotizacion = get_object_or_404(Cotizacion, id=cotizacion_id)
     
-    # Verificar permisos
-    es_propietario = cotizacion.usuario == request.user
-    es_creador = cotizacion.creado_por == request.user if cotizacion.creado_por else False
-    es_staff = request.user.is_superuser or (
-        hasattr(request.user, 'perfil') and 
-        request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
-    )
+    # Verificar si viene de MercadoPago
+    viene_de_mercadopago = request.GET.get('payment_id') or request.GET.get('collection_id') or request.GET.get('preference_id')
+    
+    # PERMITIR ACCESO SIN AUTENTICACIÓN si viene de MercadoPago
+    if not viene_de_mercadopago and not request.user.is_authenticated:
+        messages.error(request, 'Debes iniciar sesión para ver esta página.')
+        return redirect('login')
+    
+    # Verificar permisos solo si está autenticado
+    if request.user.is_authenticated:
+        es_propietario = cotizacion.usuario == request.user
+        es_creador = cotizacion.creado_por == request.user if cotizacion.creado_por else False
+        es_staff = request.user.is_superuser or (
+            hasattr(request.user, 'perfil') and 
+            request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+        )
     
     if not (es_propietario or es_creador or es_staff):
         messages.error(request, 'No tienes permisos para ver esta página.')

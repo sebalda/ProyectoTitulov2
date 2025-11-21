@@ -54,6 +54,7 @@ urlpatterns = [
     # Pagos
     path('cotizaciones/<int:cotizacion_id>/seleccionar-pago/', views.seleccionar_pago, name='seleccionar_pago'),
     path('cotizaciones/<int:cotizacion_id>/pagar-mercadopago/', views.procesar_pago_mercadopago, name='procesar_pago_mercadopago'),
+    path('cotizaciones/<int:cotizacion_id>/simular-pago-exitoso/', views.simular_pago_exitoso, name='simular_pago_exitoso'),  # Solo para pruebas locales
     path('cotizaciones/<int:cotizacion_id>/pago-exitoso/', views.pago_exitoso, name='pago_exitoso'),
     path('cotizaciones/<int:cotizacion_id>/pago-fallido/', views.pago_fallido, name='pago_fallido'),
     path('cotizaciones/<int:cotizacion_id>/pago-pendiente/', views.pago_pendiente, name='pago_pendiente'),

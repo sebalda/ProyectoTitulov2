@@ -41,7 +41,7 @@
                     </div>
                     
                     <!-- Mensaje informativo -->
-                    <div class="alert alert-info text-start">
+                    <div class="alert alert-info text-start mb-3">
                         <h5 class="alert-heading">
                             <i class="fas fa-info-circle me-2"></i>¿Qué sigue?
                         </h5>
@@ -52,6 +52,12 @@
                             <li>Te contactaremos para coordinar la entrega o retiro</li>
                             <li>Puedes revisar el estado de tu cotización en "Mis Cotizaciones"</li>
                         </ul>
+                    </div>
+                    
+                    <!-- Mensaje de redirección automática -->
+                    <div class="alert alert-warning text-center">
+                        <i class="fas fa-clock me-2"></i>
+                        Esta página se redirigirá automáticamente a tu cotización en <strong><span id="countdown">5</span> segundos</strong>...
                     </div>
                     
                     <!-- Botones de acción -->
@@ -81,5 +87,21 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Redirección automática después de 5 segundos
+    let seconds = 5;
+    const countdownElement = document.getElementById('countdown');
+    
+    const interval = setInterval(() => {
+        seconds--;
+        countdownElement.textContent = seconds;
+        
+        if (seconds <= 0) {
+            clearInterval(interval);
+            window.location.href = "{% url 'detalle_cotizacion' cotizacion.id %}";
+        }
+    }, 1000);
+</script>
 {% endblock %}
 
