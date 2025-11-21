@@ -20,6 +20,7 @@ urlpatterns = [
     path('panel-admin/categorias/eliminar/<int:categoria_id>/', views.eliminar_categoria, name='eliminar_categoria'),
     path('panel-admin/transferencias/', views.panel_verificacion_transferencias, name='panel_verificacion_transferencias'),
     path('panel-admin/transferencias/<int:transferencia_id>/verificar/', views.verificar_transferencia, name='verificar_transferencia'),
+    path('panel-admin/reportes/', views.reportes_generales, name='reportes_generales'),
     
     # Recepciones de Compras (Solo Administradores)
     path('panel-admin/recepciones/', views.gestionar_recepciones, name='gestionar_recepciones'),
