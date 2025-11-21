@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.conf import settings
 from django.urls import reverse
-from .models import Producto, CategoriaAcero, Cotizacion, DetalleCotizacion, TransferenciaBancaria, RecepcionCompra, DetalleRecepcionCompra
+from .models import Producto, CategoriaAcero, Cotizacion, DetalleCotizacion, TransferenciaBancaria, RecepcionCompra, DetalleRecepcionCompra, VentaN8n
 from .forms import ProductoForm, CategoriaForm
 import mercadopago
 import os
@@ -1388,26 +1388,46 @@ def pago_exitoso(request, cotizacion_id):
         return redirect('home')
     
     # Obtener payment_id de MercadoPago si está disponible
-    payment_id = request.GET.get('payment_id') or request.GET.get('preference_id')
+    # MercadoPago puede enviar payment_id, collection_id, o preference_id
+    payment_id = (
+        request.GET.get('payment_id') or 
+        request.GET.get('collection_id') or 
+        request.GET.get('preference_id')
+    )
+    
+    # Obtener el estado directamente de los parámetros de la URL
+    collection_status = request.GET.get('collection_status') or request.GET.get('status')
     
     # Si hay un payment_id, verificar el estado del pago con MercadoPago
     if payment_id and getattr(settings, 'MERCADOPAGO_ACCESS_TOKEN', None):
         try:
             mp_access_token = getattr(settings, 'MERCADOPAGO_ACCESS_TOKEN', None) or os.getenv('MERCADOPAGO_ACCESS_TOKEN')
             sdk = mercadopago.SDK(mp_access_token)
+            
+            # Intentar obtener el pago usando payment_id o collection_id
             payment_response = sdk.payment().get(payment_id)
             
             if "error" not in payment_response:
                 payment = payment_response["response"]
-                status = payment.get("status")
+                status = payment.get("status", collection_status)
                 
                 # Actualizar información del pago
-                cotizacion.mercadopago_payment_id = str(payment.get("id", ""))
+                cotizacion.mercadopago_payment_id = str(payment.get("id", payment_id))
                 
                 if status == 'approved':
-                    cotizacion.estado = 'en_revision'  # Ir a revisión para aprobación manual
-                    cotizacion.pago_completado = False
-                    messages.success(request, '¡Pago recibido! Está en revisión y te notificaremos cuando sea aprobado.')
+                    # Marcar como pagada cuando el pago está aprobado
+                    cotizacion.estado = 'pagada'
+                    cotizacion.pago_completado = True
+                    cotizacion.metodo_pago = 'mercadopago'
+                    
+                    # Enviar email de confirmación de compra
+                    try:
+                        from apps.tienda.views import enviar_confirmacion_compra
+                        enviar_confirmacion_compra(cotizacion)
+                    except Exception as e:
+                        logger.exception(f'Error al enviar confirmación de compra: {e}')
+                    
+                    messages.success(request, '¡Pago exitoso! Tu cotización ha sido pagada correctamente.')
                 elif status == 'pending':
                     cotizacion.estado = 'en_revision'
                     cotizacion.pago_completado = False
@@ -1417,8 +1437,33 @@ def pago_exitoso(request, cotizacion_id):
                     return redirect('seleccionar_pago', cotizacion_id=cotizacion.id)
                 
                 cotizacion.save()
+            else:
+                # Si no se pudo obtener el pago, verificar el estado desde la URL
+                if collection_status == 'approved':
+                    cotizacion.estado = 'pagada'
+                    cotizacion.pago_completado = True
+                    cotizacion.mercadopago_payment_id = str(payment_id)
+                    cotizacion.metodo_pago = 'mercadopago'
+                    cotizacion.save()
+                    
+                    # Enviar email de confirmación
+                    try:
+                        from apps.tienda.views import enviar_confirmacion_compra
+                        enviar_confirmacion_compra(cotizacion)
+                    except Exception as e:
+                        logger.exception(f'Error al enviar confirmación de compra: {e}')
+                    
+                    messages.success(request, '¡Pago exitoso! Tu cotización ha sido pagada correctamente.')
         except Exception as e:
-            logger.exception(f'Error al verificar pago {payment_id} en pago_exitoso')
+            logger.exception(f'Error al verificar pago {payment_id} en pago_exitoso: {e}')
+            # Si falla la verificación pero el status en la URL es approved, marcar como pagada
+            if collection_status == 'approved':
+                cotizacion.estado = 'pagada'
+                cotizacion.pago_completado = True
+                cotizacion.mercadopago_payment_id = str(payment_id) if payment_id else ''
+                cotizacion.metodo_pago = 'mercadopago'
+                cotizacion.save()
+                messages.success(request, '¡Pago exitoso! Tu cotización ha sido pagada correctamente.')
             # Continuar de todas formas, mostrar la página de éxito
     
     # Mostrar la página de revisión si está en revisión o pagada
@@ -2506,6 +2551,127 @@ def generar_documento_electronico(request, cotizacion_id):
     return render(request, 'tienda/trabajadores/confirmar_facturacion.html', context)
 
 
+def facturar_cotizacion_automaticamente(cotizacion, usuario_que_factura=None):
+    """
+    Factura automáticamente una cotización (solo para pagos con MercadoPago desde n8n)
+    Determina automáticamente si es boleta (persona natural) o factura (empresa)
+    """
+    from django.core.files.base import ContentFile
+    import random
+    
+    # Verificar que la cotización esté pagada
+    if cotizacion.estado != 'pagada':
+        logger.warning(f'No se puede facturar cotización {cotizacion.id} porque no está pagada')
+        return False
+    
+    # Verificar que no esté ya facturada
+    if cotizacion.facturada:
+        logger.info(f'Cotización {cotizacion.id} ya está facturada')
+        return True
+    
+    # Verificar que sea pago con MercadoPago
+    if cotizacion.metodo_pago != 'mercadopago':
+        logger.warning(f'Facturación automática solo aplica para MercadoPago. Método: {cotizacion.metodo_pago}')
+        return False
+    
+    # Obtener perfil del cliente
+    try:
+        perfil = cotizacion.usuario.perfil
+    except AttributeError:
+        logger.error(f'Usuario {cotizacion.usuario.id} no tiene perfil')
+        return False
+    
+    # Determinar tipo de documento automáticamente
+    # Persona natural → Boleta
+    # Empresa → Factura
+    if perfil.tipo_cliente == 'persona':
+        tipo_documento = 'boleta'
+    elif perfil.tipo_cliente == 'empresa':
+        tipo_documento = 'factura'
+    else:
+        # Por defecto, persona natural (boleta)
+        tipo_documento = 'boleta'
+        logger.warning(f'Perfil {perfil.id} no tiene tipo_cliente definido, usando boleta por defecto')
+    
+    # Validar datos del cliente para facturación
+    errores = []
+    
+    if not perfil.rut:
+        errores.append('El cliente no tiene RUT registrado.')
+    
+    if tipo_documento == 'factura':
+        # Para factura se requieren más datos
+        if perfil.tipo_cliente == 'empresa':
+            if not perfil.razon_social:
+                errores.append('La empresa no tiene razón social registrada.')
+            if not perfil.giro:
+                errores.append('La empresa no tiene giro comercial registrado.')
+            if not perfil.direccion_comercial:
+                errores.append('La empresa no tiene dirección comercial registrada.')
+        else:
+            if not perfil.direccion:
+                errores.append('El cliente no tiene dirección registrada.')
+    
+    # Si hay errores de validación, no facturar pero no fallar
+    if errores:
+        logger.warning(f'No se puede facturar cotización {cotizacion.id} automáticamente: {", ".join(errores)}')
+        return False
+    
+    try:
+        # Actualizar información de facturación
+        cotizacion.tipo_documento = tipo_documento
+        cotizacion.facturada = True
+        cotizacion.fecha_facturacion = timezone.now()
+        cotizacion.facturado_por = usuario_que_factura  # Puede ser None para facturación automática
+        
+        # Generar número de folio temporal
+        # TODO: En producción, integrar con API del SII
+        cotizacion.numero_documento = f"{tipo_documento.upper()[0]}{timezone.now().year}{random.randint(10000, 99999)}"
+        cotizacion.folio_sii = cotizacion.numero_documento
+        cotizacion.estado_sii = 'PENDIENTE_ENVIO'
+        
+        # Descontar stock de productos
+        detalles = cotizacion.detalles.all().select_related('producto')
+        productos_sin_stock = []
+        
+        for detalle in detalles:
+            producto = detalle.producto
+            if producto.stock_actual >= detalle.cantidad:
+                producto.stock_actual -= detalle.cantidad
+                producto.save()
+            else:
+                productos_sin_stock.append(f'{producto.nombre} (disponible: {producto.stock_actual}, necesario: {detalle.cantidad})')
+        
+        if productos_sin_stock:
+            logger.warning(f'Cotización {cotizacion.id}: Algunos productos no tenían stock suficiente: {", ".join(productos_sin_stock)}')
+        
+        # Generar PDF y guardarlo en la base de datos
+        pdf_content = generar_pdf_documento_tributario(cotizacion)
+        tipo_doc_filename = 'boleta' if tipo_documento == 'boleta' else 'factura'
+        filename = f'{tipo_doc_filename}_{cotizacion.numero_documento}.pdf'
+        
+        # Guardar el PDF en el campo pdf_documento
+        cotizacion.pdf_documento.save(filename, ContentFile(pdf_content), save=False)
+        
+        cotizacion.save()
+        
+        tipo_doc_texto = 'Boleta Electrónica' if tipo_documento == 'boleta' else 'Factura Electrónica'
+        logger.info(f'✅ {tipo_doc_texto} N° {cotizacion.numero_documento} generada automáticamente para cotización {cotizacion.numero_cotizacion}')
+        
+        # Enviar notificación al cliente
+        try:
+            enviar_notificacion_facturacion(cotizacion, tipo_documento)
+            logger.info(f'📧 Notificación de facturación enviada al cliente: {cotizacion.usuario.email}')
+        except Exception as e:
+            logger.exception(f'Error al enviar notificación de facturación: {e}')
+        
+        return True
+        
+    except Exception as e:
+        logger.exception(f'Error al facturar cotización {cotizacion.id} automáticamente: {e}')
+        return False
+
+
 def generar_pdf_documento_tributario(cotizacion):
     """Generar PDF del documento tributario (Boleta o Factura) - Función reutilizable"""
     detalles = cotizacion.detalles.all().select_related('producto')
@@ -3082,3 +3248,452 @@ def detalle_recepcion(request, recepcion_id):
     }
     
     return render(request, 'tienda/admin/detalle_recepcion.html', context)
+
+
+# ============================================
+# VENTAS N8N - BOT DE VENTAS
+# ============================================
+
+def crear_cotizacion_desde_venta_n8n(venta):
+    """
+    Crea una nueva cotización pagada desde una venta de n8n
+    """
+    from django.contrib.auth.models import User
+    from decimal import Decimal
+    
+    # Verificar si ya existe una cotización para esta venta (evitar duplicados)
+    if venta.metadata and venta.metadata.get('cotizacion_id'):
+        try:
+            return Cotizacion.objects.get(id=venta.metadata['cotizacion_id'])
+        except Cotizacion.DoesNotExist:
+            pass
+    
+    # Obtener o crear usuario por email
+    usuario = None
+    if venta.usuario:
+        usuario = venta.usuario
+    elif venta.email_comprador:
+        try:
+            usuario = User.objects.get(email=venta.email_comprador)
+            venta.usuario = usuario
+            venta.save()
+        except User.DoesNotExist:
+            # Si no existe el usuario, crear uno básico
+            username = venta.email_comprador.split('@')[0]
+            # Asegurar que el username sea único
+            counter = 1
+            original_username = username
+            while User.objects.filter(username=username).exists():
+                username = f"{original_username}{counter}"
+                counter += 1
+            
+            usuario = User.objects.create_user(
+                username=username,
+                email=venta.email_comprador,
+                first_name=venta.email_comprador.split('@')[0],
+            )
+            venta.usuario = usuario
+            venta.save()
+    
+    if not usuario:
+        logger.error(f'No se pudo crear usuario para venta n8n {venta.id}')
+        return None
+    
+    # IMPORTANTE: Para ventas de n8n, el total de MercadoPago ya incluye IVA
+    # Por lo tanto, debemos calcular el subtotal sin IVA desde el total que ya incluye IVA
+    # Ejemplo: Si total = $1190 (incluye IVA), subtotal = $1190 / 1.19 = $1000
+    # Luego IVA = $1000 * 0.19 = $190
+    total_con_iva = venta.total
+    subtotal_sin_iva = (total_con_iva / Decimal('1.19')).quantize(Decimal('0.01'))
+    iva_calculado = (subtotal_sin_iva * Decimal('0.19')).quantize(Decimal('0.01'))
+    
+    # Crear la cotización con los totales correctos (solo para ventas n8n)
+    cotizacion = Cotizacion.objects.create(
+        usuario=usuario,
+        estado='pagada',
+        metodo_pago='mercadopago',
+        pago_completado=True,
+        mercadopago_preference_id=venta.mercadopago_preference_id,
+        mercadopago_payment_id=venta.mercadopago_payment_id or '',
+        subtotal=subtotal_sin_iva,  # Subtotal sin IVA
+        iva=iva_calculado,  # IVA calculado correctamente
+        total=total_con_iva,  # Total original de MercadoPago (ya incluye IVA)
+        fecha_finalizacion=timezone.now(),
+    )
+    
+    # Crear detalles de cotización basándose en los items
+    for item in venta.items:
+        producto_id = item.get('id') or (venta.metadata.get('product_id') if venta.metadata else None)
+        sku = item.get('sku') or (venta.metadata.get('sku') if venta.metadata else None)
+        
+        producto = None
+        
+        # Intentar buscar el producto por ID o SKU
+        if producto_id:
+            try:
+                producto = Producto.objects.get(id=producto_id, activo=True)
+            except Producto.DoesNotExist:
+                pass
+        
+        if not producto and sku:
+            try:
+                producto = Producto.objects.get(codigo_producto=sku, activo=True)
+            except Producto.DoesNotExist:
+                pass
+        
+        # Si no encontramos el producto, crear uno genérico
+        if not producto:
+            categoria_default = CategoriaAcero.objects.first()
+            if not categoria_default:
+                logger.warning(f'No se encontró categoría para crear producto de item: {item.get("title")}')
+                continue
+            
+            codigo_producto = sku or f"N8N-{venta.id}-{len(cotizacion.detalles.all())}"
+            producto, created = Producto.objects.get_or_create(
+                codigo_producto=codigo_producto,
+                defaults={
+                    'nombre': item.get('title', 'Producto sin nombre')[:200],
+                    'descripcion': item.get('description', '')[:500],
+                    'categoria': categoria_default,
+                    'tipo_acero': '304',
+                    'precio_por_unidad': Decimal(str(item.get('unit_price', 0))),
+                    'stock_actual': 0,
+                    'activo': True,
+                }
+            )
+        
+        # Crear detalle de cotización
+        # IMPORTANTE: Para ventas n8n, el precio unitario de MercadoPago ya incluye IVA
+        # Calcular precio sin IVA: precio_con_iva / 1.19
+        cantidad = item.get('quantity', 1)
+        precio_unitario_con_iva = Decimal(str(item.get('unit_price', 0)))
+        precio_unitario_sin_iva = (precio_unitario_con_iva / Decimal('1.19')).quantize(Decimal('0.01'))
+        
+        DetalleCotizacion.objects.create(
+            cotizacion=cotizacion,
+            producto=producto,
+            cantidad=cantidad,
+            precio_unitario=precio_unitario_sin_iva,  # Precio sin IVA (solo para n8n)
+        )
+    
+    # NO recalcular totales con calcular_totales() porque ya están calculados correctamente
+    # calcular_totales() agregaría otro IVA encima, duplicando el IVA
+    # Los totales ya están establecidos correctamente arriba
+    
+    # Asociar la cotización con la venta
+    if not venta.metadata:
+        venta.metadata = {}
+    venta.metadata['cotizacion_id'] = cotizacion.id
+    venta.save()
+    
+    # Enviar email de confirmación
+    try:
+        enviar_confirmacion_compra(cotizacion)
+    except Exception as e:
+        logger.exception(f'Error al enviar confirmación de compra para cotización {cotizacion.id}: {e}')
+    
+    # IMPORTANTE: Facturación automática solo para pagos con MercadoPago desde n8n
+    # Para Transferencia/Efectivo se hace manualmente desde el panel de trabajadores
+    if cotizacion.metodo_pago == 'mercadopago':
+        try:
+            # Facturar automáticamente: boleta para persona natural, factura para empresa
+            facturado = facturar_cotizacion_automaticamente(cotizacion, usuario_que_factura=None)
+            if facturado:
+                logger.info(f'✅ Facturación automática exitosa para cotización {cotizacion.numero_cotizacion}')
+            else:
+                logger.warning(f'⚠️ No se pudo facturar automáticamente la cotización {cotizacion.numero_cotizacion} (faltan datos del cliente o ya estaba facturada)')
+        except Exception as e:
+            logger.exception(f'Error en facturación automática para cotización {cotizacion.id}: {e}')
+            # Continuar de todas formas, la cotización se creó correctamente
+    
+    logger.info(f'Cotización {cotizacion.numero_cotizacion} creada desde venta n8n {venta.id}')
+    
+    return cotizacion
+
+
+@require_POST
+def api_crear_venta_n8n(request):
+    """API endpoint para que n8n registre una venta cuando crea una preferencia de MercadoPago"""
+    try:
+        data = json.loads(request.body)
+        
+        # Validar datos requeridos
+        preference_id = data.get('preference_id')
+        email_comprador = data.get('email_comprador') or data.get('payer', {}).get('email')
+        items = data.get('items', [])
+        metadata = data.get('metadata', {})
+        
+        if not preference_id:
+            return JsonResponse({'error': 'preference_id es requerido'}, status=400)
+        if not email_comprador:
+            return JsonResponse({'error': 'email_comprador es requerido'}, status=400)
+        if not items:
+            return JsonResponse({'error': 'items es requerido'}, status=400)
+        
+        # Calcular totales
+        subtotal = sum(item.get('unit_price', 0) * item.get('quantity', 0) for item in items)
+        total = subtotal  # Puedes agregar IVA si es necesario
+        
+        # Crear o actualizar venta
+        venta, created = VentaN8n.objects.update_or_create(
+            mercadopago_preference_id=preference_id,
+            defaults={
+                'email_comprador': email_comprador,
+                'items': items,
+                'metadata': metadata,
+                'subtotal': subtotal,
+                'total': total,
+            }
+        )
+        
+        # Intentar asociar usuario por email
+        venta.asociar_usuario_por_email()
+        
+        return JsonResponse({
+            'success': True,
+            'venta_id': venta.id,
+            'preference_id': venta.mercadopago_preference_id,
+            'created': created
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'JSON inválido'}, status=400)
+    except Exception as e:
+        logger.exception(f'Error al crear venta n8n: {e}')
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def pago_exitoso_n8n(request):
+    """Página de pago exitoso para ventas de n8n"""
+    payment_id = request.GET.get('payment_id') or request.GET.get('collection_id')
+    preference_id = request.GET.get('preference_id')
+    collection_status = request.GET.get('collection_status') or request.GET.get('status', 'approved')
+    status = collection_status
+    
+    if not preference_id and not payment_id:
+        messages.error(request, 'No se encontró información de pago.')
+        return redirect('home')
+    
+    # Buscar la venta
+    venta = None
+    if preference_id:
+        try:
+            venta = VentaN8n.objects.get(mercadopago_preference_id=preference_id)
+        except VentaN8n.DoesNotExist:
+            pass
+    
+    if not venta and payment_id:
+        try:
+            venta = VentaN8n.objects.get(mercadopago_payment_id=payment_id)
+        except VentaN8n.DoesNotExist:
+            pass
+    
+    # Si no encontramos la venta, intentar obtenerla de MercadoPago
+    if not venta and (payment_id or preference_id):
+        try:
+            mp_access_token = getattr(settings, 'MERCADOPAGO_ACCESS_TOKEN', None) or os.getenv('MERCADOPAGO_ACCESS_TOKEN')
+            if mp_access_token:
+                sdk = mercadopago.SDK(mp_access_token)
+                
+                # Obtener información del pago
+                if payment_id:
+                    payment_response = sdk.payment().get(payment_id)
+                    if "error" not in payment_response:
+                        payment = payment_response["response"]
+                        preference_id_from_payment = payment.get("preference_id")
+                        if preference_id_from_payment:
+                            try:
+                                venta = VentaN8n.objects.get(mercadopago_preference_id=preference_id_from_payment)
+                                venta.mercadopago_payment_id = str(payment.get("id", ""))
+                                venta.estado_pago = payment.get("status", "approved")
+                                if venta.estado_pago == 'approved':
+                                    venta.fecha_pago = timezone.now()
+                                    venta.save()
+                                    # Crear cotización cuando el pago está aprobado
+                                    crear_cotizacion_desde_venta_n8n(venta)
+                                else:
+                                    venta.save()
+                            except VentaN8n.DoesNotExist:
+                                pass
+                
+                # Si aún no tenemos la venta, intentar con preference_id
+                if not venta and preference_id:
+                    preference_response = sdk.preference().get(preference_id)
+                    if "error" not in preference_response:
+                        preference = preference_response["response"]
+                        # Crear venta desde la preferencia
+                        items = preference.get("items", [])
+                        payer = preference.get("payer", {})
+                        email = payer.get("email") or request.user.email if request.user.is_authenticated else None
+                        metadata = preference.get("metadata", {})
+                        
+                        if email and items:
+                            subtotal = sum(item.get("unit_price", 0) * item.get("quantity", 0) for item in items)
+                            venta = VentaN8n.objects.create(
+                                mercadopago_preference_id=preference_id,
+                                email_comprador=email,
+                                items=items,
+                                metadata=metadata,
+                                subtotal=subtotal,
+                                total=subtotal,
+                                estado_pago=status,
+                            )
+                            venta.asociar_usuario_por_email()
+                            # Si el estado es approved, crear la cotización
+                            if status == 'approved':
+                                venta.fecha_pago = timezone.now()
+                                venta.save()
+                                crear_cotizacion_desde_venta_n8n(venta)
+        except Exception as e:
+            logger.exception(f'Error al obtener información de MercadoPago: {e}')
+    
+    # Si el estado desde la URL es 'approved' y tenemos la venta, actualizar y crear cotización
+    if venta and collection_status == 'approved' and venta.estado_pago != 'approved':
+        venta.estado_pago = 'approved'
+        venta.fecha_pago = timezone.now()
+        if payment_id:
+            venta.mercadopago_payment_id = str(payment_id)
+        venta.save()
+        # Crear cotización cuando el pago está aprobado
+        crear_cotizacion_desde_venta_n8n(venta)
+    
+    # Verificar permisos si la venta existe
+    if venta:
+        # Si el usuario está logueado, verificar que sea el dueño o staff
+        if request.user.is_authenticated:
+            es_propietario = venta.usuario == request.user
+            es_staff = request.user.is_superuser or (
+                hasattr(request.user, 'perfil') and 
+                request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
+            )
+            # También verificar por email
+            if not es_propietario and not es_staff:
+                es_propietario = request.user.email == venta.email_comprador
+            
+            if not (es_propietario or es_staff):
+                messages.error(request, 'No tienes permisos para ver esta página.')
+                return redirect('home')
+        else:
+            # Si no está logueado, permitir ver pero sugerir login
+            messages.info(request, 'Inicia sesión para ver todas tus compras.')
+    
+    # Si la venta está aprobada, crear la cotización si no existe
+    cotizacion = None
+    if venta and venta.estado_pago == 'approved':
+        # Verificar si ya tiene una cotización asociada
+        if venta.metadata and venta.metadata.get('cotizacion_id'):
+            try:
+                cotizacion = Cotizacion.objects.get(id=venta.metadata['cotizacion_id'])
+            except Cotizacion.DoesNotExist:
+                pass
+        
+        # Si no existe, crear la cotización
+        if not cotizacion:
+            cotizacion = crear_cotizacion_desde_venta_n8n(venta)
+            if cotizacion and request.user.is_authenticated:
+                # Redirigir a la cotización si el usuario está logueado
+                messages.success(request, f'¡Cotización {cotizacion.numero_cotizacion} creada y pagada!')
+                return redirect('detalle_cotizacion', cotizacion_id=cotizacion.id)
+    
+    # Preparar items con subtotales calculados
+    items_con_subtotal = []
+    if venta and venta.items:
+        for item in venta.items:
+            item_copy = item.copy()
+            item_copy['subtotal'] = item.get('unit_price', 0) * item.get('quantity', 0)
+            items_con_subtotal.append(item_copy)
+    
+    context = {
+        'venta': venta,
+        'cotizacion': cotizacion,
+        'items': items_con_subtotal if items_con_subtotal else (venta.items if venta else []),
+        'payment_id': payment_id,
+        'preference_id': preference_id,
+    }
+    
+    return render(request, 'tienda/ventas_n8n/pago_exitoso.html', context)
+
+
+def pago_fallido_n8n(request):
+    """Página de pago fallido para ventas de n8n"""
+    payment_id = request.GET.get('payment_id')
+    preference_id = request.GET.get('preference_id')
+    status = request.GET.get('status', 'rejected')
+    
+    # Buscar la venta si existe
+    venta = None
+    if preference_id:
+        try:
+            venta = VentaN8n.objects.get(mercadopago_preference_id=preference_id)
+            venta.estado_pago = status
+            venta.save()
+        except VentaN8n.DoesNotExist:
+            pass
+    
+    context = {
+        'venta': venta,
+        'payment_id': payment_id,
+        'preference_id': preference_id,
+    }
+    
+    return render(request, 'tienda/ventas_n8n/pago_fallido.html', context)
+
+
+def pago_pendiente_n8n(request):
+    """Página de pago pendiente para ventas de n8n"""
+    payment_id = request.GET.get('payment_id')
+    preference_id = request.GET.get('preference_id')
+    status = request.GET.get('status', 'pending')
+    
+    # Buscar la venta
+    venta = None
+    if preference_id:
+        try:
+            venta = VentaN8n.objects.get(mercadopago_preference_id=preference_id)
+            venta.estado_pago = status
+            venta.save()
+        except VentaN8n.DoesNotExist:
+            pass
+    
+    # Verificar si el pago ya fue aprobado
+    if payment_id and getattr(settings, 'MERCADOPAGO_ACCESS_TOKEN', None):
+        try:
+            mp_access_token = getattr(settings, 'MERCADOPAGO_ACCESS_TOKEN', None) or os.getenv('MERCADOPAGO_ACCESS_TOKEN')
+            sdk = mercadopago.SDK(mp_access_token)
+            payment_response = sdk.payment().get(payment_id)
+            
+            if "error" not in payment_response:
+                payment = payment_response["response"]
+                payment_status = payment.get("status")
+                
+                if payment_status == 'approved':
+                    if venta:
+                        venta.estado_pago = 'approved'
+                        venta.mercadopago_payment_id = str(payment.get("id", ""))
+                        venta.fecha_pago = timezone.now()
+                        venta.save()
+                    messages.success(request, '¡Tu pago ha sido confirmado!')
+                    url = reverse('pago_exitoso_n8n')
+                    if payment_id:
+                        url += f'?payment_id={payment_id}'
+                    if preference_id:
+                        url += f'&preference_id={preference_id}' if payment_id else f'?preference_id={preference_id}'
+                    return redirect(url)
+                elif payment_status in ['rejected', 'cancelled']:
+                    messages.error(request, 'El pago fue rechazado. Por favor, intenta nuevamente.')
+                    url = reverse('pago_fallido_n8n')
+                    if payment_id:
+                        url += f'?payment_id={payment_id}'
+                    if preference_id:
+                        url += f'&preference_id={preference_id}' if payment_id else f'?preference_id={preference_id}'
+                    return redirect(url)
+        except Exception as e:
+            logger.exception(f'Error al verificar pago pendiente: {e}')
+    
+    context = {
+        'venta': venta,
+        'payment_id': payment_id,
+        'preference_id': preference_id,
+    }
+    
+    return render(request, 'tienda/ventas_n8n/pago_pendiente.html', context)

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Producto, CategoriaAcero, Cliente, Pedido, DetallePedido, Cotizacion, DetalleCotizacion, TransferenciaBancaria
+from .models import Producto, CategoriaAcero, Cliente, Pedido, DetallePedido, Cotizacion, DetalleCotizacion, TransferenciaBancaria, VentaN8n
 
 
 @admin.register(CategoriaAcero)
@@ -154,3 +154,28 @@ class TransferenciaBancariaAdmin(admin.ModelAdmin):
             # Los trabajadores solo ven transferencias pendientes y en verificación
             qs = qs.filter(estado__in=['pendiente', 'verificando'])
         return qs
+
+
+@admin.register(VentaN8n)
+class VentaN8nAdmin(admin.ModelAdmin):
+    """Administración de ventas de N8N"""
+    list_display = ['mercadopago_preference_id', 'email_comprador', 'usuario', 'estado_pago', 'total', 'fecha_creacion']
+    list_filter = ['estado_pago', 'fecha_creacion', 'fecha_pago']
+    search_fields = ['mercadopago_preference_id', 'mercadopago_payment_id', 'email_comprador', 'usuario__email', 'usuario__username']
+    ordering = ['-fecha_creacion']
+    readonly_fields = ['mercadopago_preference_id', 'fecha_creacion', 'fecha_actualizacion', 'fecha_pago']
+    
+    fieldsets = (
+        ('Información de MercadoPago', {
+            'fields': ('mercadopago_preference_id', 'mercadopago_payment_id', 'estado_pago')
+        }),
+        ('Información del Comprador', {
+            'fields': ('email_comprador', 'usuario')
+        }),
+        ('Productos y Totales', {
+            'fields': ('items', 'metadata', 'subtotal', 'total')
+        }),
+        ('Fechas', {
+            'fields': ('fecha_creacion', 'fecha_actualizacion', 'fecha_pago')
+        }),
+    )

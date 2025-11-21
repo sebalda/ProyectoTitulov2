@@ -18,7 +18,36 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-rj%70h$u-cq9_(j!!02=kieo*^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# ALLOWED_HOSTS desde .env (separados por comas)
+ALLOWED_HOSTS_STR = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1')
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_STR.split(',') if host.strip()]
+
+# En modo DEBUG, permitir cualquier host (incluyendo ngrok)
+# ⚠️ SOLO PARA DESARROLLO - NO USAR EN PRODUCCIÓN
+if DEBUG:
+    # Permitir cualquier host cuando DEBUG=True (incluye ngrok)
+    ALLOWED_HOSTS = ['*']
+
+# CSRF_TRUSTED_ORIGINS desde .env (separados por comas)
+CSRF_TRUSTED_ORIGINS_STR = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000,http://127.0.0.1:8000')
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_STR.split(',') if origin.strip()]
+
+# Configuración adicional de CSRF para ngrok y desarrollo
+CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False') == 'True'  # True solo en producción con HTTPS
+CSRF_COOKIE_HTTPONLY = False
+CSRF_USE_SESSIONS = False
+
+# Si estamos en DEBUG, configurar CSRF de forma más permisiva (solo para desarrollo)
+if DEBUG:
+    # El middleware NgrokHostMiddleware agregará dinámicamente los orígenes de ngrok
+    # Asegurar que las cookies CSRF funcionen con ngrok
+    CSRF_COOKIE_SECURE = False  # ngrok maneja HTTPS, pero la cookie puede no ser segura
+    CSRF_USE_SESSIONS = False  # Usar cookies en lugar de sesiones
+    
+    # Configurar para que Django confíe en los headers X-Forwarded-* de ngrok
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    USE_X_FORWARDED_HOST = True
+    USE_X_FORWARDED_PORT = True
 
 # URL del sitio (para correos y enlaces)
 SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
@@ -45,6 +74,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'apps.tienda.middleware.NgrokHostMiddleware',  # Permitir ngrok automáticamente en DEBUG
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -208,6 +238,8 @@ if SUPABASE_URL and SUPABASE_KEY:
     from supabase import create_client, Client
     SUPABASE_CLIENT: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+MERCADOPAGO_ACCESS_TOKEN = os.getenv('MERCADOPAGO_ACCESS_TOKEN', '')
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -220,3 +252,10 @@ print("🔍 DEBUGGING STORAGE:")
 print("AWS_ACCESS_KEY_ID:", "✅ Configurado" if os.getenv('AWS_ACCESS_KEY_ID') else "❌ No configurado")
 print("USE_S3_STORAGE:", USE_S3_STORAGE)
 print("DEFAULT_FILE_STORAGE:", DEFAULT_FILE_STORAGE if USE_S3_STORAGE else "Local storage")
+
+# ==================================
+# DEBUGGING CSRF (temporal)
+# ==================================
+print("🔍 DEBUGGING CSRF:")
+print("ALLOWED_HOSTS:", ALLOWED_HOSTS)
+print("CSRF_TRUSTED_ORIGINS:", CSRF_TRUSTED_ORIGINS)

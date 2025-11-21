@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pago Pendiente - Pozinox{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-body text-center py-5">
+                    <!-- Icono de pendiente -->
+                    <div class="mb-4">
+                        <i class="fas fa-clock text-warning" style="font-size: 6rem;"></i>
+                    </div>
+                    
+                    <!-- Mensaje principal -->
+                    <h1 class="display-4 text-warning mb-3">Pago Pendiente</h1>
+                    <h4 class="mb-4">Tu pago está siendo procesado</h4>
+                    
+                    {% if venta %}
+                    <!-- Información de la venta -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <div class="row text-start">
+                                <div class="col-md-6 mb-3">
+                                    <p class="mb-1 text-muted">Email:</p>
+                                    <h5 class="mb-0">{{ venta.email_comprador }}</h5>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <p class="mb-1 text-muted">Total:</p>
+                                    <h5 class="mb-0">${{ venta.total|floatformat:0 }}</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Mensaje informativo -->
+                    <div class="alert alert-warning text-start">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-info-circle me-2"></i>¿Qué significa esto?
+                        </h5>
+                        <hr>
+                        <ul class="mb-0">
+                            <li>Tu pago está siendo verificado por MercadoPago</li>
+                            <li>Este proceso puede tardar unos minutos</li>
+                            <li>Recibirás un correo electrónico cuando el pago sea confirmado</li>
+                            <li>Te notificaremos cuando tu pedido esté listo</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Botones de acción -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+                        <a href="{% url 'home' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-home me-2"></i>Ir al Inicio
+                        </a>
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'perfil' %}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-user me-2"></i>Mi Perfil
+                        </a>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Contacto -->
+                    <div class="mt-5 pt-4 border-top">
+                        <p class="text-muted mb-2">¿Tienes alguna pregunta?</p>
+                        <p class="mb-0">
+                            <i class="fas fa-phone me-2"></i>+56 2 1234 5678
+                            <span class="mx-3">|</span>
+                            <i class="fas fa-envelope me-2"></i>info@pozinox.cl
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

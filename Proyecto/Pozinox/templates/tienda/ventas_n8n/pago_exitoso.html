@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pago Exitoso - Pozinox{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-lg border-0">
+                <div class="card-body text-center py-5">
+                    <!-- Icono de éxito -->
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle text-success" style="font-size: 6rem;"></i>
+                    </div>
+                    
+                    <!-- Mensaje principal -->
+                    <h1 class="display-4 text-success mb-3">¡Pago Exitoso!</h1>
+                    <h4 class="mb-4">Tu pago ha sido procesado correctamente</h4>
+                    
+                    {% if venta %}
+                        <!-- Información del comprador -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-body">
+                                <div class="row text-start">
+                                    <div class="col-md-6 mb-3">
+                                        <p class="mb-1 text-muted">Email:</p>
+                                        <h5 class="mb-0">{{ venta.email_comprador }}</h5>
+                                    </div>
+                                    {% if venta.usuario %}
+                                    <div class="col-md-6 mb-3">
+                                        <p class="mb-1 text-muted">Cliente:</p>
+                                        <h5 class="mb-0">{{ venta.usuario.get_full_name|default:venta.usuario.username }}</h5>
+                                    </div>
+                                    {% endif %}
+                                    <div class="col-md-6 mb-3">
+                                        <p class="mb-1 text-muted">Total Pagado:</p>
+                                        <h5 class="mb-0 text-success">${{ venta.total|floatformat:0 }}</h5>
+                                    </div>
+                                    {% if venta.mercadopago_payment_id %}
+                                    <div class="col-md-6 mb-3">
+                                        <p class="mb-1 text-muted">ID de Pago:</p>
+                                        <h6 class="mb-0">{{ venta.mercadopago_payment_id }}</h6>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Productos comprados -->
+                        {% if items %}
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-shopping-cart me-2"></i>Productos Comprados
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th>Descripción</th>
+                                                <th class="text-center">Cantidad</th>
+                                                <th class="text-end">Precio Unitario</th>
+                                                <th class="text-end">Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in items %}
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ item.title }}</strong>
+                                                    {% if item.sku %}
+                                                    <br><small class="text-muted">SKU: {{ item.sku }}</small>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">{{ item.description|truncatewords:15 }}</small>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="badge bg-primary">{{ item.quantity }}</span>
+                                                </td>
+                                                <td class="text-end">${{ item.unit_price|floatformat:0 }}</td>
+                                                <td class="text-end">
+                                                    <strong>${{ item.subtotal|floatformat:0 }}</strong>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="4" class="text-end"><strong>Total:</strong></td>
+                                                <td class="text-end"><strong class="text-success">${{ venta.total|floatformat:0 }}</strong></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <!-- Si no hay venta, mostrar información básica -->
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No se encontró información detallada de la compra. 
+                            {% if not user.is_authenticated %}
+                            <a href="{% url 'login' %}?next={{ request.path }}">Inicia sesión</a> para ver tus compras.
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Mensaje informativo -->
+                    <div class="alert alert-info text-start">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-info-circle me-2"></i>¿Qué sigue?
+                        </h5>
+                        <hr>
+                        <ul class="mb-0">
+                            <li>Recibirás un correo electrónico con la confirmación de tu pago</li>
+                            <li>Nuestro equipo procesará tu pedido en las próximas horas</li>
+                            <li>Te contactaremos para coordinar la entrega o retiro</li>
+                            {% if user.is_authenticated %}
+                            <li>Puedes revisar tus compras en tu perfil</li>
+                            {% else %}
+                            <li><a href="{% url 'login' %}">Inicia sesión</a> para ver todas tus compras</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    
+                    <!-- Botones de acción -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'perfil' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-user me-2"></i>Mi Perfil
+                        </a>
+                        {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-home me-2"></i>Ir al Inicio
+                        </a>
+                    </div>
+                    
+                    <!-- Contacto -->
+                    <div class="mt-5 pt-4 border-top">
+                        <p class="text-muted mb-2">¿Tienes alguna pregunta?</p>
+                        <p class="mb-0">
+                            <i class="fas fa-phone me-2"></i>+56 2 1234 5678
+                            <span class="mx-3">|</span>
+                            <i class="fas fa-envelope me-2"></i>info@pozinox.cl
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -581,3 +581,64 @@ class DetalleRecepcionCompra(models.Model):
         if self.precio_compra:
             return self.cantidad * self.precio_compra
         return 0
+
+
+class VentaN8n(models.Model):
+    """Ventas creadas desde el bot de n8n"""
+    ESTADOS_PAGO = [
+        ('pending', 'Pendiente'),
+        ('approved', 'Aprobado'),
+        ('rejected', 'Rechazado'),
+        ('cancelled', 'Cancelado'),
+        ('refunded', 'Reembolsado'),
+    ]
+    
+    # Identificadores de MercadoPago
+    mercadopago_preference_id = models.CharField(max_length=100, unique=True, db_index=True)
+    mercadopago_payment_id = models.CharField(max_length=100, blank=True, null=True, db_index=True)
+    
+    # Información del comprador
+    email_comprador = models.EmailField()
+    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='ventas_n8n')
+    
+    # Items comprados (almacenados como JSON)
+    items = models.JSONField(default=list, help_text="Lista de productos comprados")
+    
+    # Metadata adicional
+    metadata = models.JSONField(default=dict, blank=True, help_text="Metadata adicional de la venta")
+    
+    # Estado del pago
+    estado_pago = models.CharField(max_length=20, choices=ESTADOS_PAGO, default='pending')
+    
+    # Totales
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    # Fechas
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    fecha_pago = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        verbose_name = 'Venta N8N'
+        verbose_name_plural = 'Ventas N8N'
+        ordering = ['-fecha_creacion']
+        indexes = [
+            models.Index(fields=['mercadopago_preference_id']),
+            models.Index(fields=['mercadopago_payment_id']),
+            models.Index(fields=['email_comprador']),
+        ]
+    
+    def __str__(self):
+        return f"Venta N8N {self.mercadopago_preference_id} - {self.email_comprador}"
+    
+    def asociar_usuario_por_email(self):
+        """Intenta asociar un usuario existente por email"""
+        if not self.usuario and self.email_comprador:
+            try:
+                usuario = User.objects.get(email=self.email_comprador)
+                self.usuario = usuario
+                self.save(update_fields=['usuario'])
+            except User.DoesNotExist:
+                pass
+        return self.usuario

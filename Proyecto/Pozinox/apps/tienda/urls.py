@@ -68,4 +68,10 @@ urlpatterns = [
     # Páginas legales
     path('politica-privacidad/', views.politica_privacidad, name='politica_privacidad'),
     path('terminos-condiciones/', views.terminos_condiciones, name='terminos_condiciones'),
+    
+    # Ventas N8N - Bot de ventas
+    path('api/n8n/crear-venta/', views.api_crear_venta_n8n, name='api_crear_venta_n8n'),
+    path('exito/', views.pago_exitoso_n8n, name='pago_exitoso_n8n'),
+    path('fallo/', views.pago_fallido_n8n, name='pago_fallido_n8n'),
+    path('pendiente/', views.pago_pendiente_n8n, name='pago_pendiente_n8n'),
 ]
