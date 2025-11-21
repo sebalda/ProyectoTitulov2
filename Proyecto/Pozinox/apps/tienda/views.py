@@ -14,10 +14,11 @@ import mercadopago
 import os
 import json
 import logging
+from datetime import timedelta
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 from io import BytesIO
@@ -1291,7 +1292,7 @@ def pago_pendiente(request, cotizacion_id):
 @login_required
 def descargar_cotizacion_pdf(request, cotizacion_id):
     """Generar y descargar PDF de la cotización"""
-    # Verificar permisos: staff puede descargar cualquier cotización, usuarios solo las suyas
+    # Verificar permisos: staff puede descargar cualquier cotizacion, usuarios solo las suyas
     es_staff = request.user.is_superuser or request.user.is_staff or (
         hasattr(request.user, 'perfil') and 
         request.user.perfil.tipo_usuario in ['trabajador', 'administrador']
@@ -1307,9 +1308,10 @@ def descargar_cotizacion_pdf(request, cotizacion_id):
     # Crear el buffer
     buffer = BytesIO()
     
-    # Crear el documento PDF
-    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=72, leftMargin=72,
-                           topMargin=72, bottomMargin=18)
+    # Crear el documento PDF con margenes
+    doc = SimpleDocTemplate(buffer, pagesize=letter, 
+                           rightMargin=50, leftMargin=50,
+                           topMargin=50, bottomMargin=50)
     
     # Contenedor para los elementos del PDF
     elements = []
@@ -1317,153 +1319,198 @@ def descargar_cotizacion_pdf(request, cotizacion_id):
     # Estilos
     styles = getSampleStyleSheet()
     
-    # Estilo personalizado para el título
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=24,
-        textColor=colors.HexColor('#1e3a8a'),
-        spaceAfter=30,
-        alignment=TA_CENTER,
-        fontName='Helvetica-Bold'
-    )
+    # ===== ENCABEZADO CON LOGO Y DATOS DE EMPRESA =====
+    # Intentar cargar el logo
+    logo_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'pozinox_logo.png')
     
-    # Estilo para encabezados
-    heading_style = ParagraphStyle(
-        'CustomHeading',
-        parent=styles['Heading2'],
-        fontSize=14,
-        textColor=colors.HexColor('#1e3a8a'),
-        spaceAfter=12,
-        fontName='Helvetica-Bold'
-    )
+    if os.path.exists(logo_path):
+        try:
+            logo_img = Image(logo_path, width=2*inch, height=0.5*inch)
+            logo_cell = logo_img
+        except:
+            logo_cell = Paragraph('<b><font size=18 color="#1e3a8a">POZINOX</font></b><br/>'
+                                 '<font size=10 color="#f59e0b">TECNOLOGÍA E INNOVACIÓN</font>', 
+                                 styles['Normal'])
+    else:
+        logo_cell = Paragraph('<b><font size=18 color="#1e3a8a">POZINOX</font></b><br/>'
+                             '<font size=10 color="#f59e0b">TECNOLOGÍA E INNOVACIÓN</font>', 
+                             styles['Normal'])
     
-    # Estilo normal
-    normal_style = ParagraphStyle(
-        'CustomNormal',
-        parent=styles['Normal'],
-        fontSize=10,
-        spaceAfter=12,
-    )
+    # Datos de la empresa
+    empresa_data = Paragraph('<b>POZINOX SpA</b><br/>'
+                            'RUT: 77.123.456-7<br/>'
+                            'Av. Industrial 1234, Santiago<br/>'
+                            'Tel: +56 2 2345 6789<br/>'
+                            'Email: ventas@pozinox.cl<br/>'
+                            'www.pozinox.cl', 
+                            ParagraphStyle('EmpresaInfo', parent=styles['Normal'], 
+                                         fontSize=8, alignment=TA_RIGHT, leading=10))
     
-    # Título
-    elements.append(Paragraph('POZINOX', title_style))
-    elements.append(Paragraph('Tienda de Aceros', styles['Normal']))
-    elements.append(Spacer(1, 20))
+    logo_data = [[logo_cell, empresa_data]]
     
-    # Información de la cotización
-    elements.append(Paragraph(f'COTIZACIÓN N° {cotizacion.numero_cotizacion}', heading_style))
+    logo_table = Table(logo_data, colWidths=[3.5*inch, 3.5*inch])
+    logo_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+        ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+    ]))
+    elements.append(logo_table)
+    elements.append(Spacer(1, 15))
     
-    # Datos del cliente y cotización (usar el cliente de la cotización, no request.user)
+    # Linea separadora
+    elements.append(Table([['']], colWidths=[7*inch], style=[('LINEBELOW', (0,0), (-1,-1), 1.5, colors.HexColor('#1e3a8a'))]))
+    elements.append(Spacer(1, 12))
+    
+    # ===== TITULO COTIZACIÓN =====
+    cot_title = Paragraph(f'<b>COTIZACIÓN N° {cotizacion.numero_cotizacion}</b>', 
+                         ParagraphStyle('CotTitle', parent=styles['Normal'], 
+                                      fontSize=16, textColor=colors.HexColor('#1e3a8a'), 
+                                      alignment=TA_CENTER, fontName='Helvetica-Bold'))
+    elements.append(cot_title)
+    elements.append(Spacer(1, 15))
+    
+    # ===== DATOS DEL CLIENTE Y COTIZACIÓN =====
     cliente = cotizacion.usuario
-    info_data = [
-        ['Cliente:', f'{cliente.get_full_name() or cliente.username}'],
-        ['Email:', cliente.email],
-        ['Fecha:', cotizacion.fecha_creacion.strftime('%d/%m/%Y %H:%M')],
-        ['Estado:', cotizacion.get_estado_display()],
+    cliente_perfil = cliente.perfil if hasattr(cliente, 'perfil') else None
+    
+    fecha_emision = cotizacion.fecha_creacion.strftime('%d/%m/%Y')
+    fecha_vencimiento = (cotizacion.fecha_creacion + timedelta(days=30)).strftime('%d/%m/%Y')
+    
+    datos_cotizacion = [
+        [Paragraph('<b>Fecha Emisión:</b>', styles['Normal']), fecha_emision,
+         Paragraph('<b>Fecha Vencimiento:</b>', styles['Normal']), fecha_vencimiento],
+        [Paragraph('<b>Cliente:</b>', styles['Normal']), 
+         cliente.get_full_name() or cliente.username,
+         Paragraph('<b>RUT:</b>', styles['Normal']), 
+         cliente_perfil.rut if cliente_perfil else 'N/A'],
+        [Paragraph('<b>Dirección:</b>', styles['Normal']), 
+         cliente_perfil.direccion if cliente_perfil else 'N/A',
+         Paragraph('<b>Comuna:</b>', styles['Normal']), 
+         cliente_perfil.comuna if cliente_perfil else 'N/A'],
+        [Paragraph('<b>Teléfono:</b>', styles['Normal']), 
+         cliente_perfil.telefono if cliente_perfil else 'N/A',
+         Paragraph('<b>Email:</b>', styles['Normal']), 
+         cliente.email],
     ]
     
-    info_table = Table(info_data, colWidths=[2*inch, 4*inch])
-    info_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#1e3a8a')),
-        ('ALIGN', (0, 0), (0, -1), 'LEFT'),
-        ('ALIGN', (1, 0), (1, -1), 'LEFT'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    datos_table = Table(datos_cotizacion, colWidths=[1.2*inch, 2.3*inch, 1.2*inch, 2.3*inch])
+    datos_table.setStyle(TableStyle([
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
     ]))
-    
-    elements.append(info_table)
+    elements.append(datos_table)
     elements.append(Spacer(1, 20))
     
-    # Tabla de productos
-    elements.append(Paragraph('DETALLE DE PRODUCTOS', heading_style))
+    # ===== TABLA DE PRODUCTOS =====
+    table_data = [['ITEM', 'DESCRIPCIÓN', 'CANTIDAD', 'PRECIO UNIT.', 'TOTAL']]
     
-    # Encabezados de tabla
-    table_data = [['Producto', 'Código', 'Cantidad', 'Precio Unit.', 'Subtotal']]
-    
-    # Datos de productos
+    item_num = 1
     for detalle in detalles:
+        descripcion = f"{detalle.producto.nombre}<br/>"
+        descripcion += f"Código: {detalle.producto.codigo_producto}<br/>"
+        if detalle.producto.tipo_acero:
+            descripcion += f"Material: {detalle.producto.get_tipo_acero_display()}"
+        
         table_data.append([
-            Paragraph(detalle.producto.nombre, normal_style),
-            detalle.producto.codigo_producto,
+            str(item_num),
+            Paragraph(descripcion, ParagraphStyle('Prod', parent=styles['Normal'], fontSize=8)),
             str(detalle.cantidad),
             f'${detalle.precio_unitario:,.0f}',
             f'${detalle.subtotal:,.0f}'
         ])
+        item_num += 1
     
-    # Crear tabla
-    product_table = Table(table_data, colWidths=[2.5*inch, 1.2*inch, 0.8*inch, 1*inch, 1*inch])
+    # Crear tabla de productos
+    product_table = Table(table_data, colWidths=[0.5*inch, 3.5*inch, 0.8*inch, 1.1*inch, 1.1*inch])
     product_table.setStyle(TableStyle([
         # Encabezado
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e3a8a')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 11),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('TOPPADDING', (0, 0), (-1, 0), 8),
         
         # Contenido
         ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
         ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('ALIGN', (0, 1), (0, -1), 'CENTER'),
         ('ALIGN', (2, 1), (2, -1), 'CENTER'),
         ('ALIGN', (3, 1), (-1, -1), 'RIGHT'),
-        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8fafc')]),
         ('TOPPADDING', (0, 1), (-1, -1), 6),
         ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
     ]))
     
     elements.append(product_table)
-    elements.append(Spacer(1, 20))
+    elements.append(Spacer(1, 15))
     
-    # Totales
+    # ===== TOTALES =====
     totales_data = [
-        ['Subtotal:', f'${cotizacion.subtotal:,.0f}'],
-        ['IVA (19%):', f'${cotizacion.iva:,.0f}'],
-        ['', ''],
-        ['TOTAL:', f'${cotizacion.total:,.0f}'],
+        ['', '', '', 'SUBTOTAL:', f'${cotizacion.subtotal:,.0f}'],
+        ['', '', '', 'IVA (19%):', f'${cotizacion.iva:,.0f}'],
+        ['', '', '', 'TOTAL:', f'${cotizacion.total:,.0f}'],
     ]
     
-    totales_table = Table(totales_data, colWidths=[5*inch, 1.5*inch])
+    totales_table = Table(totales_data, colWidths=[0.5*inch, 3.5*inch, 0.8*inch, 1.1*inch, 1.1*inch])
     totales_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (0, 1), 'Helvetica'),
-        ('FONTNAME', (1, 0), (1, 1), 'Helvetica-Bold'),
-        ('FONTNAME', (0, 3), (-1, 3), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 2), 11),
-        ('FONTSIZE', (0, 3), (-1, 3), 14),
-        ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
-        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
-        ('TEXTCOLOR', (0, 3), (-1, 3), colors.HexColor('#1e3a8a')),
-        ('LINEABOVE', (0, 3), (-1, 3), 2, colors.HexColor('#1e3a8a')),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('FONTNAME', (3, 0), (3, 1), 'Helvetica-Bold'),
+        ('FONTNAME', (4, 0), (4, 1), 'Helvetica'),
+        ('FONTNAME', (3, 2), (4, 2), 'Helvetica-Bold'),
+        ('FONTSIZE', (3, 0), (-1, 1), 10),
+        ('FONTSIZE', (3, 2), (-1, 2), 12),
+        ('ALIGN', (3, 0), (-1, -1), 'RIGHT'),
+        ('TEXTCOLOR', (3, 2), (-1, 2), colors.HexColor('#1e3a8a')),
+        ('LINEABOVE', (3, 2), (-1, 2), 2, colors.HexColor('#1e3a8a')),
+        ('TOPPADDING', (3, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (3, 0), (-1, -1), 4),
     ]))
     
     elements.append(totales_table)
+    elements.append(Spacer(1, 25))
+    
+    # ===== CONDICIONES COMERCIALES =====
+    condiciones_style = ParagraphStyle('Condiciones', parent=styles['Normal'], 
+                                      fontSize=8, leading=10)
+    
+    elements.append(Paragraph('<b>CONDICIONES COMERCIALES:</b>', condiciones_style))
+    elements.append(Spacer(1, 8))
+    
+    condiciones = [
+        f'• Forma de pago: Según condiciones acordadas',
+        f'• Plazo de entrega: A coordinar según disponibilidad de stock',
+        f'• Garantía: Según especificaciones del fabricante',
+        f'• Precios en pesos chilenos, incluyen IVA',
+    ]
+    
+    for condicion in condiciones:
+        elements.append(Paragraph(condicion, condiciones_style))
+    
     elements.append(Spacer(1, 30))
     
-    # Observaciones si existen
-    if cotizacion.observaciones:
-        elements.append(Paragraph('OBSERVACIONES:', heading_style))
-        elements.append(Paragraph(cotizacion.observaciones, normal_style))
-        elements.append(Spacer(1, 20))
+    # ===== PIE DE PÁGINA =====
+    footer_data = [[
+        Paragraph('<b>POZINOX SpA</b><br/>'
+                 'Especialistas en Acero Inoxidable<br/>'
+                 'www.pozinox.cl | ventas@pozinox.cl | +56 2 2345 6789<br/>'
+                 'Av. Industrial 1234, Santiago - Chile',
+                 ParagraphStyle('Footer', parent=styles['Normal'], 
+                              fontSize=7, alignment=TA_CENTER, 
+                              textColor=colors.grey))
+    ]]
     
-    # Pie de página
-    footer_style = ParagraphStyle(
-        'Footer',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.grey,
-        alignment=TA_CENTER,
-    )
+    footer_table = Table(footer_data, colWidths=[7*inch])
+    footer_table.setStyle(TableStyle([
+        ('LINEABOVE', (0, 0), (-1, 0), 1, colors.grey),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+    ]))
     
-    elements.append(Spacer(1, 30))
-    elements.append(Paragraph('_______________________________________________', footer_style))
-    elements.append(Spacer(1, 10))
-    elements.append(Paragraph('POZINOX - Tienda de Aceros', footer_style))
-    elements.append(Paragraph('www.pozinox.cl | info@pozinox.cl | +56 2 1234 5678', footer_style))
-    elements.append(Paragraph('Este documento es una cotización y no constituye una factura', footer_style))
+    elements.append(footer_table)
     
     # Construir PDF
     doc.build(elements)
