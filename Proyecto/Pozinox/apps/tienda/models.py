@@ -5,6 +5,16 @@ from storages.backends.s3boto3 import S3Boto3Storage
 from decimal import Decimal
 from django.utils import timezone
 from datetime import timedelta
+import os
+import uuid
+
+
+def producto_imagen_path(instance, filename):
+    """Genera un path corto para las imágenes de productos"""
+    ext = filename.split('.')[-1]
+    # Usar UUID para evitar nombres largos
+    filename = f"{uuid.uuid4().hex[:12]}.{ext}"
+    return os.path.join('productos', filename)
 
 
 class CategoriaAcero(models.Model):
@@ -57,7 +67,7 @@ class Producto(models.Model):
     unidad_medida = models.CharField(max_length=20, default='unidad')
     
     # Metadatos
-    imagen = models.ImageField(upload_to='productos/', null=True, blank=True, storage=S3Boto3Storage())
+    imagen = models.ImageField(upload_to=producto_imagen_path, null=True, blank=True, storage=S3Boto3Storage())
     activo = models.BooleanField(default=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)

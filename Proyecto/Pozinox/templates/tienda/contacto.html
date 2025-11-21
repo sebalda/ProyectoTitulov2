@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Contacto - Pozinox{% endblock %}
+
+{% block extra_css %}
+<style>
+    .contact-page {
+        padding-top: 80px;
+        min-height: calc(100vh - 400px);
+    }
+    
+    .contact-header {
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        color: white;
+        padding: 3rem 0;
+        margin-bottom: 3rem;
+    }
+    
+    .contact-info-box {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        height: 100%;
+        border: 3px solid #1e3a8a;
+    }
+    
+    .contact-info-box h3 {
+        color: #1e3a8a;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+    }
+    
+    .info-item {
+        display: flex;
+        align-items-start;
+        margin-bottom: 1.5rem;
+    }
+    
+    .info-item i {
+        font-size: 1.5rem;
+        color: #3b82f6;
+        margin-right: 1rem;
+        margin-top: 0.25rem;
+    }
+    
+    .info-item .info-content h5 {
+        color: #1e3a8a;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        font-size: 1rem;
+    }
+    
+    .info-item .info-content p {
+        color: #6b7280;
+        margin: 0;
+        font-size: 0.95rem;
+    }
+    
+    .contact-form-box {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        border: 3px solid #1e3a8a;
+    }
+    
+    .contact-form-box h3 {
+        color: #1e3a8a;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #1e3a8a;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control, .form-select {
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+    }
+    
+    .btn-send {
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        border: none;
+        color: #1e3a8a;
+        font-weight: 700;
+        padding: 0.75rem 2rem;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-send:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(251, 191, 36, 0.4);
+        color: #1e3a8a;
+    }
+    
+    .captcha-box {
+        background: #f3f4f6;
+        padding: 1rem;
+        border-radius: 10px;
+        border: 2px solid #e5e7eb;
+    }
+    
+    .map-section {
+        margin-top: 3rem;
+        padding: 3rem 0;
+        background: #f9fafb;
+    }
+    
+    .map-container {
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        border: 3px solid #1e3a8a;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="contact-page">
+    <!-- Header -->
+    <div class="contact-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto text-center">
+                    <h1 class="display-4 fw-bold mb-3">
+                        <i class="fas fa-envelope me-3"></i>Contáctenos
+                    </h1>
+                    <p class="lead">
+                        Estamos aquí para ayudarle. Complete el formulario o contáctenos directamente.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Content -->
+    <div class="container mb-5">
+        <div class="row g-4">
+            <!-- Información de Contacto -->
+            <div class="col-lg-4">
+                <div class="contact-info-box">
+                    <h3>
+                        <i class="fas fa-info-circle me-2"></i>Información de Contacto
+                    </h3>
+                    
+                    <div class="info-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div class="info-content">
+                            <h5>Dirección</h5>
+                            <p>Avenida Principal #123<br>Santiago, Chile</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="fas fa-phone"></i>
+                        <div class="info-content">
+                            <h5>Teléfono</h5>
+                            <p>+56 9 1234 5678</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="fas fa-envelope"></i>
+                        <div class="info-content">
+                            <h5>Email</h5>
+                            <p>pozinox.empresa@gmail.com</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="fas fa-clock"></i>
+                        <div class="info-content">
+                            <h5>Horario de Atención</h5>
+                            <p>Lunes a Viernes: 9:00 - 18:00<br>Sábado: 9:00 - 13:00</p>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <h5 class="text-center mb-3" style="color: #1e3a8a; font-weight: 600;">
+                        <i class="fas fa-share-alt me-2"></i>Síguenos
+                    </h5>
+                    <div class="text-center">
+                        <a href="#" class="btn btn-outline-primary btn-sm me-2 mb-2">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-info btn-sm me-2 mb-2">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-danger btn-sm me-2 mb-2">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-success btn-sm mb-2">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Formulario de Contacto -->
+            <div class="col-lg-8">
+                <div class="contact-form-box">
+                    <h3>
+                        <i class="fas fa-paper-plane me-2"></i>Envíanos un Mensaje
+                    </h3>
+                    <p class="text-muted mb-4">
+                        Complete el formulario y nos pondremos en contacto con usted a la brevedad.
+                    </p>
+                    
+                    <form method="post" action="{% url 'contacto' %}" id="contact-form">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="nombre" class="form-label">
+                                    Nombre Completo <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" name="nombre" id="nombre" class="form-control" 
+                                       placeholder="Ingrese su nombre completo" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <label for="email" class="form-label">
+                                    Email <span class="text-danger">*</span>
+                                </label>
+                                <input type="email" name="email" id="email" class="form-control" 
+                                       placeholder="correo@ejemplo.com" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="telefono" class="form-label">
+                                    Teléfono <span class="text-danger">*</span>
+                                </label>
+                                <input type="tel" name="telefono" id="telefono" class="form-control" 
+                                       placeholder="+56 9 1234 5678" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <label for="direccion" class="form-label">Dirección</label>
+                                <input type="text" name="direccion" id="direccion" class="form-control" 
+                                       placeholder="Ingrese su dirección (opcional)">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="comuna" class="form-label">Comuna</label>
+                                <input type="text" name="comuna" id="comuna" class="form-control" 
+                                       placeholder="Ingrese la comuna (opcional)">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <label for="ciudad" class="form-label">Ciudad</label>
+                                <input type="text" name="ciudad" id="ciudad" class="form-control" 
+                                       placeholder="Ingrese la ciudad (opcional)">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="giro" class="form-label">Actividad Económica / Giro</label>
+                                <input type="text" name="giro" id="giro" class="form-control" 
+                                       placeholder="Ingrese su actividad económica (opcional)">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="mensaje" class="form-label">
+                                Mensaje <span class="text-danger">*</span>
+                            </label>
+                            <textarea name="mensaje" id="mensaje" class="form-control" rows="5" 
+                                      placeholder="Escriba su mensaje aquí..." required></textarea>
+                        </div>
+                        
+                        <!-- Captcha -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                Verificación <span class="text-danger">*</span>
+                            </label>
+                            <div class="captcha-box">
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="fw-bold fs-5">
+                                        ¿Cuánto es <span id="captcha-num1">0</span> + <span id="captcha-num2">0</span>?
+                                    </span>
+                                    <input type="text" id="captcha-input" class="form-control" 
+                                           style="max-width: 100px;" placeholder="?" required>
+                                </div>
+                                <small class="text-danger d-none mt-2 d-block" id="captcha-error">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    Respuesta incorrecta. Intente nuevamente.
+                                </small>
+                            </div>
+                        </div>
+                        
+                        {% if error_message %}
+                            <div class="alert alert-danger mb-3 fw-bold">
+                                <i class="fas fa-exclamation-circle me-2"></i>{{ error_message }}
+                            </div>
+                        {% endif %}
+                        
+                        {% if success %}
+                            <div class="alert alert-success mb-3 fw-bold">
+                                <i class="fas fa-check-circle me-2"></i>{{ success }}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-send">
+                                <i class="fas fa-paper-plane me-2"></i>Enviar Mensaje
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mapa (opcional) -->
+    <div class="map-section">
+        <div class="container">
+            <h2 class="text-center mb-4 fw-bold" style="color: #1e3a8a;">
+                <i class="fas fa-map-marked-alt me-2"></i>Encuéntranos
+            </h2>
+            <div class="map-container">
+                <!-- Aquí puedes agregar un iframe de Google Maps -->
+                <iframe 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3329.0!2d-70.6483!3d-33.4489!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzPCsDI2JzU2LjAiUyA3MMKwMzgnNTMuOSJX!5e0!3m2!1ses!2scl!4v1234567890"
+                    width="100%" 
+                    height="400" 
+                    style="border:0;" 
+                    allowfullscreen="" 
+                    loading="lazy" 
+                    referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Captcha simple
+    let captchaAnswer = 0;
+    
+    function generateCaptcha() {
+        const num1 = Math.floor(Math.random() * 9) + 1;
+        const num2 = Math.floor(Math.random() * (15 - num1)) + 1;
+        captchaAnswer = num1 + num2;
+        
+        document.getElementById('captcha-num1').textContent = num1;
+        document.getElementById('captcha-num2').textContent = num2;
+        document.getElementById('captcha-input').value = '';
+        document.getElementById('captcha-error').classList.add('d-none');
+    }
+    
+    // Generar captcha al cargar
+    document.addEventListener('DOMContentLoaded', generateCaptcha);
+    
+    // Validar captcha
+    document.getElementById('contact-form').addEventListener('submit', function(e) {
+        const userAnswer = parseInt(document.getElementById('captcha-input').value);
+        
+        if (userAnswer !== captchaAnswer) {
+            e.preventDefault();
+            document.getElementById('captcha-error').classList.remove('d-none');
+            generateCaptcha();
+            return false;
+        }
+    });
+</script>
+{% endblock %}

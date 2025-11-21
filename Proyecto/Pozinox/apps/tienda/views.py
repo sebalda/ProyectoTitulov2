@@ -150,6 +150,77 @@ Mensaje:
         return render(request, 'tienda/home.html', context)
 
 
+def contacto(request):
+    """Vista de la página de contacto"""
+    from django.core.mail import send_mail
+    import threading
+    
+    if request.method == 'GET':
+        return render(request, 'tienda/contacto.html')
+    
+    # Procesar formulario POST
+    elif request.method == 'POST':
+        # Obtener datos del formulario
+        nombre = request.POST.get('nombre', '').strip()
+        direccion = request.POST.get('direccion', '').strip()
+        comuna = request.POST.get('comuna', '').strip()
+        ciudad = request.POST.get('ciudad', '').strip()
+        giro = request.POST.get('giro', '').strip()
+        email = request.POST.get('email', '').strip()
+        telefono = request.POST.get('telefono', '').strip()
+        mensaje = request.POST.get('mensaje', '').strip()
+
+        # Construir cuerpo del correo
+        cuerpo = f"""
+Nuevo mensaje de contacto desde Pozinox
+
+Datos del contacto:
+Nombre: {nombre}
+Email: {email}
+Teléfono: {telefono}
+"""
+        
+        # Agregar campos opcionales solo si fueron proporcionados
+        if direccion:
+            cuerpo += f"Dirección: {direccion}\n"
+        if comuna:
+            cuerpo += f"Comuna: {comuna}\n"
+        if ciudad:
+            cuerpo += f"Ciudad: {ciudad}\n"
+        if giro:
+            cuerpo += f"Actividad Económica / Giro: {giro}\n"
+        
+        cuerpo += f"""
+Mensaje:
+{mensaje}
+"""
+        
+        # Función para enviar correo en segundo plano
+        def enviar_correo_asincrono():
+            try:
+                send_mail(
+                    subject=f"Nuevo mensaje de contacto de {nombre}",
+                    message=cuerpo,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=["pozinox.empresa@gmail.com"],
+                    fail_silently=True,
+                )
+            except Exception as e:
+                print(f"Error al enviar correo: {e}")
+        
+        # Enviar correo en un hilo separado
+        thread = threading.Thread(target=enviar_correo_asincrono)
+        thread.daemon = True
+        thread.start()
+        
+        # Mostrar mensaje de éxito
+        success = "¡Mensaje enviado correctamente! Nos contactaremos pronto."
+        context = {
+            'success': success,
+        }
+        return render(request, 'tienda/contacto.html', context)
+
+
 def productos_publicos(request):
     """Vista pública de productos para todos los usuarios"""
     productos = aplicar_filtros_productos(Producto.objects.filter(activo=True), request)
@@ -287,30 +358,39 @@ def crear_producto(request):
 def editar_producto(request, producto_id):
     """Editar producto existente"""
     producto = get_object_or_404(Producto, id=producto_id)
-    form = ProductoForm(request.POST or None, request.FILES or None, instance=producto)
     
-    if form.is_valid():
-        producto = form.save()
-        messages.success(request, f'Producto "{producto.nombre}" actualizado exitosamente.')
-        
-        # Restaurar todos los parámetros de navegación
-        params = []
-        if request.POST.get('page'):
-            params.append(f"page={request.POST.get('page')}")
-        if request.POST.get('categoria'):
-            params.append(f"categoria={request.POST.get('categoria')}")
-        if request.POST.get('estado'):
-            params.append(f"estado={request.POST.get('estado')}")
-        if request.POST.get('q'):
-            params.append(f"q={request.POST.get('q')}")
-        if request.POST.get('scroll_position'):
-            params.append(f"scroll={request.POST.get('scroll_position')}")
-        
-        redirect_url = reverse('lista_productos_admin')
-        if params:
-            redirect_url += '?' + '&'.join(params)
-        
-        return redirect(redirect_url)
+    if request.method == 'POST':
+        form = ProductoForm(request.POST, request.FILES, instance=producto)
+        if form.is_valid():
+            producto = form.save()
+            messages.success(request, f'Producto "{producto.nombre}" actualizado exitosamente.')
+            
+            # Restaurar todos los parámetros de navegación desde POST
+            params = []
+            page = request.POST.get('page', '')
+            categoria = request.POST.get('categoria', '')
+            estado = request.POST.get('estado', '')
+            busqueda = request.POST.get('q', '')
+            scroll = request.POST.get('scroll_position', '')
+            
+            if page:
+                params.append(f"page={page}")
+            if categoria:
+                params.append(f"categoria={categoria}")
+            if estado:
+                params.append(f"estado={estado}")
+            if busqueda:
+                params.append(f"q={busqueda}")
+            if scroll:
+                params.append(f"scroll={scroll}")
+            
+            redirect_url = reverse('lista_productos_admin')
+            if params:
+                redirect_url += '?' + '&'.join(params)
+            
+            return redirect(redirect_url)
+    else:
+        form = ProductoForm(instance=producto)
     
     # Capturar parámetros de navegación desde GET
     context = {
