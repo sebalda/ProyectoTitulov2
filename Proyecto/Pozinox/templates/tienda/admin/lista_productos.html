@@ -312,7 +312,7 @@
                         
                         <div class="col-md-1">
                             <div class="product-actions">
-                                <a href="{% url 'editar_producto' producto.id %}" class="btn-action btn-edit" title="Editar">
+                                <a href="{% url 'editar_producto' producto.id %}?page={{ productos.number }}{% if categoria_actual %}&categoria={{ categoria_actual }}{% endif %}{% if estado_actual %}&estado={{ estado_actual }}{% endif %}{% if busqueda %}&q={{ busqueda }}{% endif %}" class="btn-action btn-edit save-scroll" title="Editar">
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 <a href="{% url 'eliminar_producto' producto.id %}" class="btn-action btn-delete" title="Eliminar">
@@ -375,4 +375,28 @@
             </div>
         {% endif %}
     </div>
+{% endblock %}
+
+{% block admin_extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Restaurar posición de scroll si existe en URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const scrollPos = urlParams.get('scroll');
+    if (scrollPos) {
+        window.scrollTo(0, parseInt(scrollPos));
+    }
+    
+    // Guardar posición de scroll al hacer clic en editar
+    document.querySelectorAll('.save-scroll').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+            const href = this.getAttribute('href');
+            const separator = href.includes('?') ? '&' : '?';
+            window.location.href = href + separator + 'scroll=' + currentScroll;
+        });
+    });
+});
+</script>
 {% endblock %}
