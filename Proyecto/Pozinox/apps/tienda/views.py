@@ -3470,7 +3470,10 @@ def pago_exitoso_n8n(request):
     collection_status = request.GET.get('collection_status') or request.GET.get('status', 'approved')
     status = collection_status
     
+    logger.info(f'🔵 pago_exitoso_n8n llamado - payment_id: {payment_id}, preference_id: {preference_id}, status: {status}')
+    
     if not preference_id and not payment_id:
+        logger.warning('❌ No se encontró preference_id ni payment_id en la URL')
         messages.error(request, 'No se encontró información de pago.')
         return redirect('home')
     
@@ -3479,13 +3482,17 @@ def pago_exitoso_n8n(request):
     if preference_id:
         try:
             venta = VentaN8n.objects.get(mercadopago_preference_id=preference_id)
+            logger.info(f'✅ Venta encontrada por preference_id: {venta.id}, estado: {venta.estado_pago}')
         except VentaN8n.DoesNotExist:
+            logger.warning(f'⚠️ No se encontró venta con preference_id: {preference_id}')
             pass
     
     if not venta and payment_id:
         try:
             venta = VentaN8n.objects.get(mercadopago_payment_id=payment_id)
+            logger.info(f'✅ Venta encontrada por payment_id: {venta.id}, estado: {venta.estado_pago}')
         except VentaN8n.DoesNotExist:
+            logger.warning(f'⚠️ No se encontró venta con payment_id: {payment_id}')
             pass
     
     # Si no encontramos la venta, intentar obtenerla de MercadoPago
@@ -3518,10 +3525,11 @@ def pago_exitoso_n8n(request):
                 
                 # Si aún no tenemos la venta, intentar con preference_id
                 if not venta and preference_id:
+                    logger.info(f'🔍 Intentando obtener venta desde MercadoPago preference_id: {preference_id}')
                     preference_response = sdk.preference().get(preference_id)
                     if "error" not in preference_response:
                         preference = preference_response["response"]
-                        # Crear venta desde la preferencia
+                        # Crear o obtener venta desde la preferencia
                         items = preference.get("items", [])
                         payer = preference.get("payer", {})
                         email = payer.get("email") or request.user.email if request.user.is_authenticated else None
@@ -3529,26 +3537,50 @@ def pago_exitoso_n8n(request):
                         
                         if email and items:
                             subtotal = sum(item.get("unit_price", 0) * item.get("quantity", 0) for item in items)
-                            venta = VentaN8n.objects.create(
+                            # Usar get_or_create para evitar errores de duplicados
+                            venta, created = VentaN8n.objects.get_or_create(
                                 mercadopago_preference_id=preference_id,
-                                email_comprador=email,
-                                items=items,
-                                metadata=metadata,
-                                subtotal=subtotal,
-                                total=subtotal,
-                                estado_pago=status,
+                                defaults={
+                                    'email_comprador': email,
+                                    'items': items,
+                                    'metadata': metadata,
+                                    'subtotal': subtotal,
+                                    'total': subtotal,
+                                    'estado_pago': status,
+                                }
                             )
+                            if created:
+                                logger.info(f'✅ Venta creada desde preference_id: {venta.id}')
+                            else:
+                                logger.info(f'✅ Venta existente encontrada: {venta.id}')
+                                # Actualizar datos si es necesario
+                                if payment_id and not venta.mercadopago_payment_id:
+                                    venta.mercadopago_payment_id = str(payment_id)
+                                if status == 'approved' and venta.estado_pago != 'approved':
+                                    venta.estado_pago = status
+                                    venta.fecha_pago = timezone.now()
+                                venta.save()
+                            
                             venta.asociar_usuario_por_email()
                             # Si el estado es approved, crear la cotización
                             if status == 'approved':
                                 venta.fecha_pago = timezone.now()
                                 venta.save()
                                 crear_cotizacion_desde_venta_n8n(venta)
+                    else:
+                        logger.warning(f'❌ Error al obtener preference de MercadoPago: {preference_response.get("error")}')
         except Exception as e:
             logger.exception(f'Error al obtener información de MercadoPago: {e}')
     
+    # Si no hay venta después de todos los intentos, mostrar error
+    if not venta:
+        logger.error(f'❌ No se pudo encontrar venta después de todos los intentos - payment_id: {payment_id}, preference_id: {preference_id}')
+        messages.error(request, 'No se pudo encontrar la información de tu compra. Por favor, contacta con soporte.')
+        return redirect('home')
+    
     # Si el estado desde la URL es 'approved' y tenemos la venta, actualizar y crear cotización
     if venta and collection_status == 'approved' and venta.estado_pago != 'approved':
+        logger.info(f'🔄 Actualizando estado de venta {venta.id} a approved')
         venta.estado_pago = 'approved'
         venta.fecha_pago = timezone.now()
         if payment_id:
@@ -3584,16 +3616,26 @@ def pago_exitoso_n8n(request):
         if venta.metadata and venta.metadata.get('cotizacion_id'):
             try:
                 cotizacion = Cotizacion.objects.get(id=venta.metadata['cotizacion_id'])
+                logger.info(f'✅ Cotización encontrada para venta {venta.id}: {cotizacion.numero_cotizacion}')
             except Cotizacion.DoesNotExist:
+                logger.warning(f'⚠️ Cotización {venta.metadata.get("cotizacion_id")} no existe en BD')
                 pass
         
         # Si no existe, crear la cotización
         if not cotizacion:
+            logger.info(f'📝 Creando nueva cotización para venta {venta.id}')
             cotizacion = crear_cotizacion_desde_venta_n8n(venta)
-            if cotizacion and request.user.is_authenticated:
-                # Redirigir a la cotización si el usuario está logueado
-                messages.success(request, f'¡Cotización {cotizacion.numero_cotizacion} creada y pagada!')
-                return redirect('detalle_cotizacion', cotizacion_id=cotizacion.id)
+            if cotizacion:
+                logger.info(f'✅ Cotización creada: {cotizacion.numero_cotizacion}')
+        
+        # Si tenemos cotización y el usuario está logueado, redirigir siempre
+        if cotizacion and request.user.is_authenticated:
+            logger.info(f'🔄 Redirigiendo a detalle_cotizacion: {cotizacion.id}')
+            messages.success(request, f'¡Cotización {cotizacion.numero_cotizacion} creada y pagada!')
+            return redirect('detalle_cotizacion', cotizacion_id=cotizacion.id)
+        elif cotizacion and not request.user.is_authenticated:
+            # Si hay cotización pero el usuario no está logueado, mostrar página de éxito
+            logger.info(f'📄 Mostrando página de éxito (usuario no logueado) - cotización: {cotizacion.numero_cotizacion}')
     
     # Preparar items con subtotales calculados
     items_con_subtotal = []
@@ -3602,6 +3644,8 @@ def pago_exitoso_n8n(request):
             item_copy = item.copy()
             item_copy['subtotal'] = item.get('unit_price', 0) * item.get('quantity', 0)
             items_con_subtotal.append(item_copy)
+    
+    logger.info(f'📄 Renderizando página de éxito - venta: {venta.id}, cotizacion: {cotizacion.id if cotizacion else None}')
     
     context = {
         'venta': venta,
