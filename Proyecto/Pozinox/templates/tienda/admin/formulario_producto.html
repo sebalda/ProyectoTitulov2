@@ -163,7 +163,7 @@
 {% block admin_content %}
 <div class="form-header">
     <h1><i class="fas fa-boxes me-3"></i>{{ titulo }}</h1>
-    <a href="{% url 'lista_productos_admin' %}" class="btn-back">
+    <a href="{% url 'lista_productos_admin' %}{% if page or categoria or estado or busqueda or scroll_position %}?{% endif %}{% if page %}page={{ page }}{% endif %}{% if categoria %}&categoria={{ categoria }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if busqueda %}&q={{ busqueda }}{% endif %}{% if scroll_position %}&scroll={{ scroll_position }}{% endif %}" class="btn-back">
         <i class="fas fa-arrow-left me-2"></i>Volver a Lista
     </a>
 </div>
@@ -173,6 +173,12 @@
             {% csrf_token %}
                     {# Ensure unidad_medida is posted even when not shown: keep as hidden with default 'unidad' #}
                     <input type="hidden" name="unidad_medida" id="{{ form.unidad_medida.id_for_label }}" value="{{ form.unidad_medida.value|default:'unidad' }}">
+                    {# Campos ocultos para mantener el contexto de navegación #}
+                    <input type="hidden" name="scroll_position" value="{{ scroll_position|default:'0' }}">
+                    <input type="hidden" name="page" value="{{ page }}">
+                    <input type="hidden" name="categoria" value="{{ categoria }}">
+                    <input type="hidden" name="estado" value="{{ estado }}">
+                    <input type="hidden" name="q" value="{{ busqueda }}">
             
             <!-- Información Básica -->
             <div class="form-section">
@@ -408,7 +414,7 @@
                     </button>
                 </div>
                 <div class="col-md-6">
-                    <a href="{% url 'lista_productos_admin' %}" class="btn-cancel">
+                    <a href="{% url 'lista_productos_admin' %}{% if page or categoria or estado or busqueda or scroll_position %}?{% endif %}{% if page %}page={{ page }}{% endif %}{% if categoria %}&categoria={{ categoria }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if busqueda %}&q={{ busqueda }}{% endif %}{% if scroll_position %}&scroll={{ scroll_position }}{% endif %}" class="btn-cancel">
                         <i class="fas fa-times me-2"></i>Cancelar
                     </a>
                 </div>

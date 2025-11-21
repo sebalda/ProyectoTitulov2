@@ -7,6 +7,7 @@ from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.conf import settings
+from django.urls import reverse
 from .models import Producto, CategoriaAcero, Cotizacion, DetalleCotizacion, TransferenciaBancaria, RecepcionCompra, DetalleRecepcionCompra
 from .forms import ProductoForm, CategoriaForm
 import mercadopago
@@ -291,11 +292,39 @@ def editar_producto(request, producto_id):
     if form.is_valid():
         producto = form.save()
         messages.success(request, f'Producto "{producto.nombre}" actualizado exitosamente.')
-        return redirect('lista_productos_admin')
+        
+        # Restaurar todos los parámetros de navegación
+        params = []
+        if request.POST.get('page'):
+            params.append(f"page={request.POST.get('page')}")
+        if request.POST.get('categoria'):
+            params.append(f"categoria={request.POST.get('categoria')}")
+        if request.POST.get('estado'):
+            params.append(f"estado={request.POST.get('estado')}")
+        if request.POST.get('q'):
+            params.append(f"q={request.POST.get('q')}")
+        if request.POST.get('scroll_position'):
+            params.append(f"scroll={request.POST.get('scroll_position')}")
+        
+        redirect_url = reverse('lista_productos_admin')
+        if params:
+            redirect_url += '?' + '&'.join(params)
+        
+        return redirect(redirect_url)
     
-    return render(request, 'tienda/admin/formulario_producto.html', {
-        'form': form, 'producto': producto, 'titulo': 'Editar Producto'
-    })
+    # Capturar parámetros de navegación desde GET
+    context = {
+        'form': form, 
+        'producto': producto, 
+        'titulo': 'Editar Producto',
+        'scroll_position': request.GET.get('scroll', '0'),
+        'page': request.GET.get('page', ''),
+        'categoria': request.GET.get('categoria', ''),
+        'estado': request.GET.get('estado', ''),
+        'busqueda': request.GET.get('q', ''),
+    }
+    
+    return render(request, 'tienda/admin/formulario_producto.html', context)
 
 
 @login_required
