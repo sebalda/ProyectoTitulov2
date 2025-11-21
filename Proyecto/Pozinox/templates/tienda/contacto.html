@@ -180,7 +180,7 @@
                         </div>
                     </div>
                     
-                    
+
 
 
                     <hr class="my-4">
@@ -339,6 +339,8 @@
         document.getElementById('captcha-num2').textContent = num2;
         document.getElementById('captcha-input').value = '';
         document.getElementById('captcha-error').classList.add('d-none');
+        
+        console.log('Captcha generado: ' + num1 + ' + ' + num2 + ' = ' + captchaAnswer);
     }
     
     // Generar captcha al cargar
@@ -348,12 +350,18 @@
     document.getElementById('contact-form').addEventListener('submit', function(e) {
         const userAnswer = parseInt(document.getElementById('captcha-input').value);
         
+        console.log('Respuesta del usuario:', userAnswer);
+        console.log('Respuesta correcta:', captchaAnswer);
+        
         if (userAnswer !== captchaAnswer) {
             e.preventDefault();
             document.getElementById('captcha-error').classList.remove('d-none');
+            console.log('Captcha incorrecto, bloqueando envío');
             generateCaptcha();
             return false;
         }
+        
+        console.log('Captcha correcto, enviando formulario...');
     });
 </script>
 {% endblock %}

@@ -73,7 +73,6 @@ def paginar_queryset(queryset, request, per_page=20):
 def home(request):
     """Vista principal de la página de inicio"""
     from django.core.mail import send_mail
-    import threading
     
     if request.method == 'GET':
         context = {
@@ -120,27 +119,145 @@ Mensaje:
 {mensaje}
 """
         
-        # Función para enviar correo en segundo plano
-        def enviar_correo_asincrono():
-            try:
-                send_mail(
-                    subject=f"Nuevo mensaje de contacto de {nombre}",
-                    message=cuerpo,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=["pozinox.empresa@gmail.com"],
-                    fail_silently=True,  # No bloquear si falla
-                )
-            except Exception as e:
-                # Log del error (puedes agregar logging aquí si lo necesitas)
-                print(f"Error al enviar correo: {e}")
-        
-        # Enviar correo en un hilo separado para no bloquear la respuesta
-        thread = threading.Thread(target=enviar_correo_asincrono)
-        thread.daemon = True
-        thread.start()
-        
-        # Mostrar mensaje de éxito inmediatamente
-        success = "¡Mensaje enviado correctamente! Nos contactaremos pronto."
+        # Intentar enviar correos
+        try:
+            # Enviar correo a la empresa
+            send_mail(
+                subject=f"Nuevo mensaje de contacto de {nombre}",
+                message=cuerpo,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=["pozinox.empresa@gmail.com"],
+                fail_silently=False,
+            )
+            
+            # Enviar correo de confirmación al usuario (HTML)
+            from django.core.mail import EmailMultiAlternatives
+            
+            subject = "Confirmación de Contacto - Pozinox"
+            text_content = f"Estimado/a {nombre}, hemos recibido tu mensaje correctamente."
+            
+            html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    
+                    <!-- Header con logo -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 30px; text-align: center;">
+                            <img src="https://mxwwqzguzcsgbefvyyge.supabase.co/storage/v1/object/public/Productos/static/footer_logopozi.png" 
+                                 alt="Pozinox" style="max-width: 200px; height: auto;">
+                            <h1 style="color: #ffffff; margin: 15px 0 0 0; font-size: 24px; font-weight: bold;">
+                                CONFIRMACIÓN DE CONTACTO
+                            </h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Contenido principal -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="color: #1e3a8a; font-size: 18px; font-weight: bold; margin: 0 0 20px 0;">
+                                Estimado/a {nombre},
+                            </p>
+                            
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                                ¡Gracias por contactarnos! Nos complace confirmar que hemos recibido tu solicitud 
+                                de contacto con éxito.
+                            </p>
+                            
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
+                                Tu consulta ha sido registrada en nuestro sistema y será atendida por nuestro 
+                                equipo de especialistas a la brevedad.
+                            </p>
+                            
+                            <!-- Resumen de consulta -->
+                            <div style="background-color: #f3f4f6; border-left: 4px solid #f59e0b; padding: 20px; margin: 0 0 30px 0; border-radius: 5px;">
+                                <h3 style="color: #1e3a8a; margin: 0 0 15px 0; font-size: 16px; font-weight: bold;">
+                                    📋 RESUMEN DE TU CONSULTA
+                                </h3>
+                                <p style="color: #4b5563; font-size: 14px; line-height: 1.6; margin: 0; white-space: pre-wrap;">
+{mensaje}
+                                </p>
+                            </div>
+                            
+                            <!-- Información de contacto -->
+                            <div style="background-color: #eff6ff; padding: 20px; border-radius: 5px; margin: 0 0 20px 0;">
+                                <h3 style="color: #1e3a8a; margin: 0 0 15px 0; font-size: 16px; font-weight: bold;">
+                                    📞 INFORMACIÓN DE CONTACTO
+                                </h3>
+                                <table width="100%" cellpadding="5" cellspacing="0">
+                                    <tr>
+                                        <td style="color: #4b5563; font-size: 14px; padding: 5px 0;">
+                                            <strong>Teléfono:</strong> +56 2 2345 6789
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="color: #4b5563; font-size: 14px; padding: 5px 0;">
+                                            <strong>Email:</strong> ventas@pozinox.cl
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="color: #4b5563; font-size: 14px; padding: 5px 0;">
+                                            <strong>Web:</strong> www.pozinox.cl
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="color: #4b5563; font-size: 14px; padding: 5px 0;">
+                                            <strong>Dirección:</strong> Av. Industrial 1234, Santiago - Chile
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0; font-style: italic;">
+                                En Pozinox nos especializamos en ofrecer soluciones integrales en acero inoxidable 
+                                de la más alta calidad, respaldados por años de experiencia y un compromiso 
+                                inquebrantable con la excelencia.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #1e293b; padding: 30px; text-align: center;">
+                            <p style="color: #94a3b8; font-size: 14px; margin: 0 0 10px 0; font-weight: bold;">
+                                Equipo Comercial POZINOX
+                            </p>
+                            <p style="color: #94a3b8; font-size: 12px; margin: 0 0 15px 0;">
+                                Especialistas en Acero Inoxidable | Tecnología e Innovación
+                            </p>
+                            <div style="border-top: 1px solid #475569; padding-top: 15px;">
+                                <p style="color: #64748b; font-size: 11px; margin: 0; line-height: 1.5;">
+                                    Este es un mensaje automático, por favor no responder directamente a este correo.<br>
+                                    Para consultas, utiliza los canales de contacto indicados anteriormente.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
+            
+            msg = EmailMultiAlternatives(subject, text_content, settings.DEFAULT_FROM_EMAIL, [email])
+            msg.attach_alternative(html_content, "text/html")
+            msg.send()
+            
+            success = "¡Mensaje enviado correctamente! Hemos enviado un correo de confirmación a tu email."
+            
+        except Exception as e:
+            success = "¡Mensaje recibido! Nos contactaremos pronto."
 
         context = {
             'productos_destacados': Producto.objects.filter(activo=True)[:6],
@@ -154,7 +271,6 @@ Mensaje:
 def contacto(request):
     """Vista de la página de contacto"""
     from django.core.mail import send_mail
-    import threading
     
     if request.method == 'GET':
         return render(request, 'tienda/contacto.html')
@@ -196,26 +312,148 @@ Mensaje:
 {mensaje}
 """
         
-        # Función para enviar correo en segundo plano
-        def enviar_correo_asincrono():
-            try:
-                send_mail(
-                    subject=f"Nuevo mensaje de contacto de {nombre}",
-                    message=cuerpo,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=["pozinox.empresa@gmail.com"],
-                    fail_silently=True,
-                )
-            except Exception as e:
-                print(f"Error al enviar correo: {e}")
+        # Intentar enviar correos
+        try:
+            # Enviar correo a la empresa
+            send_mail(
+                subject=f"Nuevo mensaje de contacto de {nombre}",
+                message=cuerpo,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=["pozinox.empresa@gmail.com"],
+                fail_silently=False,
+            )
+            
+            # Enviar correo de confirmación al usuario (HTML)
+            from django.core.mail import EmailMultiAlternatives
+            
+            subject = "Confirmación de Contacto - Pozinox"
+            text_content = f"Estimado/a {nombre}, hemos recibido tu mensaje correctamente."
+            
+            html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    
+                    <!-- Header con logo -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 30px; text-align: center;">
+                            <img src="https://mxwwqzguzcsgbefvyyge.supabase.co/storage/v1/object/public/Productos/static/footer_logopozi.png" 
+                                 alt="Pozinox" style="max-width: 200px; height: auto;">
+                            <h1 style="color: #ffffff; margin: 15px 0 0 0; font-size: 24px; font-weight: bold;">
+                                CONFIRMACIÓN DE CONTACTO
+                            </h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Contenido principal -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="color: #1e3a8a; font-size: 18px; font-weight: bold; margin: 0 0 20px 0;">
+                                Estimado/a {nombre},
+                            </p>
+                            
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                                ¡Gracias por contactarnos! Nos complace confirmar que hemos recibido tu solicitud 
+                                de contacto con éxito.
+                            </p>
+                            
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
+                                Tu consulta ha sido registrada en nuestro sistema y será atendida por nuestro 
+                                equipo de especialistas a la brevedad.
+                            </p>
+                            
+                            <!-- Resumen de consulta -->
+                            <div style="background-color: #f3f4f6; border-left: 4px solid #f59e0b; padding: 20px; margin: 0 0 30px 0; border-radius: 5px;">
+                                <h3 style="color: #1e3a8a; margin: 0 0 15px 0; font-size: 16px; font-weight: bold;">
+                                    📋 RESUMEN DE TU CONSULTA
+                                </h3>
+                                <p style="color: #4b5563; font-size: 14px; line-height: 1.6; margin: 0; white-space: pre-wrap;">
+{mensaje}
+                                </p>
+                            </div>
+                            
+                            <!-- Información de contacto -->
+                            <div style="background-color: #eff6ff; padding: 20px; border-radius: 5px; margin: 0 0 20px 0;">
+                                <h3 style="color: #1e3a8a; margin: 0 0 15px 0; font-size: 16px; font-weight: bold;">
+                                    📞 INFORMACIÓN DE CONTACTO
+                                </h3>
+                                <table width="100%" cellpadding="5" cellspacing="0">
+                                    <tr>
+                                        <td style="color: #4b5563; font-size: 14px; padding: 5px 0;">
+                                            <strong>Teléfono:</strong> +56 2 2345 6789
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="color: #4b5563; font-size: 14px; padding: 5px 0;">
+                                            <strong>Email:</strong> ventas@pozinox.cl
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="color: #4b5563; font-size: 14px; padding: 5px 0;">
+                                            <strong>Web:</strong> www.pozinox.cl
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="color: #4b5563; font-size: 14px; padding: 5px 0;">
+                                            <strong>Dirección:</strong> Av. Industrial 1234, Santiago - Chile
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0; font-style: italic;">
+                                En Pozinox nos especializamos en ofrecer soluciones integrales en acero inoxidable 
+                                de la más alta calidad, respaldados por años de experiencia y un compromiso 
+                                inquebrantable con la excelencia.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #1e293b; padding: 30px; text-align: center;">
+                            <p style="color: #94a3b8; font-size: 14px; margin: 0 0 10px 0; font-weight: bold;">
+                                Equipo Comercial POZINOX
+                            </p>
+                            <p style="color: #94a3b8; font-size: 12px; margin: 0 0 15px 0;">
+                                Especialistas en Acero Inoxidable | Tecnología e Innovación
+                            </p>
+                            <div style="border-top: 1px solid #475569; padding-top: 15px;">
+                                <p style="color: #64748b; font-size: 11px; margin: 0; line-height: 1.5;">
+                                    Este es un mensaje automático, por favor no responder directamente a este correo.<br>
+                                    Para consultas, utiliza los canales de contacto indicados anteriormente.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
+            
+            msg = EmailMultiAlternatives(subject, text_content, settings.DEFAULT_FROM_EMAIL, [email])
+            msg.attach_alternative(html_content, "text/html")
+            msg.send()
+            
+            # Mostrar mensaje de éxito
+            success = "¡Mensaje enviado correctamente! Hemos enviado un correo de confirmación a tu email."
+            
+        except Exception as e:
+            # Mostrar mensaje de éxito aunque falle el correo (para no confundir al usuario)
+            success = "¡Mensaje recibido! Nos contactaremos pronto."
         
-        # Enviar correo en un hilo separado
-        thread = threading.Thread(target=enviar_correo_asincrono)
-        thread.daemon = True
-        thread.start()
-        
-        # Mostrar mensaje de éxito
-        success = "¡Mensaje enviado correctamente! Nos contactaremos pronto."
         context = {
             'success': success,
         }
