@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q, F
+from django.db.models import Q, F, Count, Sum
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -239,6 +239,109 @@ def panel_admin(request):
         'dispositivos': dispositivos,
     }
     return render(request, 'tienda/panel_admin.html', context)
+
+
+@login_required
+@user_passes_test(es_superusuario)
+def reportes_generales(request):
+    """Generar reportes generales: ventas, stock, cotizaciones"""
+    import datetime
+
+    tipo = request.GET.get('tipo') or request.POST.get('tipo') or 'ventas'
+    # Rango por defecto: últimos 30 días
+    hoy = timezone.now()
+    fecha_desde = request.GET.get('desde') or request.POST.get('desde')
+    fecha_hasta = request.GET.get('hasta') or request.POST.get('hasta')
+    try:
+        if fecha_desde:
+            fecha_desde_dt = timezone.make_aware(datetime.datetime.fromisoformat(fecha_desde))
+        else:
+            fecha_desde_dt = hoy - datetime.timedelta(days=30)
+    except Exception:
+        fecha_desde_dt = hoy - datetime.timedelta(days=30)
+    try:
+        if fecha_hasta:
+            fecha_hasta_dt = timezone.make_aware(datetime.datetime.fromisoformat(fecha_hasta))
+        else:
+            fecha_hasta_dt = hoy
+    except Exception:
+        fecha_hasta_dt = hoy
+
+    results = []
+    no_data = False
+
+    # Normalize fecha_hasta to include the whole day if it is a date
+    try:
+        if hasattr(fecha_hasta_dt, 'hour') and fecha_hasta_dt.hour == 0 and fecha_hasta_dt.minute == 0 and fecha_hasta_dt.second == 0:
+            fecha_hasta_dt = fecha_hasta_dt.replace(hour=23, minute=59, second=59)
+    except Exception:
+        pass
+
+    # Estados de cotización que consideramos para ventas/ingresos/productos vendidos
+    estados_ventas = ['pagada', 'finalizada', 'en_revision']
+
+    if tipo == 'ventas':
+        # Ventas: sumamos el total por día dentro del rango
+        qs = Cotizacion.objects.filter(fecha_creacion__gte=fecha_desde_dt, fecha_creacion__lte=fecha_hasta_dt, estado__in=estados_ventas)
+        if not qs.exists():
+            no_data = True
+        else:
+            ventas_por_dia = qs.extra(select={'dia': "date(fecha_creacion)"}).values('dia').annotate(total=Sum('total')).order_by('dia')
+            results = [{'label': v['dia'], 'value': v['total'] or 0} for v in ventas_por_dia]
+
+    elif tipo == 'ingresos':
+        # Ingresos por fecha: similar a ventas, pero explícito
+        qs = Cotizacion.objects.filter(fecha_creacion__gte=fecha_desde_dt, fecha_creacion__lte=fecha_hasta_dt, estado__in=estados_ventas)
+        if not qs.exists():
+            no_data = True
+        else:
+            ingresos_por_dia = qs.extra(select={'dia': "date(fecha_creacion)"}).values('dia').annotate(total=Sum('total')).order_by('dia')
+            results = [{'label': v['dia'], 'value': v['total'] or 0} for v in ingresos_por_dia]
+
+    elif tipo == 'productos_mas_vendidos':
+        # Productos más vendidos: sumar cantidades en DetalleCotizacion para cotizaciones pagadas/finalizadas
+        detalles_qs = DetalleCotizacion.objects.filter(cotizacion__fecha_creacion__gte=fecha_desde_dt, cotizacion__fecha_creacion__lte=fecha_hasta_dt, cotizacion__estado__in=estados_ventas)
+        if not detalles_qs.exists():
+            no_data = True
+        else:
+            vendidos = detalles_qs.values('producto__id', 'producto__nombre').annotate(total_vendido=Sum('cantidad')).order_by('-total_vendido')[:100]
+            results = list(vendidos)
+
+    elif tipo == 'clientes':
+        # Reporte de clientes: top por total comprado y número de pedidos
+        qs = Cotizacion.objects.filter(fecha_creacion__gte=fecha_desde_dt, fecha_creacion__lte=fecha_hasta_dt, estado__in=estados_ventas)
+        if not qs.exists():
+            no_data = True
+        else:
+            clientes_qs = qs.values('usuario__id', 'usuario__username', 'usuario__first_name', 'usuario__last_name').annotate(total_gastado=Sum('total'), pedidos=Count('id')).order_by('-total_gastado')[:100]
+            results = list(clientes_qs)
+
+    elif tipo == 'stock':
+        # Productos con stock bajo
+        qs = Producto.objects.filter(stock_actual__lte=F('stock_minimo'))
+        if not qs.exists():
+            no_data = True
+        else:
+            results = list(qs.values('id', 'nombre', 'stock_actual', 'stock_minimo', 'categoria__nombre'))
+
+    elif tipo == 'cotizaciones':
+        qs = Cotizacion.objects.filter(fecha_creacion__gte=fecha_desde_dt, fecha_creacion__lte=fecha_hasta_dt)
+        if not qs.exists():
+            no_data = True
+        else:
+            results = list(qs.values('numero_cotizacion', 'usuario__username', 'estado', 'total', 'fecha_creacion')[:100])
+
+    else:
+        no_data = True
+
+    context = {
+        'tipo': tipo,
+        'results': results,
+        'no_data': no_data,
+        'fecha_desde': fecha_desde_dt.date() if fecha_desde_dt else None,
+        'fecha_hasta': fecha_hasta_dt.date() if fecha_hasta_dt else None,
+    }
+    return render(request, 'tienda/admin/reportes_generales.html', context)
 
 
 @login_required

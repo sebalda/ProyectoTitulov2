@@ -1,0 +1,174 @@
+{% extends 'admin/base_admin.html' %}
+{% load static %}
+
+{% block admin_title %}Reportes Generales{% endblock %}
+
+{% block admin_content %}
+<div class="dashboard-header">
+    <h1><i class="fas fa-chart-pie me-2"></i>Reportes Generales</h1>
+    <p>Genera informes (ventas, stock, cotizaciones, productos vendidos, clientes, ingresos). Selecciona el tipo de informe y el rango de fechas.</p>
+</div>
+
+<div class="recent-activity">
+    <div class="mb-4">
+        <h5>Flujo del reporte</h5>
+        <ol>
+            <li><strong>Selecciona un tipo de informe:</strong> Ventas, Stock actual, Cotizaciones, Productos más vendidos, Clientes, Ingresos por fecha.</li>
+            <li><strong>Acciones del sistema:</strong> Se consultan los datos necesarios en la base de datos según el informe seleccionado.</li>
+            <li><strong>Validación de datos:</strong> El sistema comprueba si existen registros suficientes para generar el reporte.</li>
+            <li><strong>Generación:</strong> Si hay datos, se muestra tabla, estadísticas y (si procede) gráficos. Si no hay datos, se muestra un mensaje informativo.</li>
+        </ol>
+    </div>
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-4">
+            <label class="form-label">Tipo de reporte</label>
+            <select name="tipo" class="form-select">
+                <option value="ventas" {% if tipo == 'ventas' %}selected{% endif %}>Reporte de ventas</option>
+                <option value="ingresos" {% if tipo == 'ingresos' %}selected{% endif %}>Reporte de ingresos por fecha</option>
+                <option value="stock" {% if tipo == 'stock' %}selected{% endif %}>Reporte de stock actual (stock bajo)</option>
+                <option value="cotizaciones" {% if tipo == 'cotizaciones' %}selected{% endif %}>Reporte de cotizaciones realizadas</option>
+                <option value="productos_mas_vendidos" {% if tipo == 'productos_mas_vendidos' %}selected{% endif %}>Reporte de productos más vendidos</option>
+                <option value="clientes" {% if tipo == 'clientes' %}selected{% endif %}>Reporte de clientes (top compradores)</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Desde</label>
+            <input type="date" name="desde" class="form-control" value="{{ fecha_desde }}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Hasta</label>
+            <input type="date" name="hasta" class="form-control" value="{{ fecha_hasta }}">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button class="btn btn-primary w-100">Generar</button>
+        </div>
+    </form>
+
+    {% if no_data %}
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>❗ No hay datos suficientes para generar este reporte.
+        </div>
+    {% else %}
+        {% if tipo == 'ventas' or tipo == 'ingresos' %}
+            <h4>{% if tipo == 'ventas' %}Ventas por día{% else %}Ingresos por fecha{% endif %}</h4>
+            <div class="table-responsive mb-3">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th class="text-end">Total (CLP)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in results %}
+                            <tr>
+                                <td>{{ row.label }}</td>
+                                <td class="text-end">${{ row.value|floatformat:0 }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div id="chart-placeholder" class="mb-4">(Aquí podría mostrarse un gráfico si se integra Chart.js)</div>
+
+        {% elif tipo == 'productos_mas_vendidos' %}
+            <h4>Productos más vendidos</h4>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th class="text-end">Cantidad vendida</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in results %}
+                        <tr>
+                            <td>{{ p.producto__nombre }}</td>
+                            <td class="text-end">{{ p.total_vendido }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        {% elif tipo == 'clientes' %}
+            <h4>Clientes (Top compradores)</h4>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Nombre</th>
+                            <th class="text-end">Pedidos</th>
+                            <th class="text-end">Total gastado (CLP)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in results %}
+                        <tr>
+                            <td>{{ c.usuario__username }}</td>
+                            <td>{{ c.usuario__first_name }} {{ c.usuario__last_name }}</td>
+                            <td class="text-end">{{ c.pedidos }}</td>
+                            <td class="text-end">${{ c.total_gastado|floatformat:0 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        {% elif tipo == 'stock' %}
+            <h4>Productos con stock bajo</h4>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th class="text-end">Stock actual</th>
+                            <th class="text-end">Stock mínimo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in results %}
+                        <tr>
+                            <td>{{ p.nombre }}</td>
+                            <td>{{ p.categoria__nombre }}</td>
+                            <td class="text-end">{{ p.stock_actual }}</td>
+                            <td class="text-end">{{ p.stock_minimo }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        {% elif tipo == 'cotizaciones' %}
+            <h4>Cotizaciones</h4>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>N° Cotización</th>
+                            <th>Usuario</th>
+                            <th>Estado</th>
+                            <th class="text-end">Total</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in results %}
+                        <tr>
+                            <td>{{ c.numero_cotizacion }}</td>
+                            <td>{{ c.usuario__username }}</td>
+                            <td>{{ c.estado }}</td>
+                            <td class="text-end">${{ c.total }}</td>
+                            <td>{{ c.fecha_creacion }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}
