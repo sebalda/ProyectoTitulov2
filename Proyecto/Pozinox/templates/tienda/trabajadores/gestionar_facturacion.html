@@ -314,9 +314,15 @@
                                         <i class="fas fa-check me-1"></i>Facturado: {{ cotizacion.fecha_facturacion|date:"d/m/Y H:i" }}
                                     </small>
                                     <br>
-                                    <small class="text-muted">
-                                        <i class="fas fa-user me-1"></i>Por: {{ cotizacion.facturado_por.get_full_name|default:cotizacion.facturado_por.username }}
-                                    </small>
+                                    {% if cotizacion.facturado_por %}
+                                        <small class="text-muted">
+                                            <i class="fas fa-user me-1"></i>Por: {{ cotizacion.facturado_por.get_full_name|default:cotizacion.facturado_por.username }}
+                                        </small>
+                                    {% else %}
+                                        <small class="text-muted">
+                                            <i class="fas fa-user me-1"></i>Por: Sistema (automático)
+                                        </small>
+                                    {% endif %}
                                     {% if cotizacion.numero_documento %}
                                         <br>
                                         <small class="text-muted">

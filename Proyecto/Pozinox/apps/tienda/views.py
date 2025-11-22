@@ -1343,7 +1343,6 @@ def procesar_pago_mercadopago(request, cotizacion_id):
             "auto_return": "approved",  # Redirección automática cuando el pago es aprobado
             "external_reference": cotizacion.numero_cotizacion,
             "statement_descriptor": "Pozinox",
-            "notification_url": f"{base_url}/webhooks/mercadopago/",  # Webhook para notificaciones
             "payer": {
                 "name": request.user.first_name or request.user.username,
                 "surname": request.user.last_name or "",
