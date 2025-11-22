@@ -1494,6 +1494,7 @@ def pago_exitoso(request, cotizacion_id):
                     cotizacion.estado = 'pagada'
                     cotizacion.pago_completado = True
                     cotizacion.metodo_pago = 'mercadopago'
+                    cotizacion.save()
                     
                     # Enviar email de confirmación de compra
                     try:
@@ -1502,7 +1503,19 @@ def pago_exitoso(request, cotizacion_id):
                     except Exception as e:
                         logger.exception(f'Error al enviar confirmación de compra: {e}')
                     
-                    messages.success(request, '¡Pago exitoso! Tu cotización ha sido pagada correctamente.')
+                    # IMPORTANTE: Facturación automática para pagos con MercadoPago desde la página web
+                    # Boleta para persona natural, factura para empresa
+                    try:
+                        facturado = facturar_cotizacion_automaticamente(cotizacion, usuario_que_factura=None)
+                        if facturado:
+                            logger.info(f'✅ Facturación automática exitosa para cotización {cotizacion.numero_cotizacion}')
+                            messages.success(request, f'¡Pago exitoso! Tu cotización ha sido pagada y facturada automáticamente.')
+                        else:
+                            logger.warning(f'⚠️ No se pudo facturar automáticamente la cotización {cotizacion.numero_cotizacion} (faltan datos del cliente o ya estaba facturada)')
+                            messages.success(request, '¡Pago exitoso! Tu cotización ha sido pagada correctamente.')
+                    except Exception as e:
+                        logger.exception(f'Error en facturación automática para cotización {cotizacion.id}: {e}')
+                        messages.success(request, '¡Pago exitoso! Tu cotización ha sido pagada correctamente.')
                 elif status == 'pending':
                     cotizacion.estado = 'en_revision'
                     cotizacion.pago_completado = False
@@ -1528,7 +1541,19 @@ def pago_exitoso(request, cotizacion_id):
                     except Exception as e:
                         logger.exception(f'Error al enviar confirmación de compra: {e}')
                     
-                    messages.success(request, '¡Pago exitoso! Tu cotización ha sido pagada correctamente.')
+                    # IMPORTANTE: Facturación automática para pagos con MercadoPago desde la página web
+                    # Boleta para persona natural, factura para empresa
+                    try:
+                        facturado = facturar_cotizacion_automaticamente(cotizacion, usuario_que_factura=None)
+                        if facturado:
+                            logger.info(f'✅ Facturación automática exitosa para cotización {cotizacion.numero_cotizacion}')
+                            messages.success(request, f'¡Pago exitoso! Tu cotización ha sido pagada y facturada automáticamente.')
+                        else:
+                            logger.warning(f'⚠️ No se pudo facturar automáticamente la cotización {cotizacion.numero_cotizacion} (faltan datos del cliente o ya estaba facturada)')
+                            messages.success(request, '¡Pago exitoso! Tu cotización ha sido pagada correctamente.')
+                    except Exception as e:
+                        logger.exception(f'Error en facturación automática para cotización {cotizacion.id}: {e}')
+                        messages.success(request, '¡Pago exitoso! Tu cotización ha sido pagada correctamente.')
         except Exception as e:
             logger.exception(f'Error al verificar pago {payment_id} en pago_exitoso: {e}')
             # Si falla la verificación pero el status en la URL es approved, marcar como pagada
@@ -1538,7 +1563,20 @@ def pago_exitoso(request, cotizacion_id):
                 cotizacion.mercadopago_payment_id = str(payment_id) if payment_id else ''
                 cotizacion.metodo_pago = 'mercadopago'
                 cotizacion.save()
-                messages.success(request, '¡Pago exitoso! Tu cotización ha sido pagada correctamente.')
+                
+                # IMPORTANTE: Facturación automática para pagos con MercadoPago desde la página web
+                # Boleta para persona natural, factura para empresa
+                try:
+                    facturado = facturar_cotizacion_automaticamente(cotizacion, usuario_que_factura=None)
+                    if facturado:
+                        logger.info(f'✅ Facturación automática exitosa para cotización {cotizacion.numero_cotizacion}')
+                        messages.success(request, f'¡Pago exitoso! Tu cotización ha sido pagada y facturada automáticamente.')
+                    else:
+                        logger.warning(f'⚠️ No se pudo facturar automáticamente la cotización {cotizacion.numero_cotizacion} (faltan datos del cliente o ya estaba facturada)')
+                        messages.success(request, '¡Pago exitoso! Tu cotización ha sido pagada correctamente.')
+                except Exception as e:
+                    logger.exception(f'Error en facturación automática para cotización {cotizacion.id}: {e}')
+                    messages.success(request, '¡Pago exitoso! Tu cotización ha sido pagada correctamente.')
             # Continuar de todas formas, mostrar la página de éxito
     
     # Mostrar la página de revisión si está en revisión o pagada
@@ -1629,6 +1667,7 @@ def pago_pendiente(request, cotizacion_id):
                         # El pago fue aprobado, redirigir a página de éxito
                         cotizacion.estado = 'pagada'
                         cotizacion.pago_completado = True
+                        cotizacion.metodo_pago = 'mercadopago'
                         cotizacion.mercadopago_payment_id = str(payment.get("id", ""))
                         cotizacion.save()
                         
@@ -1638,7 +1677,20 @@ def pago_pendiente(request, cotizacion_id):
                         except Exception as e:
                             logger.exception(f'Error al enviar confirmación de compra: {e}')
                         
-                        messages.success(request, '¡Tu pago ha sido confirmado!')
+                        # IMPORTANTE: Facturación automática para pagos con MercadoPago desde la página web
+                        # Boleta para persona natural, factura para empresa
+                        try:
+                            facturado = facturar_cotizacion_automaticamente(cotizacion, usuario_que_factura=None)
+                            if facturado:
+                                logger.info(f'✅ Facturación automática exitosa para cotización {cotizacion.numero_cotizacion}')
+                                messages.success(request, f'¡Tu pago ha sido confirmado! Cotización facturada automáticamente.')
+                            else:
+                                logger.warning(f'⚠️ No se pudo facturar automáticamente la cotización {cotizacion.numero_cotizacion} (faltan datos del cliente o ya estaba facturada)')
+                                messages.success(request, '¡Tu pago ha sido confirmado!')
+                        except Exception as e:
+                            logger.exception(f'Error en facturación automática para cotización {cotizacion.id}: {e}')
+                            messages.success(request, '¡Tu pago ha sido confirmado!')
+                        
                         return redirect('pago_exitoso', cotizacion_id=cotizacion.id)
                     elif status in ['rejected', 'cancelled']:
                         # El pago fue rechazado, redirigir a página de fallo
@@ -2644,8 +2696,9 @@ def generar_documento_electronico(request, cotizacion_id):
 
 def facturar_cotizacion_automaticamente(cotizacion, usuario_que_factura=None):
     """
-    Factura automáticamente una cotización (solo para pagos con MercadoPago desde n8n)
+    Factura automáticamente una cotización para pagos con MercadoPago
     Determina automáticamente si es boleta (persona natural) o factura (empresa)
+    Aplica tanto para pagos desde n8n como desde la página web
     """
     from django.core.files.base import ContentFile
     import random
@@ -2665,12 +2718,15 @@ def facturar_cotizacion_automaticamente(cotizacion, usuario_que_factura=None):
         logger.warning(f'Facturación automática solo aplica para MercadoPago. Método: {cotizacion.metodo_pago}')
         return False
     
-    # Obtener perfil del cliente
+    # Obtener o crear perfil del cliente
     try:
         perfil = cotizacion.usuario.perfil
     except AttributeError:
-        logger.error(f'Usuario {cotizacion.usuario.id} no tiene perfil')
-        return False
+        # Si no tiene perfil, crearlo
+        from apps.usuarios.models import PerfilUsuario
+        logger.warning(f'Usuario {cotizacion.usuario.id} no tiene perfil, creando uno nuevo')
+        perfil = PerfilUsuario.objects.create(user=cotizacion.usuario)
+        logger.info(f'✅ Perfil creado para usuario {cotizacion.usuario.id}')
     
     # Determinar tipo de documento automáticamente
     # Persona natural → Boleta
@@ -2687,8 +2743,13 @@ def facturar_cotizacion_automaticamente(cotizacion, usuario_que_factura=None):
     # Validar datos del cliente para facturación
     errores = []
     
-    if not perfil.rut:
+    # Verificar RUT - si está vacío o solo tiene espacios, considerarlo como no válido
+    rut_valido = perfil.rut and perfil.rut.strip()
+    if not rut_valido:
+        logger.warning(f'⚠️ Usuario {cotizacion.usuario.id} ({cotizacion.usuario.email}) no tiene RUT registrado. Perfil ID: {perfil.id}, RUT actual: "{perfil.rut}"')
         errores.append('El cliente no tiene RUT registrado.')
+    else:
+        logger.info(f'✅ Usuario {cotizacion.usuario.id} tiene RUT: {perfil.rut}')
     
     if tipo_documento == 'factura':
         # Para factura se requieren más datos
@@ -3383,6 +3444,14 @@ def crear_cotizacion_desde_venta_n8n(venta):
                 email=venta.email_comprador,
                 first_name=venta.email_comprador.split('@')[0],
             )
+            # Asegurar que el perfil existe (debería crearse automáticamente por la señal, pero verificamos)
+            try:
+                perfil = usuario.perfil
+            except AttributeError:
+                from apps.usuarios.models import PerfilUsuario
+                perfil = PerfilUsuario.objects.create(user=usuario)
+                logger.info(f'✅ Perfil creado para nuevo usuario {usuario.id} desde venta n8n')
+            
             venta.usuario = usuario
             venta.save()
     
@@ -3623,8 +3692,18 @@ def pago_exitoso_n8n(request):
                         # Crear o obtener venta desde la preferencia
                         items = preference.get("items", [])
                         payer = preference.get("payer", {})
-                        email = payer.get("email") or request.user.email if request.user.is_authenticated else None
                         metadata = preference.get("metadata", {})
+                        # Intentar obtener email de múltiples fuentes
+                        email = (
+                            payer.get("email") or 
+                            payer.get("email_address") or
+                            (request.user.email if request.user.is_authenticated else None) or
+                            (metadata.get("email_comprador") if metadata else None)
+                        )
+                        logger.info(f'📧 Email obtenido: {email if email else "NO ENCONTRADO"}')
+                        logger.info(f'📦 Items obtenidos: {len(items)} items')
+                        logger.info(f'👤 Payer info: {payer}')
+                        logger.info(f'📝 Metadata: {metadata}')
                         
                         if email and items:
                             subtotal = sum(item.get("unit_price", 0) * item.get("quantity", 0) for item in items)
@@ -3663,11 +3742,13 @@ def pago_exitoso_n8n(request):
         except Exception as e:
             logger.exception(f'Error al obtener información de MercadoPago: {e}')
     
-    # Si no hay venta después de todos los intentos, mostrar error
+    # Si no hay venta después de todos los intentos, mostrar página de error pero NO redirigir
+    # Permitir que el usuario vea que hubo un problema en lugar de redirigir
     if not venta:
         logger.error(f'❌ No se pudo encontrar venta después de todos los intentos - payment_id: {payment_id}, preference_id: {preference_id}')
+        # NO redirigir, mostrar la página de éxito con error
         messages.error(request, 'No se pudo encontrar la información de tu compra. Por favor, contacta con soporte.')
-        return redirect('home')
+        # Continuar para mostrar la página de éxito aunque no haya venta
     
     # Si el estado desde la URL es 'approved' y tenemos la venta, actualizar y crear cotización
     if venta and collection_status == 'approved' and venta.estado_pago != 'approved':
@@ -3681,8 +3762,10 @@ def pago_exitoso_n8n(request):
         crear_cotizacion_desde_venta_n8n(venta)
     
     # Verificar permisos si la venta existe
+    # IMPORTANTE: Permitir acceso a la página de éxito siempre, especialmente si viene de MercadoPago
+    # Las cookies de sesión se pierden al redirigir desde MercadoPago
     if venta:
-        # Si el usuario está logueado, verificar que sea el dueño o staff
+        # Si el usuario está logueado, verificar permisos solo para mostrar información adicional
         if request.user.is_authenticated:
             es_propietario = venta.usuario == request.user
             es_staff = request.user.is_superuser or (
@@ -3694,8 +3777,9 @@ def pago_exitoso_n8n(request):
                 es_propietario = request.user.email == venta.email_comprador
             
             if not (es_propietario or es_staff):
-                messages.error(request, 'No tienes permisos para ver esta página.')
-                return redirect('home')
+                # NO redirigir, permitir ver la página pero mostrar mensaje
+                logger.warning(f'⚠️ Usuario {request.user.id} intenta ver venta {venta.id} que no le pertenece')
+                messages.warning(request, 'Esta compra no está asociada a tu cuenta. Si es tuya, inicia sesión con el email correcto.')
         else:
             # Si no está logueado, permitir ver pero sugerir login
             messages.info(request, 'Inicia sesión para ver todas tus compras.')
@@ -3719,14 +3803,16 @@ def pago_exitoso_n8n(request):
             if cotizacion:
                 logger.info(f'✅ Cotización creada: {cotizacion.numero_cotizacion}')
         
-        # Si tenemos cotización y el usuario está logueado, redirigir siempre
-        if cotizacion and request.user.is_authenticated:
-            logger.info(f'🔄 Redirigiendo a detalle_cotizacion: {cotizacion.id}')
-            messages.success(request, f'¡Cotización {cotizacion.numero_cotizacion} creada y pagada!')
-            return redirect('detalle_cotizacion', cotizacion_id=cotizacion.id)
-        elif cotizacion and not request.user.is_authenticated:
-            # Si hay cotización pero el usuario no está logueado, mostrar página de éxito
-            logger.info(f'📄 Mostrando página de éxito (usuario no logueado) - cotización: {cotizacion.numero_cotizacion}')
+        # IMPORTANTE: SIEMPRE mostrar la página de éxito, NO redirigir a detalle_cotizacion
+        # Esto es porque el usuario viene de MercadoPago y espera ver la confirmación aquí
+        if cotizacion:
+            if request.user.is_authenticated:
+                logger.info(f'📄 Mostrando página de éxito (usuario logueado) - cotización: {cotizacion.numero_cotizacion}')
+                messages.success(request, f'¡Cotización {cotizacion.numero_cotizacion} creada y pagada!')
+            else:
+                # Si hay cotización pero el usuario no está logueado, mostrar página de éxito
+                logger.info(f'📄 Mostrando página de éxito (usuario no logueado) - cotización: {cotizacion.numero_cotizacion}')
+                messages.success(request, f'¡Pago exitoso! Cotización {cotizacion.numero_cotizacion} creada.')
     
     # Preparar items con subtotales calculados
     items_con_subtotal = []
@@ -3736,16 +3822,22 @@ def pago_exitoso_n8n(request):
             item_copy['subtotal'] = item.get('unit_price', 0) * item.get('quantity', 0)
             items_con_subtotal.append(item_copy)
     
-    logger.info(f'📄 Renderizando página de éxito - venta: {venta.id}, cotizacion: {cotizacion.id if cotizacion else None}')
+    logger.info(f'📄 Renderizando página de éxito - venta: {venta.id if venta else None}, cotizacion: {cotizacion.id if cotizacion else None}')
+    logger.info(f'🔍 Estado final - payment_id: {payment_id}, preference_id: {preference_id}, status: {status}')
     
+    # SIEMPRE renderizar la página de éxito, incluso si no hay venta
+    # Esto es importante porque MercadoPago redirige aquí después del pago
     context = {
         'venta': venta,
         'cotizacion': cotizacion,
         'items': items_con_subtotal if items_con_subtotal else (venta.items if venta else []),
         'payment_id': payment_id,
         'preference_id': preference_id,
+        'status': status,
+        'payment_status': collection_status,
     }
     
+    logger.info(f'✅ Mostrando página de éxito con context: venta={venta is not None}, cotizacion={cotizacion is not None}, items={len(context["items"])}')
     return render(request, 'tienda/ventas_n8n/pago_exitoso.html', context)
 
 
