@@ -84,7 +84,7 @@
                                         <strong>{{ cotizacion.numero_cotizacion }}</strong>
                                     </td>
                                     <td>
-                                        {{ cotizacion.usuario.get_full_name|default:cotizacion.usuario.username }}<br>
+                                        {{ cotizacion.get_nombre_usuario }}<br>
                                         <small class="text-muted">{{ cotizacion.usuario.email }}</small>
                                     </td>
                                     <td>
@@ -161,7 +161,7 @@
                                                         {% csrf_token %}
                                                         <div class="modal-body">
                                                             <p><strong>Cotización:</strong> {{ cotizacion.numero_cotizacion }}</p>
-                                                            <p><strong>Cliente:</strong> {{ cotizacion.usuario.get_full_name|default:cotizacion.usuario.username }}</p>
+                                                            <p><strong>Cliente:</strong> {{ cotizacion.get_nombre_usuario }}</p>
                                                             <p><strong>Estado actual:</strong> 
                                                                 <span class="badge bg-secondary">
                                                                     {{ cotizacion.get_estado_preparacion_display|default:"Sin estado" }}

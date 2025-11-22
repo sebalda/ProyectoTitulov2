@@ -281,7 +281,7 @@
                         <div class="col-md-4">
                             <div class="cliente-info">
                                 <strong class="d-block">
-                                    <i class="fas fa-user me-2"></i>{{ cotizacion.usuario.get_full_name|default:cotizacion.usuario.username }}
+                                    <i class="fas fa-user me-2"></i>{{ cotizacion.get_nombre_usuario }}
                                 </strong>
                                 <small class="d-block text-muted">
                                     <i class="fas fa-id-card me-1"></i>RUT: {{ cotizacion.usuario.perfil.rut|default:"No registrado" }}
@@ -314,6 +314,7 @@
                                         <i class="fas fa-check me-1"></i>Facturado: {{ cotizacion.fecha_facturacion|date:"d/m/Y H:i" }}
                                     </small>
                                     <br>
+<<<<<<< HEAD
                                     {% if cotizacion.facturado_por %}
                                         <small class="text-muted">
                                             <i class="fas fa-user me-1"></i>Por: {{ cotizacion.facturado_por.get_full_name|default:cotizacion.facturado_por.username }}
@@ -323,6 +324,11 @@
                                             <i class="fas fa-user me-1"></i>Por: Sistema (automático)
                                         </small>
                                     {% endif %}
+=======
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>Por: {{ cotizacion.get_nombre_facturador }}
+                                    </small>
+>>>>>>> 0d3819b03e6df967ef997ab8a22bb939e96ab340
                                     {% if cotizacion.numero_documento %}
                                         <br>
                                         <small class="text-muted">

@@ -19,7 +19,7 @@
                         <div class="col-md-6">
                             <h5>Cotización: {{ transferencia.cotizacion.numero_cotizacion }}</h5>
                             <p class="text-muted">
-                                <strong>Cliente:</strong> {{ transferencia.cotizacion.usuario.get_full_name|default:transferencia.cotizacion.usuario.username }}<br>
+                                <strong>Cliente:</strong> {{ transferencia.cotizacion.get_nombre_usuario }}<br>
                                 <strong>Email:</strong> {{ transferencia.cotizacion.usuario.email }}<br>
                                 <strong>Fecha:</strong> {{ transferencia.fecha_creacion|date:"d/m/Y H:i" }}
                             </p>
