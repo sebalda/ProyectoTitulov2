@@ -87,7 +87,7 @@
                             <!-- Cliente -->
                             <div class="col-md-3">
                                 <small class="text-muted d-block">Cliente:</small>
-                                <strong>{{ cotizacion.usuario.get_full_name|default:cotizacion.usuario.username }}</strong>
+                                <strong>{{ cotizacion.get_nombre_usuario }}</strong>
                                 {% if cotizacion.usuario.email %}
                                     <br><small class="text-muted">{{ cotizacion.usuario.email }}</small>
                                 {% endif %}

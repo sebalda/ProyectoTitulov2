@@ -281,7 +281,7 @@
                         <div class="col-md-4">
                             <div class="cliente-info">
                                 <strong class="d-block">
-                                    <i class="fas fa-user me-2"></i>{{ cotizacion.usuario.get_full_name|default:cotizacion.usuario.username }}
+                                    <i class="fas fa-user me-2"></i>{{ cotizacion.get_nombre_usuario }}
                                 </strong>
                                 <small class="d-block text-muted">
                                     <i class="fas fa-id-card me-1"></i>RUT: {{ cotizacion.usuario.perfil.rut|default:"No registrado" }}
@@ -315,7 +315,7 @@
                                     </small>
                                     <br>
                                     <small class="text-muted">
-                                        <i class="fas fa-user me-1"></i>Por: {{ cotizacion.facturado_por.get_full_name|default:cotizacion.facturado_por.username }}
+                                        <i class="fas fa-user me-1"></i>Por: {{ cotizacion.get_nombre_facturador }}
                                     </small>
                                     {% if cotizacion.numero_documento %}
                                         <br>

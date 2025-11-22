@@ -240,7 +240,7 @@
                     <h5 class="mb-3"><i class="fas fa-user me-2"></i>Datos del Cliente</h5>
                     <div class="info-row">
                         <span class="info-label">Nombre:</span>
-                        <span class="info-value">{{ cotizacion.usuario.get_full_name|default:cotizacion.usuario.username }}</span>
+                        <span class="info-value">{{ cotizacion.get_nombre_usuario }}</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">RUT:</span>

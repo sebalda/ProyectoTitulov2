@@ -228,8 +228,13 @@ class Cotizacion(models.Model):
         ('efectivo', 'Efectivo'),
     ]
     
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cotizaciones')
+    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='cotizaciones')
+    usuario_nombre = models.CharField(max_length=200, blank=True, help_text="Nombre del usuario (se preserva si el usuario es eliminado)")
+    usuario_email = models.EmailField(blank=True, help_text="Email del usuario (se preserva si el usuario es eliminado)")
+    
     creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='cotizaciones_creadas', help_text="Usuario que creó esta cotización (trabajador/admin)")
+    creado_por_nombre = models.CharField(max_length=200, blank=True, help_text="Nombre del creador (se preserva si el usuario es eliminado)")
+    
     numero_cotizacion = models.CharField(max_length=20, unique=True, blank=True)
     estado = models.CharField(max_length=20, choices=ESTADOS_COTIZACION, default='borrador')
     
@@ -294,9 +299,43 @@ class Cotizacion(models.Model):
         ordering = ['-fecha_creacion']
     
     def __str__(self):
-        return f"Cotización {self.numero_cotizacion} - {self.usuario.username}"
+        nombre_usuario = self.get_nombre_usuario()
+        return f"Cotización {self.numero_cotizacion} - {nombre_usuario}"
+    
+    def get_nombre_usuario(self):
+        """Retorna el nombre del usuario, incluso si fue eliminado"""
+        if self.usuario:
+            return self.usuario.get_full_name() or self.usuario.username
+        return self.usuario_nombre or "Usuario eliminado"
+    
+    def get_email_usuario(self):
+        """Retorna el email del usuario, incluso si fue eliminado"""
+        if self.usuario:
+            return self.usuario.email
+        return self.usuario_email or "No disponible"
+    
+    def get_nombre_creador(self):
+        """Retorna el nombre del creador, incluso si fue eliminado"""
+        if self.creado_por:
+            return self.creado_por.get_full_name() or self.creado_por.username
+        return self.creado_por_nombre or "Usuario eliminado"
+    
+    def get_nombre_facturador(self):
+        """Retorna el nombre del usuario que facturó, incluso si fue eliminado o es sistema automático"""
+        if self.facturado_por:
+            return self.facturado_por.get_full_name() or self.facturado_por.username
+        return "Sistema Automático"
     
     def save(self, *args, **kwargs):
+        # Capturar información del usuario antes de guardar
+        if self.usuario and not self.usuario_nombre:
+            self.usuario_nombre = self.usuario.get_full_name() or self.usuario.username
+            self.usuario_email = self.usuario.email
+        
+        # Capturar información del creador antes de guardar
+        if self.creado_por and not self.creado_por_nombre:
+            self.creado_por_nombre = self.creado_por.get_full_name() or self.creado_por.username
+        
         if not self.numero_cotizacion:
             # Generar número de cotización con formato PZAÑOMES####
             # Ejemplo: PZ20251100001 (Año 2025, Mes 11, Número 0001)
