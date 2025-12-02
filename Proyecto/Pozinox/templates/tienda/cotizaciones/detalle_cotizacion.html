@@ -30,7 +30,9 @@
                     <small class="text-muted">Creación de la cotización:</small><br>
                     {% if cotizacion.creado_por %}
                         <strong>{{ cotizacion.creado_por.get_full_name|default:cotizacion.creado_por.username }}</strong>
-                        {% if cotizacion.creado_por.is_superuser %}
+                        {% if cotizacion.creado_por == cotizacion.usuario %}
+                            <span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">Creada por ti</span>
+                        {% elif cotizacion.creado_por.is_superuser %}
                             <span class="badge bg-danger ms-1" style="font-size: 0.7rem;">Superusuario</span>
                         {% elif cotizacion.creado_por.perfil.tipo_usuario == 'administrador' %}
                             <span class="badge bg-warning text-dark ms-1" style="font-size: 0.7rem;">Admin</span>
@@ -41,7 +43,7 @@
                         {% endif %}
                     {% else %}
                         <strong>{{ cotizacion.get_nombre_creador }}</strong>
-                        <span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">Cliente</span>
+                        <span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">Usuario no disponible</span>
                     {% endif %}
                 </div>
                 

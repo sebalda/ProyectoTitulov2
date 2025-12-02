@@ -907,7 +907,7 @@ def crear_cotizacion(request):
     cotizacion = Cotizacion.objects.filter(usuario=request.user, estado='borrador').first()
     
     if not cotizacion:
-        cotizacion = Cotizacion.objects.create(usuario=request.user)
+        cotizacion = Cotizacion.objects.create(usuario=request.user, creado_por=request.user)
         messages.success(request, f'Nueva cotización {cotizacion.numero_cotizacion} creada.')
     
     # Si se proporciona un producto_id, agregarlo automáticamente

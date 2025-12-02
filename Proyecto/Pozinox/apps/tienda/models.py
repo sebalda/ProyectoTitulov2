@@ -318,7 +318,11 @@ class Cotizacion(models.Model):
         """Retorna el nombre del creador, incluso si fue eliminado"""
         if self.creado_por:
             return self.creado_por.get_full_name() or self.creado_por.username
-        return self.creado_por_nombre or "Usuario eliminado"
+        # Si no hay creador registrado pero hay nombre guardado, usarlo
+        if self.creado_por_nombre:
+            return self.creado_por_nombre
+        # Si tampoco hay nombre guardado, podría ser una cotización antigua o de cliente
+        return "No especificado"
     
     def get_nombre_facturador(self):
         """Retorna el nombre del usuario que facturó, incluso si fue eliminado o es sistema automático"""
